@@ -15,6 +15,8 @@ export class AudioService {
   public static currentTime: number = 0;
   public static duration: number = 0;
   public static volume: number = 0.85;
+  private static rate = 1;
+  private static eq: [number, number, number] = [0, 0, 0];
 
   private static onEndedCallbacks: (() => void)[] = [];
   private static onTimeUpdateCallbacks: ((time: number, duration: number) => void)[] = [];
@@ -31,13 +33,15 @@ export class AudioService {
     this.audio.crossOrigin = 'anonymous';
     this.audio.volume = this.volume;
 
-    this.audio.addEventListener('timeupdate', () => {
+    const emitTime = () => {
       if (this.audio) {
         this.currentTime = this.audio.currentTime || 0;
-        this.duration = this.audio.duration || 0;
+        this.duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 0;
         this.onTimeUpdateCallbacks.forEach((cb) => cb(this.currentTime, this.duration));
       }
-    });
+    };
+    this.audio.addEventListener('timeupdate', emitTime);
+    this.audio.addEventListener('loadedmetadata', emitTime);
 
     this.audio.addEventListener('ended', () => {
       this.isPlaying = false;
@@ -74,22 +78,22 @@ export class AudioService {
           this.lowFilter = this.audioContext.createBiquadFilter();
           this.lowFilter.type = 'lowshelf';
           this.lowFilter.frequency.value = 250;
-          this.lowFilter.gain.value = 0;
+          this.lowFilter.gain.value = this.eq[0];
 
           this.midFilter = this.audioContext.createBiquadFilter();
           this.midFilter.type = 'peaking';
           this.midFilter.frequency.value = 1000;
           this.midFilter.Q.value = 1;
-          this.midFilter.gain.value = 0;
+          this.midFilter.gain.value = this.eq[1];
 
           this.highFilter = this.audioContext.createBiquadFilter();
           this.highFilter.type = 'highshelf';
           this.highFilter.frequency.value = 4000;
-          this.highFilter.gain.value = 0;
+          this.highFilter.gain.value = this.eq[2];
 
           // Analyser
           this.analyserNode = this.audioContext.createAnalyser();
-          this.analyserNode.fftSize = 64;
+          this.analyserNode.fftSize = 128;
           this.analyserNode.smoothingTimeConstant = 0.8;
           this.dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
 
@@ -120,6 +124,7 @@ export class AudioService {
       this.audio.src = filePath;
       this.audio.load();
     }
+    this.audio.playbackRate = this.rate;
 
     const promise = this.audio.play();
     if (promise !== undefined) {
@@ -177,52 +182,45 @@ export class AudioService {
     }
   }
 
+  static setPlaybackRate(rate: number): void {
+    this.rate = rate;
+    if (this.audio) {
+      this.audio.defaultPlaybackRate = rate;
+      this.audio.playbackRate = rate;
+    }
+  }
+
+  /** Allocation-free spectrum read for the canvas visualizer (values 0–1). */
+  static fillSpectrum(out: Float32Array): void {
+    const n = out.length;
+    if (!this.isPlaying) {
+      out.fill(0);
+      return;
+    }
+    if (this.analyserNode && this.dataArray) {
+      this.analyserNode.getByteFrequencyData(this.dataArray as unknown as Uint8Array<ArrayBuffer>);
+      // Skip the top quarter of bins: little musical energy lives there.
+      const usable = Math.floor(this.dataArray.length * 0.75);
+      let energy = 0;
+      for (let i = 0; i < n; i++) {
+        const v = this.dataArray[Math.floor((i / n) * usable)] / 255;
+        out[i] = v;
+        energy += v;
+      }
+      if (energy / n > 0.02) return;
+    }
+    // CORS-restricted streams expose no analyser data; animate a soft fallback.
+    const t = performance.now() / 420;
+    for (let i = 0; i < n; i++) {
+      out[i] = 0.18 + 0.5 * Math.abs(Math.sin(t + i * 0.37) * Math.cos(t * 0.6 + i * 0.13));
+    }
+  }
+
   static setEqualizer(low: number, mid: number, high: number): void {
+    this.eq = [low, mid, high];
     if (this.lowFilter) this.lowFilter.gain.value = low;
     if (this.midFilter) this.midFilter.gain.value = mid;
     if (this.highFilter) this.highFilter.gain.value = high;
-  }
-
-  static getFFT(): number[] {
-    const bands: number[] = new Array(16).fill(0);
-    if (!this.isPlaying) {
-      return bands;
-    }
-
-    if (this.analyserNode && this.dataArray) {
-      try {
-        this.analyserNode.getByteFrequencyData(this.dataArray as unknown as Uint8Array<ArrayBuffer>);
-        // Downsample bins to 16 bands
-        const binCount = this.analyserNode.frequencyBinCount;
-        const step = Math.max(1, Math.floor(binCount / 16));
-        let hasSignal = false;
-
-        for (let i = 0; i < 16; i++) {
-          const start = i * step;
-          let sum = 0;
-          for (let j = 0; j < step && (start + j) < binCount; j++) {
-            sum += this.dataArray[start + j];
-          }
-          const avg = sum / step / 255;
-          bands[i] = avg;
-          if (avg > 0.02) hasSignal = true;
-        }
-
-        if (hasSignal) {
-          return bands;
-        }
-      } catch {
-        // Fallback to lively simulated bands
-      }
-    }
-
-    // Animated fallback so visualizer is always active when playing
-    const time = Date.now() / 150;
-    for (let i = 0; i < 16; i++) {
-      const val = 0.2 + 0.6 * Math.abs(Math.sin(time + i * 0.45)) * Math.cos(time * 0.7 + i * 0.2);
-      bands[i] = Math.max(0.05, Math.min(1, val));
-    }
-    return bands;
   }
 
   static async getAudioDevices(): Promise<AudioDevice[]> {
