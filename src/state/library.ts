@@ -118,7 +118,7 @@ export function smartMix(): Playlist {
     id: 'smart-mix',
     name: 'Daily Mix',
     description: 'Tuned by your agent from what you love lately.',
-    color: '#8b7cff',
+    color: '#ff3c00',
     trackIds: ids,
     smart: true,
     createdAt: new Date().toISOString(),

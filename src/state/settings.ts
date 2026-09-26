@@ -70,7 +70,7 @@ export function applyTheme(pref: ThemePref, origin?: { x: number; y: number }) {
   const next = resolveTheme(pref);
   const commit = () => {
     root.dataset.theme = next;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0a0a0c' : '#f6f5f2');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', next === 'dark' ? '#0d0f11' : '#f6f7f9');
   };
   if (root.dataset.theme === next) return commit();
 

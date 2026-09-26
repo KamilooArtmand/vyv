@@ -15,7 +15,7 @@ export function Aura() {
       />
       <div
         className="anim-drift absolute -bottom-[25%] -right-[15%] size-[55vmax] rounded-full blur-[120px] transition-[background] duration-[1500ms] [animation-delay:-8s] [animation-duration:32s]"
-        style={{ background: 'radial-gradient(circle, color-mix(in oklab, var(--accent) 55%, #3b82f6) 0%, transparent 65%)', opacity: 0.6, animationPlayState: playing ? 'running' : 'paused' }}
+        style={{ background: 'radial-gradient(circle, color-mix(in oklab, var(--accent) 45%, var(--gray)) 0%, transparent 65%)', opacity: 0.6, animationPlayState: playing ? 'running' : 'paused' }}
       />
     </div>
   );

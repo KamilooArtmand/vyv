@@ -15,13 +15,16 @@ import { LiveBadge, MediaCard, PlayFab } from '../components/ui/Cards';
 import { Section, Shelf, SHELF_ITEM } from '../components/ui/Layout';
 import type { Mood, Track } from '../types';
 
+// One brand color for every tile — each still reads distinct because
+// meshGradient() jitters hue per seed, so the family stays cohesive.
+const MOOD_COLOR = '#ff3c00';
 const MOODS: { mood: Mood; name: string; color: string; prompt: string }[] = [
-  { mood: 'focus', name: 'Focus', color: '#06b6d4', prompt: 'Play focus music' },
-  { mood: 'calm', name: 'Calm', color: '#6366f1', prompt: 'Play something calm' },
-  { mood: 'night', name: 'Night', color: '#8b5cf6', prompt: 'Play night drive' },
-  { mood: 'energy', name: 'Energy', color: '#f97316', prompt: 'Play something with energy' },
-  { mood: 'happy', name: 'Sunny', color: '#f59e0b', prompt: 'Play something happy' },
-  { mood: 'melancholy', name: 'Rainy', color: '#3b82f6', prompt: 'Play something for a rainy day' },
+  { mood: 'focus', name: 'Focus', color: MOOD_COLOR, prompt: 'Play focus music' },
+  { mood: 'calm', name: 'Calm', color: MOOD_COLOR, prompt: 'Play something calm' },
+  { mood: 'night', name: 'Night', color: MOOD_COLOR, prompt: 'Play night drive' },
+  { mood: 'energy', name: 'Energy', color: MOOD_COLOR, prompt: 'Play something with energy' },
+  { mood: 'happy', name: 'Sunny', color: MOOD_COLOR, prompt: 'Play something happy' },
+  { mood: 'melancholy', name: 'Rainy', color: MOOD_COLOR, prompt: 'Play something for a rainy day' },
 ];
 
 function QuickTile({ title, color, seed, src, icon, onClick, onPlay }: { title: string; color: string; seed: string; src?: string; icon?: typeof Heart; onClick: () => void; onPlay: () => void }) {
@@ -76,7 +79,7 @@ export default function Home() {
       {/* Agent prediction */}
       {proactive && (
         <section className="anim-rise mb-9">
-          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white md:p-8" style={{ backgroundImage: meshGradient(nudge.mood, nudgeTracks[0]?.dominantColorHex ?? '#8b7cff') }}>
+          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white md:p-8" style={{ backgroundImage: meshGradient(nudge.mood, nudgeTracks[0]?.dominantColorHex ?? '#ff3c00') }}>
             <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(0_0_0/0.45),transparent_70%)]" />
             <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div className="max-w-lg">
@@ -103,7 +106,7 @@ export default function Home() {
 
       {/* Quick picks */}
       <section className="stagger mb-10 grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-3">
-        <QuickTile title="Liked" color="#e11d48" seed="liked" icon={Heart} onClick={() => navigate({ name: 'playlist', id: 'liked' })} onPlay={() => playQueue(liked)} />
+        <QuickTile title="Liked" color="#ff3c00" seed="liked" icon={Heart} onClick={() => navigate({ name: 'playlist', id: 'liked' })} onPlay={() => playQueue(liked)} />
         <QuickTile title={mix.name} color={mix.color} seed={mix.id} icon={Sparkles} onClick={() => navigate({ name: 'playlist', id: mix.id })} onPlay={() => playFromIds(mix.trackIds)} />
         {playlists.slice(0, 2).map((p) => (
           <QuickTile key={p.id} title={p.name} color={p.color} seed={p.id} icon={ListMusic} onClick={() => navigate({ name: 'playlist', id: p.id })} onPlay={() => playFromIds(p.trackIds)} />

@@ -47,10 +47,12 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Row({ icon: Icon, label, hint, children, tint }: { icon: LucideIcon; label: string; hint?: string; children?: ReactNode; tint?: string }) {
+// Icons stay a single neutral gray chip — the only color on this page is
+// the accent showing through an active switch, segment or the EQ fill.
+function Row({ icon: Icon, label, hint, children }: { icon: LucideIcon; label: string; hint?: string; children?: ReactNode }) {
   return (
     <div className="flex min-h-[60px] items-center gap-3.5 px-4 py-2.5">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] text-white" style={{ background: tint ?? 'var(--fg-3)' }}>
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-surface-3 text-fg-2">
         <Icon size={16} strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
@@ -62,10 +64,10 @@ function Row({ icon: Icon, label, hint, children, tint }: { icon: LucideIcon; la
   );
 }
 
-function Toggle({ k, icon, label, hint, tint }: { k: keyof S; icon: LucideIcon; label: string; hint?: string; tint?: string }) {
+function Toggle({ k, icon, label, hint }: { k: keyof S; icon: LucideIcon; label: string; hint?: string }) {
   const v = useStore(settingsStore, (s) => s[k] as boolean);
   return (
-    <Row icon={icon} label={label} hint={hint} tint={tint}>
+    <Row icon={icon} label={label} hint={hint}>
       <Switch checked={v} label={label} onChange={(n) => settingsStore.set({ [k]: n } as Partial<S>)} />
     </Row>
   );
@@ -90,7 +92,7 @@ export default function Settings() {
       <PageHeader title="Settings" />
 
       <Group title="Look">
-        <Row icon={Palette} label="Theme" tint="#8b5cf6">
+        <Row icon={Palette} label="Theme">
           <Segmented<ThemePref>
             iconOnly
             size="sm"
@@ -106,9 +108,9 @@ export default function Settings() {
             ]}
           />
         </Row>
-        <Toggle k="adaptiveColor" icon={Blend} label="Adaptive color" hint="Tint from artwork" tint="#ec4899" />
-        <Toggle k="aura" icon={Wind} label="Ambient aura" tint="#06b6d4" />
-        <Toggle k="reduceMotion" icon={Rabbit} label="Reduce motion" tint="#64748b" />
+        <Toggle k="adaptiveColor" icon={Blend} label="Adaptive color" hint="Tint from artwork" />
+        <Toggle k="aura" icon={Wind} label="Ambient aura" />
+        <Toggle k="reduceMotion" icon={Rabbit} label="Reduce motion" />
       </Group>
 
       <Group title="Sound">
@@ -135,7 +137,7 @@ export default function Settings() {
             ))}
           </div>
         </div>
-        <Row icon={Speaker} label="Output" tint="#0ea5e9">
+        <Row icon={Speaker} label="Output">
           <select
             value={deviceId}
             onChange={(e) => setDevice(e.target.value)}
@@ -149,7 +151,7 @@ export default function Settings() {
             ))}
           </select>
         </Row>
-        <Row icon={Gauge} label="Speed" tint="#f59e0b">
+        <Row icon={Gauge} label="Speed">
           <Segmented
             size="sm"
             value={String(speed)}
@@ -160,25 +162,25 @@ export default function Settings() {
       </Group>
 
       <Group title="Playback">
-        <Toggle k="hiRes" icon={AudioLines} label="Lossless" tint="#10b981" />
-        <Toggle k="normalize" icon={Waves} label="Normalize volume" tint="#3b82f6" />
-        <Toggle k="gapless" icon={InfinityIcon} label="Gapless" tint="#6366f1" />
-        <Toggle k="crossfade" icon={Blend} label="Crossfade" tint="#a855f7" />
-        <Toggle k="lyrics" icon={MicVocal} label="Lyrics" tint="#ec4899" />
-        <Toggle k="explicit" icon={Shield} label="Explicit content" tint="#ef4444" />
+        <Toggle k="hiRes" icon={AudioLines} label="Lossless" />
+        <Toggle k="normalize" icon={Waves} label="Normalize volume" />
+        <Toggle k="gapless" icon={InfinityIcon} label="Gapless" />
+        <Toggle k="crossfade" icon={Blend} label="Crossfade" />
+        <Toggle k="lyrics" icon={MicVocal} label="Lyrics" />
+        <Toggle k="explicit" icon={Shield} label="Explicit content" />
       </Group>
 
       <Group title="Agent">
-        <Toggle k="agentProactive" icon={Sparkles} label="Predictions" hint="Suggest music for the moment" tint="#8b7cff" />
-        <Toggle k="agentVoice" icon={Mic} label="Voice" tint="#f97316" />
-        <Toggle k="privateSession" icon={EyeOff} label="Private session" hint="Don’t learn from this" tint="#475569" />
+        <Toggle k="agentProactive" icon={Sparkles} label="Predictions" hint="Suggest music for the moment" />
+        <Toggle k="agentVoice" icon={Mic} label="Voice" />
+        <Toggle k="privateSession" icon={EyeOff} label="Private session" hint="Don’t learn from this" />
       </Group>
 
       <Group title="Data">
-        <Toggle k="notifications" icon={Bell} label="Notifications" tint="#ef4444" />
-        <Toggle k="dataSaver" icon={Signal} label="Data saver" tint="#14b8a6" />
-        <Toggle k="offline" icon={CloudOff} label="Offline mode" tint="#64748b" />
-        <Row icon={Download} label="Downloads" hint="0 tracks · 0 MB" tint="#0ea5e9" />
+        <Toggle k="notifications" icon={Bell} label="Notifications" />
+        <Toggle k="dataSaver" icon={Signal} label="Data saver" />
+        <Toggle k="offline" icon={CloudOff} label="Offline mode" />
+        <Row icon={Download} label="Downloads" hint="0 tracks · 0 MB" />
       </Group>
 
       <Group title="Reset">

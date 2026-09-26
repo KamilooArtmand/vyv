@@ -9,12 +9,13 @@ import { IconButton } from '../components/ui/IconButton';
 import { EmptyState, PageHeader } from '../components/ui/Layout';
 import type { NotificationItem, NotificationType } from '../types';
 
+// Only the agent gets the brand accent — every other type stays neutral gray.
 const TYPE: Record<NotificationType, { icon: typeof Bell; color: string; label: string }> = {
   agent: { icon: Sparkles, color: 'var(--accent)', label: 'Agent' },
-  release: { icon: Disc3, color: '#ec4899', label: 'Releases' },
-  podcast: { icon: Podcast, color: '#f97316', label: 'Podcasts' },
-  social: { icon: Users, color: '#10b981', label: 'Social' },
-  system: { icon: Settings2, color: '#64748b', label: 'System' },
+  release: { icon: Disc3, color: 'var(--gray)', label: 'Releases' },
+  podcast: { icon: Podcast, color: 'var(--gray)', label: 'Podcasts' },
+  social: { icon: Users, color: 'var(--gray)', label: 'Social' },
+  system: { icon: Settings2, color: 'var(--gray)', label: 'System' },
 };
 
 function bucket(iso: string) {

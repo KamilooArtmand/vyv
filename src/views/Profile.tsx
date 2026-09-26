@@ -102,7 +102,7 @@ export default function Profile() {
     <div>
       {user ? (
         <header className="anim-rise relative mb-10">
-          <div className="relative -mx-4 h-44 overflow-hidden md:mx-0 md:h-56 md:rounded-[var(--radius-2xl)]" style={{ backgroundImage: meshGradient(user.id, '#8b7cff') }}>
+          <div className="relative -mx-4 h-44 overflow-hidden md:mx-0 md:h-56 md:rounded-[var(--radius-2xl)]" style={{ backgroundImage: meshGradient(user.id, '#ff3c00') }}>
             <img src={user.coverUrl} alt="" className="size-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
             <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--bg),transparent_70%)]" />
           </div>
@@ -156,7 +156,7 @@ export default function Profile() {
 
       <div className="mb-10 grid gap-3 lg:grid-cols-2">
         {/* Persona */}
-        <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white" style={{ backgroundImage: meshGradient(topMood, '#8b7cff') }}>
+        <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white" style={{ backgroundImage: meshGradient(topMood, '#ff3c00') }}>
           <div className="mb-10 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] backdrop-blur">
             <Sparkles size={12} /> Sound persona
           </div>

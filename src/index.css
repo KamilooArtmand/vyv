@@ -3,8 +3,10 @@
 /* ──────────────────────────────────────────────────────────────
    VYV Design System
    Two themes: Obsidian (dark) · Porcelain (light)
-   Every color is a token; `--accent` is re-tinted live from the
-   artwork of the playing track (Adaptive Color).
+   Neutral base only — white, black and soft grays built from the
+   brand gray (#a2a8b2) — plus a single brand accent (#ff3c00).
+   Every color is a token; `--accent` can be re-tinted live from the
+   artwork of the playing track (Adaptive Color), toggled in Settings.
    ────────────────────────────────────────────────────────────── */
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -41,9 +43,12 @@
 }
 
 :root {
-  --accent-base: #8b7cff;
+  /* Brand */
+  --accent-base: #ff3c00;
   --accent: var(--accent-base);
-  --live: #ff4d5e;
+  --live: var(--accent);
+  /* Reference brand gray — every neutral tone below is tuned around it. */
+  --gray: #a2a8b2;
   --dock-h: 76px;
   --nav-h: 64px;
   color-scheme: dark light;
@@ -53,18 +58,18 @@
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0a0a0c;
-  --bg-2: #111114;
+  --bg: hsl(220 12% 6%);
+  --bg-2: hsl(220 11% 9%);
   --surface: rgb(255 255 255 / 0.045);
   --surface-2: rgb(255 255 255 / 0.08);
   --surface-3: rgb(255 255 255 / 0.13);
   --line: rgb(255 255 255 / 0.07);
   --line-2: rgb(255 255 255 / 0.13);
-  --fg: #f5f5f7;
-  --fg-2: rgb(245 245 247 / 0.62);
-  --fg-3: rgb(245 245 247 / 0.36);
-  --glass: rgb(20 20 24 / 0.62);
-  --glass-strong: rgb(16 16 19 / 0.86);
+  --fg: hsl(220 14% 97%);
+  --fg-2: hsl(220 10% 68% / 0.86);
+  --fg-3: hsl(220 8% 68% / 0.52);
+  --glass: hsl(220 11% 9% / 0.62);
+  --glass-strong: hsl(220 12% 7% / 0.86);
   --accent-ink: color-mix(in oklab, var(--accent) 78%, white);
   --accent-soft: color-mix(in oklab, var(--accent) 18%, transparent);
   --on-accent: #fff;
@@ -76,23 +81,23 @@
 /* Porcelain — light */
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #f6f5f2;
-  --bg-2: #efeee9;
+  --bg: hsl(220 16% 97%);
+  --bg-2: hsl(220 14% 93%);
   --surface: rgb(255 255 255 / 0.72);
-  --surface-2: rgb(12 12 14 / 0.05);
-  --surface-3: rgb(12 12 14 / 0.09);
-  --line: rgb(12 12 14 / 0.07);
-  --line-2: rgb(12 12 14 / 0.12);
-  --fg: #0c0c0e;
-  --fg-2: rgb(12 12 14 / 0.6);
-  --fg-3: rgb(12 12 14 / 0.38);
-  --glass: rgb(250 250 248 / 0.7);
-  --glass-strong: rgb(252 252 250 / 0.9);
+  --surface-2: rgb(12 14 16 / 0.05);
+  --surface-3: rgb(12 14 16 / 0.09);
+  --line: rgb(12 14 16 / 0.07);
+  --line-2: rgb(12 14 16 / 0.12);
+  --fg: hsl(220 16% 8%);
+  --fg-2: hsl(220 9% 45% / 0.92);
+  --fg-3: hsl(220 8% 45% / 0.62);
+  --glass: hsl(220 20% 99% / 0.7);
+  --glass-strong: hsl(220 20% 99% / 0.9);
   --accent-ink: color-mix(in oklab, var(--accent) 72%, black);
   --accent-soft: color-mix(in oklab, var(--accent) 14%, transparent);
   --on-accent: #fff;
-  --shadow-1: 0 1px 2px rgb(12 12 14 / 0.04), 0 8px 24px -14px rgb(12 12 14 / 0.18);
-  --shadow-2: 0 1px 2px rgb(12 12 14 / 0.05), 0 28px 60px -24px rgb(12 12 14 / 0.28);
+  --shadow-1: 0 1px 2px rgb(12 14 16 / 0.04), 0 8px 24px -14px rgb(12 14 16 / 0.18);
+  --shadow-2: 0 1px 2px rgb(12 14 16 / 0.05), 0 28px 60px -24px rgb(12 14 16 / 0.28);
   --aura-opacity: 0.32;
 }
 

@@ -94,7 +94,7 @@ export default function Library() {
           <button
             type="button"
             onClick={() => navigate({ name: 'playlist', id: 'liked' })}
-            className="press relative flex aspect-square flex-col justify-end overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#e11d48,#8b5cf6)] p-4 text-left text-white shadow-[var(--shadow-1)]"
+            className="press relative flex aspect-square flex-col justify-end overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#ff3c00,#8a1f00)] p-4 text-left text-white shadow-[var(--shadow-1)]"
           >
             <Heart size={26} className="absolute left-4 top-4 fill-current" />
             <span className="text-[19px] font-semibold tracking-[-0.03em]">Liked</span>
@@ -142,7 +142,7 @@ export function PlaylistView({ id }: { id?: string }) {
 
   const liked = id === 'liked';
   const pl = liked
-    ? { id: 'liked', name: 'Liked', description: 'Everything you’ve hearted.', color: '#e11d48', trackIds: favorites, smart: false, createdAt: '' }
+    ? { id: 'liked', name: 'Liked', description: 'Everything you’ve hearted.', color: '#ff3c00', trackIds: favorites, smart: false, createdAt: '' }
     : playlistById(id);
   if (!pl) return <EmptyState icon={ListMusic} title="Playlist not found" />;
 
