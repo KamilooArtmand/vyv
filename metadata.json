@@ -1,0 +1,8 @@
+{
+  "name": "VYV Player",
+  "description": "Liquid Glass music and radio player featuring a 3-band DSP equalizer, real-time FFT visualizer, synchronized lyrics, AI assistant, and user profiles.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
