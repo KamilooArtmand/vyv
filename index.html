@@ -1,21 +1,39 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>VYV Player</title>
-    <meta name="description" content="Liquid Glass music and radio player featuring a 3-band DSP equalizer, real-time FFT visualizer, synchronized lyrics, AI assistant, and user profiles." />
-    <meta property="og:title" content="VYV Player" />
-    <meta property="og:description" content="Liquid Glass music and radio player featuring a 3-band DSP equalizer, real-time FFT visualizer, synchronized lyrics, AI assistant, and user profiles." />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>vyv</title>
+    <meta name="description" content="vyv — a minimal, agent-powered player for music, radio, podcasts and audiobooks." />
+    <meta property="og:title" content="vyv" />
+    <meta property="og:description" content="A minimal, agent-powered player for music, radio, podcasts and audiobooks." />
+    <meta name="theme-color" content="#0d0f11" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="alternate icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#09090b" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,200..800&display=swap" rel="stylesheet" />
+    <script>
+      // Resolve the theme before first paint — no flash.
+      (function () {
+        try {
+          var s = JSON.parse(localStorage.getItem('vyv.settings.v2') || '{}');
+          var t = s.theme || 'auto';
+          if (t === 'auto') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+          document.documentElement.dataset.theme = t;
+          if (s.reduceMotion) document.documentElement.dataset.motion = 'reduced';
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#09090b] text-white overflow-hidden select-none m-0 p-0 w-full h-full font-sans antialiased">
-    <div id="root" class="w-full h-full"></div>
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,76 +1,63 @@
-# 🎵 VYV Player — Liquid Glass Music & Radio System
+# vyv
 
-> **A cutting-edge, ultra-responsive music and radio streaming player featuring a futuristic Liquid Glass design system, 3-band DSP equalizer, real-time 16-band FFT visualizer, synchronized karaoke lyrics, AI assistant command bar, and user profiles.**
+A minimal, agent-powered player for music, radio, podcasts and audiobooks.
+Icon-only UI, two themes (**Obsidian** dark · **Porcelain** light), rounded everything, and an AI agent that understands moods, years, questions and commands.
 
----
-
-## 🛠️ Technology Stack
-* **Framework**: React 19 SPA (Functional components, hooks, modular architecture)
-* **Build Tool & Bundler**: Vite 6 (Lightning-fast HMR and optimized tree-shaking)
-* **Language**: TypeScript 5.7+ (Strict type checking)
-* **Styling**: Tailwind CSS v4 with custom Liquid Glass design tokens, curved borders, and dynamic backdrop blur filters
-* **Audio Engine**: Web Audio API
-  * **DSP Equalizer**: 3-Band BiquadFilterNodes (Bass at 250Hz, Mid peaking at 1000Hz, Treble at 4000Hz, -15dB to +15dB range)
-  * **Spectrum Visualizer**: Real-time 16-band FFT Frequency AnalyserNode
-* **Fonts**: Inter (Sans-Serif typography)
-* **Icons**: Lucide Icons
-* **Platform Support**: Web SPA, Progressive Web App (PWA), and Desktop-ready (Tauri / Electron)
-
----
-
-## 💻 Running & Installing on Windows
-
-You can run and install VYV Player on Windows in multiple convenient ways:
-
-### Option A: 1-Click Windows PWA Installation (Instant & Recommended)
-1. Open the app URL in **Google Chrome** or **Microsoft Edge** on Windows.
-2. Click the **"Install app"** icon in the address bar (or Menu `...` → **Apps** → **"Install VYV Player"**).
-3. The app will install as a native Windows desktop application with its own window, taskbar icon, Start Menu shortcut, and offline caching support.
-
-### Option B: Standalone Windows `.exe` via Tauri (Ultra-lightweight ~5MB)
-Add Tauri to wrap the Vite build:
-```bash
-npm install -D @tauri-apps/cli
-npx tauri init
-npx tauri build
-```
-The resulting `.exe` and `.msix` installers will be generated in `src-tauri/target/release/bundle/`.
-
-### Option C: Desktop Build via Electron
-```bash
-npm install -D electron electron-builder
-# Build frontend and package into windows installer
-npm run build
-npx electron-builder --win
-```
-
----
-
-## ✨ Key Features
-* **4 Distinct Player Modes**:
-  * **Full Mode**: Comprehensive sidebar, search, audio device selector, EQ DSP, track table, and bottom glass controller.
-  * **Cover Mode**: Immersive full-screen album artwork with dynamic ambient lighting and synchronized scrolling lyrics (.lrc).
-  * **Micro Mode**: Compact floating horizontal desktop widget with 10-band mini visualizer.
-  * **Nano Mode**: Circular floating badge with hover play/pause controls and pulse glow.
-* **Live Radio Streams**: Curated high-fidelity stations (Lofi Girl, Synthwave Nightride, Venice Classic, Deep House Lounge, Jazz 24).
-* **Local Audio Import**: Import custom audio files (.mp3, .wav, .flac, .ogg, .m4a) with automatic metadata parsing.
-* **AI Command Bar**: Natural language speech and text commands for playback, navigation, and library search.
-* **User Profile & Social Panel**: Google/Facebook OAuth simulation, email registration, profile editing, and follower counter.
-
----
-
-## 🚀 Development Commands
+## Run
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server on port 3000
-npm run dev
-
-# Build production bundle
-npm run build
-
-# Preview production build
+npm run dev        # http://localhost:3000
+npm run build      # typecheck + production build
 npm run preview
 ```
+
+Installable as a PWA (Chrome / Edge / Safari → *Install app*). Wraps cleanly in Tauri or Electron for desktop builds.
+
+## Design system
+
+| Token | Obsidian | Porcelain |
+| --- | --- | --- |
+| `--bg` | `#0a0a0c` | `#f6f5f2` |
+| `--fg` | `#f5f5f7` | `#0c0c0e` |
+| `--surface` / `-2` / `-3` | white @ 4.5 / 8 / 13 % | white 72 % · ink 5 / 9 % |
+| `--line` | white @ 7 % | ink @ 7 % |
+| `--accent` | adaptive — tinted live from the playing artwork (base `#8b7cff`) | |
+
+- **Radii** 10 · 14 · 20 · 28 · 36 px, pills for every control.
+- **Motion** one spring curve (`--ease-spring`) for press, toggles and thumbs; `ease-out` for entrances. Honors OS *reduce motion* and an in-app switch.
+- **Theme switch** circular reveal from the tap point (View Transitions API), no-flash boot script, *Auto* follows the OS.
+- **Ambient aura** soft blobs tinted by the artwork drift behind the UI while music plays.
+- **Generative artwork** every artist, show, book and genre gets a deterministic mesh-gradient cover; images fall back to it on error.
+- **Icon-only controls** every button has an accessible name that doubles as a tooltip.
+- Brand mark: a converging “V” stroke around a resonant accent dot (`public/icon.svg`).
+
+## Sections
+
+Home · Search · Library & Playlists · Bookmarks (artists, albums, shows, books, stations, wiki…) · Inbox (notifications) · Podcasts · Radio · Audiobooks · Albums · Artists · Genres · Timeline (year by year) · Wiki (music history) · Profile (sound persona, listening DNA) · Settings (switches, EQ faders, output, speed).
+
+Player modes: **Dock** (desktop capsule) / **Mini** (phone), **Cover** (full-screen, synced karaoke lyrics, queue, speed, sleep timer), **Micro** (floating capsule) and **Nano** (orb with progress ring).
+
+## Agent
+
+`src/services/aiAgentService.ts` — an on-device intent engine (English + Persian keywords):
+
+- moods → instant mixes (“something calm”, “focus”, “night drive”), save them as playlists
+- years → timeline (“what happened in 1979?”), knowledge → wiki/artist cards (“tell me about jazz”)
+- commands: play/pause/next, shuffle/repeat, volume, sleep timer, speed, theme, player modes, like/bookmark
+- predictive nudge on Home based on time of day and habits; voice input via the Web Speech API
+
+## Architecture
+
+- React 19 + TypeScript + Vite 6 + Tailwind CSS v4 (tokens in `src/index.css`).
+- Tiny external stores (`src/lib/store.ts`, `useSyncExternalStore`) — high-frequency time updates live in their own store so only the scrubber re-renders; the spectrum is drawn on a canvas in its own rAF loop.
+- Route-level code splitting, hash deep links (`#/artist/neon`) with browser/OS back support.
+- Web Audio graph: 3-band EQ → analyser → output; Media Session API for lock screen, media keys and headsets; `setSinkId` output switching where supported.
+
+## Shortcuts
+
+`Space` play/pause · `←/→` seek 5 s · `Shift+←/→` previous/next · `⌘/Ctrl+K` agent · `F` full screen · `M` mute · `/` search · `Esc` close
+
+## Notes
+
+Catalog, artists, podcasts and user accounts are demo data (`src/data/catalog.ts`); audio uses short royalty-free previews. The *Lossless*, *Normalize*, *Gapless*, *Crossfade*, *Explicit*, *Data saver*, *Offline* and *Downloads* settings are stored preferences that don't change playback yet.
