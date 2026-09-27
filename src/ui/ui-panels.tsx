@@ -2,11 +2,11 @@
 // ui-panels.tsx: Queue & Side Panels
 // ─────────────────────────────────────────────────────────────
 
-import { ListMusic, Sparkles, X } from 'lucide-react';
+import { ListMusic, MicVocal, Sparkles, X } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { playerStore, removeFromQueue } from '../state/state-player';
 import { togglePanel, uiStore } from '../state/state-ui';
-import { EmptyState, IconButton, Segmented, TrackRow } from './ui-components';
+import { EmptyState, IconButton, LyricsView, Segmented, TrackRow } from './ui-components';
 import { AgentPanel, AgentOverlay } from './ui-agent-panel';
 export { AgentPanel, AgentOverlay };
 
@@ -62,6 +62,7 @@ export function SidePanel() {
           options={[
             { value: 'agent', label: 'Agent', icon: Sparkles },
             { value: 'queue', label: 'Queue', icon: ListMusic },
+            { value: 'lyrics', label: 'Lyrics', icon: MicVocal },
           ]}
         />
         <IconButton icon={X} label="Close" size="sm" onClick={() => togglePanel(panel)} />
@@ -69,6 +70,7 @@ export function SidePanel() {
       <div className="min-h-0 flex-1 overflow-y-auto">
         {panel === 'agent' && <AgentPanel />}
         {panel === 'queue' && <QueuePanel />}
+        {panel === 'lyrics' && <LyricsView className="h-full px-2" />}
       </div>
     </aside>
   );

@@ -5,30 +5,20 @@
 import { useState } from 'react';
 import {
   Bookmark,
-  Check,
   Disc,
   Heart,
-  HelpCircle,
   History,
-  LayoutGrid,
   Library,
   ListEnd,
-  ListMusic,
-  ListPlus,
   ListStart,
-  LogIn,
   Mic,
-  Plus,
   Radio,
   ScrollText,
   Shapes,
-  Sparkles,
-  User,
   Users,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import {
-  createPlaylist,
   libraryStore,
   toggleBookmark,
   toggleFavorite,
@@ -38,8 +28,8 @@ import {
   useIsFavorite,
 } from '../state/state-catalog';
 import { addToQueue, playNext } from '../state/state-player';
-import { AuthService, closeSheet, navigate, openSheet, toast, uiStore } from '../state/state-ui';
-import { Artwork, IconButton, Sheet } from './ui-components';
+import { AuthService, closeSheet, navigate, toast, uiStore } from '../state/state-ui';
+import { Artwork, Sheet } from './ui-components';
 
 export function TrackActionsSheet({ id }: { id: string }) {
   const track = trackById(id);

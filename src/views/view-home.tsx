@@ -2,28 +2,30 @@
 // view-home.tsx: Unified Home Experience & Genre Discovery
 // ─────────────────────────────────────────────────────────────
 
-import { ArrowUpRight, BookOpen, Heart, History, ListMusic, RadioTower, ScrollText, Shapes, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Heart, History, ListMusic, RadioTower, Sparkles } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { greeting } from '../core/core-utils';
 import {
   ALBUMS,
-  BOOKS,
-  GENRES,
   SHOWS,
   STATIONS,
   TIMELINE,
-  WIKI,
+  episodeToTrack,
   libraryStore,
+  resolveEntity,
   smartMix,
   trackById,
   useAllTracks,
 } from '../state/state-catalog';
-import { playQueue, playTrack } from '../state/state-player';
-import { ask } from '../state/state-agent';
-import { navigate } from '../state/state-ui';
-import { Artwork, LiveBadge, MediaCard, PageHeader, PlayFab, Section, Shelf, SHELF_ITEM, meshGradient } from '../ui/ui-components';
+import { playQueue, playTrack, playerStore } from '../state/state-player';
+import { ask, predict } from '../state/state-agent';
+import { authStore, navigate, settingsStore } from '../state/state-ui';
+import { Artwork, LiveBadge, MediaCard, PlayFab, Section, Shelf, SHELF_ITEM, meshGradient } from '../ui/ui-components';
 import type { Mood, Track } from '../core/core-types';
 
+// One brand color for every tile — each still reads distinct because
+// meshGradient() jitters hue per seed, so the family stays cohesive.
+const MOOD_COLOR = '#ff3c00';
 const MOODS: { mood: Mood; name: string; prompt: string }[] = [
   { mood: 'focus', name: 'Focus', prompt: 'Play focus music' },
   { mood: 'calm', name: 'Calm', prompt: 'Play something calm' },
@@ -33,148 +35,182 @@ const MOODS: { mood: Mood; name: string; prompt: string }[] = [
   { mood: 'melancholy', name: 'Rainy', prompt: 'Play something for a rainy day' },
 ];
 
+function QuickTile({ title, color, seed, src, icon, onClick, onPlay }: { title: string; color: string; seed: string; src?: string; icon?: typeof Heart; onClick: () => void; onPlay: () => void }) {
+  return (
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => e.key === 'Enter' && onClick()} className="group/q press flex h-14 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-md)] bg-surface pr-2 hover:bg-surface-2 md:h-16">
+      <Artwork seed={seed} color={color} src={src} glyph={icon} className="aspect-square h-full !rounded-none" />
+      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium md:text-[14.5px]">{title}</span>
+      <PlayFab onClick={onPlay} className="!size-9 opacity-0 transition-opacity group-hover/q:opacity-100 max-md:hidden" />
+    </div>
+  );
+}
+
 export default function HomeView() {
   const tracks = useAllTracks();
-  const onlineAlbums = ALBUMS;
-  const onlineGenres = GENRES;
   const history = useStore(libraryStore, (s) => s.history);
   const favorites = useStore(libraryStore, (s) => s.favorites);
-  const mix = smartMix();
+  const playlists = useStore(libraryStore, (s) => s.playlists);
+  const progress = useStore(libraryStore, (s) => s.progress);
+  const proactive = useStore(settingsStore, (s) => s.agentProactive);
+  const user = useStore(authStore, (s) => s.user);
+  const current = useStore(playerStore, (s) => s.track);
 
+  const nudge = predict({ tracks, current, history });
+  const nudgeTracks = tracks.filter((t) => t.moods?.includes(nudge.mood));
   const recent = history.map((id) => trackById(id)).filter(Boolean) as Track[];
   const liked = tracks.filter((t) => favorites.includes(t.id));
+  const mix = smartMix();
+  const today = new Date();
+  const onThisDay = TIMELINE[(today.getDate() + today.getMonth() * 31) % TIMELINE.length];
+  const playFromIds = (ids: string[]) => playQueue(ids.map((id) => trackById(id)).filter(Boolean) as Track[]);
+
+  const continueItems = Object.entries(progress)
+    .map(([id, secs]) => {
+      const show = SHOWS.find((s) => s.episodes.some((e) => e.id === id));
+      return show ? { id, secs, show, ep: show.episodes.find((e) => e.id === id)! } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 2) as { id: string; secs: number; show: (typeof SHOWS)[number]; ep: (typeof SHOWS)[number]['episodes'][number] }[];
 
   return (
     <div>
-      <PageHeader title={greeting()} eyebrow="Home" />
-
-      {/* Quick Picks */}
-      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => playQueue(liked)}
-          className="glass press flex h-16 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-lg)] p-2.5 hover:bg-surface-2"
-        >
-          <div className="flex size-11 items-center justify-center rounded-[var(--radius-md)] bg-accent text-on-accent">
-            <Heart size={20} className="fill-current" />
-          </div>
-          <span className="truncate font-semibold text-sm">Liked Songs</span>
+      <header className="anim-rise mb-7 md:mb-9">
+        <div className="mb-1.5 text-xs font-medium uppercase tracking-[0.14em] text-fg-3">
+          {today.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
         </div>
+        <h1 className="text-[32px] font-semibold leading-none tracking-[-0.04em] md:text-[48px]">
+          {greeting(today)}
+          {user ? <span className="text-fg-3">, {user.username.split(' ')[0]}</span> : null}
+        </h1>
+      </header>
 
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => playQueue(mix.trackIds.map((id) => trackById(id)).filter(Boolean) as Track[])}
-          className="glass press flex h-16 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-lg)] p-2.5 hover:bg-surface-2"
-        >
-          <div className="flex size-11 items-center justify-center rounded-[var(--radius-md)] bg-fg text-bg">
-            <Sparkles size={20} />
+      {/* Agent prediction */}
+      {proactive && (
+        <section className="anim-rise mb-9">
+          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white md:p-8" style={{ backgroundImage: meshGradient(nudge.mood, nudgeTracks[0]?.dominantColorHex ?? MOOD_COLOR) }}>
+            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(0_0_0/0.45),transparent_70%)]" />
+            <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-lg">
+                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] backdrop-blur">
+                  <Sparkles size={12} /> Agent · for right now
+                </div>
+                <p className="text-[22px] font-semibold leading-tight tracking-[-0.025em] md:text-[28px]">{nudge.title}</p>
+                <p className="mt-2 text-[13.5px] text-white/70">{nudgeTracks.slice(0, 3).map((t) => t.artist).join(' · ')}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => ask(nudge.prompt)} className="press flex h-12 items-center gap-2 rounded-full bg-white pl-4 pr-5 text-[14px] font-semibold text-black">
+                  <Sparkles size={16} /> Play mix
+                </button>
+                <div className="flex -space-x-3">
+                  {nudgeTracks.slice(0, 3).map((t) => (
+                    <Artwork key={t.id} seed={t.id} color={t.dominantColorHex} src={t.coverUrl} shape="circle" className="size-12 ring-2 ring-white/40" />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-          <span className="truncate font-semibold text-sm">{mix.name}</span>
-        </div>
+        </section>
+      )}
+
+      {/* Quick picks */}
+      <section className="stagger mb-10 grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-3">
+        <QuickTile title="Liked" color={MOOD_COLOR} seed="liked" icon={Heart} onClick={() => navigate({ name: 'playlist', id: 'liked' })} onPlay={() => playQueue(liked)} />
+        <QuickTile title={mix.name} color={mix.color} seed={mix.id} icon={Sparkles} onClick={() => navigate({ name: 'playlist', id: mix.id })} onPlay={() => playFromIds(mix.trackIds)} />
+        {playlists.slice(0, 2).map((p) => (
+          <QuickTile key={p.id} title={p.name} color={p.color} seed={p.id} icon={ListMusic} onClick={() => navigate({ name: 'playlist', id: p.id })} onPlay={() => playFromIds(p.trackIds)} />
+        ))}
+        {ALBUMS.slice(3, 5).map((a) => (
+          <QuickTile key={a.id} title={a.title} color={a.color} seed={a.id} src={a.coverUrl} onClick={() => navigate({ name: 'album', id: a.id })} onPlay={() => playFromIds(a.trackIds)} />
+        ))}
       </section>
 
-      {/* Mood Mixes */}
-      <Section title="Mood Mixes" icon={Sparkles}>
+      {recent.length > 0 && (
+        <Section title="Jump back in" icon={History}>
+          <Shelf>
+            {recent.slice(0, 10).map((t) => (
+              <MediaCard key={t.id} className={SHELF_ITEM} entity={resolveEntity('track', t.id)!} onPlay={() => playTrack(t, recent)} />
+            ))}
+          </Shelf>
+        </Section>
+      )}
+
+      <Section title="Moods" icon={Sparkles}>
         <Shelf>
           {MOODS.map((m) => (
             <button
               key={m.mood}
               type="button"
               onClick={() => ask(m.prompt)}
-              className={`${SHELF_ITEM} press relative aspect-[4/5] overflow-hidden rounded-[var(--radius-lg)] p-4 text-left text-white shadow-md`}
-              style={{ backgroundImage: meshGradient(m.mood, '#ff3c00') }}
+              className={`${SHELF_ITEM} press relative aspect-[4/5] overflow-hidden rounded-[var(--radius-lg)] p-4 text-left text-white`}
+              style={{ backgroundImage: meshGradient(m.mood, MOOD_COLOR) }}
             >
-              <span className="absolute bottom-4 left-4 text-[20px] font-semibold">{m.name}</span>
-              <ArrowUpRight size={18} className="absolute right-3 top-3 opacity-70" />
+              <span className="absolute bottom-4 left-4 text-[22px] font-semibold tracking-[-0.03em]">{m.name}</span>
+              <ArrowUpRight size={18} className="absolute right-3.5 top-3.5 opacity-70" />
             </button>
           ))}
         </Shelf>
       </Section>
 
-      {/* Browse by Genre */}
-      <Section title="Browse by Genre" icon={Shapes}>
-        <Shelf>
-          {onlineGenres.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => navigate({ name: 'genre', id: g.id })}
-              className={`${SHELF_ITEM} press relative aspect-[4/3] overflow-hidden rounded-[var(--radius-lg)] p-4 text-left text-white shadow-md`}
-              style={{ backgroundImage: meshGradient(g.id, g.colors[0]) }}
-            >
-              <span className="text-[11px] font-medium uppercase tracking-wider opacity-70 block">{g.era}</span>
-              <span className="absolute bottom-3 left-3 text-[17px] font-semibold">{g.name}</span>
-            </button>
-          ))}
-        </Shelf>
-      </Section>
+      {continueItems.length > 0 && (
+        <Section title="Continue listening">
+          <div className="grid gap-3 md:grid-cols-2">
+            {continueItems.map(({ id, secs, show, ep }) => (
+              <div key={id} className="glass flex items-center gap-4 rounded-[var(--radius-lg)] p-3">
+                <Artwork seed={show.id} color={show.color} className="size-16 [--art-r:14px]" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] text-fg-3">{show.title}</div>
+                  <div className="truncate text-[14.5px] font-medium">{ep.title}</div>
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-3">
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (secs / ep.durationSeconds) * 100)}%` }} />
+                  </div>
+                </div>
+                <PlayFab onClick={() => playTrack(episodeToTrack(show, ep))} />
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
-      {/* Live Radio */}
-      <Section title="Live Radio" icon={RadioTower}>
+      <Section title="Live now" icon={RadioTower} action={<SeeAll to="radio" />}>
         <Shelf>
           {STATIONS.map((s) => (
-            <MediaCard
-              key={s.id}
-              className={SHELF_ITEM}
-              entity={{ kind: 'station', id: s.id, title: s.title, subtitle: s.artist, color: s.dominantColorHex, src: s.coverUrl, route: { name: 'radio' } }}
-              badge={<LiveBadge />}
-              onPlay={() => playTrack(s, STATIONS)}
-            />
+            <MediaCard key={s.id} className={SHELF_ITEM} entity={resolveEntity('station', s.id)!} badge={<LiveBadge />} onPlay={() => playTrack(s, STATIONS)} />
           ))}
         </Shelf>
       </Section>
 
-      {/* Recent Releases */}
-      <Section title="Albums & Releases">
+      <Section title="On this day in music">
+        <button
+          type="button"
+          onClick={() => navigate({ name: 'timeline', id: String(onThisDay.year) })}
+          className="glass press group flex w-full items-center gap-5 overflow-hidden rounded-[var(--radius-xl)] p-5 text-left md:p-6"
+        >
+          <span className="text-[56px] font-extralight leading-none tracking-[-0.06em] text-fg md:text-[72px]">{onThisDay.year}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-semibold tracking-[-0.02em]">{onThisDay.headline}</span>
+            <span className="mt-1 line-clamp-2 block text-[14px] text-fg-2">{onThisDay.events[0]}</span>
+          </span>
+          <ArrowUpRight className="shrink-0 text-fg-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+        </button>
+      </Section>
+
+      <Section title="New releases" action={<SeeAll to="albums" />}>
         <Shelf>
-          {onlineAlbums.map((a) => (
-            <MediaCard
-              key={a.id}
-              className={SHELF_ITEM}
-              entity={{ kind: 'album', id: a.id, title: a.title, subtitle: `${a.year}`, color: a.color, src: a.coverUrl, route: { name: 'album', id: a.id } }}
-              onPlay={() => playQueue(a.trackIds.map((id) => trackById(id)).filter(Boolean) as Track[])}
-            />
-          ))}
+          {[...ALBUMS]
+            .sort((a, b) => b.year - a.year)
+            .map((a) => (
+              <MediaCard key={a.id} className={SHELF_ITEM} entity={resolveEntity('album', a.id)!} onPlay={() => playFromIds(a.trackIds)} />
+            ))}
         </Shelf>
-      </Section>
-
-      {/* Audiobooks Showcase */}
-      <Section title="Audiobooks & Literature">
-        <Shelf>
-          {BOOKS.map((b) => (
-            <MediaCard
-              key={b.id}
-              className={SHELF_ITEM}
-              entity={{ kind: 'book', id: b.id, title: b.title, subtitle: b.author, color: b.color, route: { name: 'book', id: b.id } }}
-            />
-          ))}
-        </Shelf>
-      </Section>
-
-      {/* Music Wiki & Timeline Highlights */}
-      <Section title="Music Philosophy & Wiki Essays" icon={ScrollText}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {WIKI.slice(0, 2).map((w) => (
-            <div
-              key={w.id}
-              onClick={() => navigate({ name: 'article', id: w.id })}
-              className="glass press group cursor-pointer rounded-[var(--radius-xl)] p-5 border border-line-2 hover:border-fg/20 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-fg-3 block mb-1">{w.era}</span>
-                <h3 className="text-lg font-bold text-fg group-hover:text-accent transition-colors">{w.title}</h3>
-                <p className="mt-2 text-xs text-fg-2 line-clamp-2 leading-relaxed">{w.summary}</p>
-              </div>
-              <div className="mt-4 flex items-center justify-between text-xs font-semibold text-accent">
-                <span>Explore essay</span>
-                <ArrowUpRight size={14} />
-              </div>
-            </div>
-          ))}
-        </div>
       </Section>
     </div>
+  );
+}
+
+export function SeeAll({ to }: { to: Parameters<typeof navigate>[0]['name'] }) {
+  return (
+    <button type="button" onClick={() => navigate({ name: to })} aria-label="See all" className="press flex size-8 items-center justify-center rounded-full text-fg-3 hover:bg-surface-2 hover:text-fg">
+      <ArrowUpRight size={18} strokeWidth={1.75} />
+    </button>
   );
 }

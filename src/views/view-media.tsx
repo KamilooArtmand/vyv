@@ -3,9 +3,10 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useRef, useState } from 'react';
-import { Bookmark, Clock, FolderPlus, Heart, History, ListMusic, LogOut, Pencil, RadioTower, Share2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Bookmark, Check, FolderPlus, Heart, ListMusic, LogOut, Pause, Pencil, Play, RadioTower, Share2, Sparkles, Trash2, Upload } from 'lucide-react';
 import { useStore } from '../core/core-store';
-import { formatDuration } from '../core/core-utils';
+import { cn, formatDuration } from '../core/core-utils';
+import { ask } from '../state/state-agent';
 import {
   ARTISTS,
   BOOKS,
@@ -18,13 +19,16 @@ import {
   importFiles,
   libraryStore,
   smartMix,
+  toggleBookmark,
   trackById,
   useAllTracks,
+  useIsBookmarked,
 } from '../state/state-catalog';
-import { playQueue, playTrack } from '../state/state-player';
-import { AuthService, authStore, closeSheet, navigate, openSheet, toast } from '../state/state-ui';
+import { playQueue, playTrack, playerStore, togglePlay } from '../state/state-player';
+import { AuthService, authStore, navigate, openSheet, toast } from '../state/state-ui';
 import {
   Artwork,
+  Chip,
   CollectionHeader,
   EmptyState,
   Grid,
@@ -34,47 +38,142 @@ import {
   PageHeader,
   PlayFab,
   Section,
-  Shelf,
   TrackList,
+  Visualizer,
   meshGradient,
 } from '../ui/ui-components';
 import type { Audiobook, Mood, Show, Track } from '../core/core-types';
 
 // ── Radio View ───────────────────────────────────────────────
+const MOOD_STATIONS = ['Calm', 'Focus', 'Night drive', 'Energy', 'Jazz', 'Lo-Fi'];
+
+function StationTile({ s }: { s: Track }) {
+  const isCurrent = useStore(playerStore, (p) => p.track?.id === s.id);
+  const isPlaying = useStore(playerStore, (p) => p.isPlaying && p.track?.id === s.id);
+  const saved = useIsBookmarked('station', s.id);
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => (isCurrent ? togglePlay() : playTrack(s, STATIONS))}
+      onKeyDown={(e) => e.key === 'Enter' && (isCurrent ? togglePlay() : playTrack(s, STATIONS))}
+      className={cn('glass press group relative flex cursor-pointer items-center gap-4 rounded-[var(--radius-xl)] p-3 pr-4 hover:bg-surface-2', isCurrent && 'ring-1 ring-accent')}
+    >
+      <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-[72px] [--art-r:16px]">
+        <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
+          {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="ml-0.5 fill-current" />}
+        </span>
+      </Artwork>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[16px] font-semibold tracking-[-0.02em]">{s.title}</div>
+        <div className="truncate text-[13px] text-fg-3">
+          {s.artist} · {genreById(s.genreId)?.name}
+        </div>
+        {isPlaying && <Visualizer bars={20} className="mt-2 h-4 w-28" />}
+      </div>
+      <IconButton
+        icon={Bookmark}
+        label={saved ? 'Saved' : 'Save'}
+        size="sm"
+        active={saved}
+        filled={saved}
+        onClick={(e) => {
+          e.stopPropagation();
+          toast(toggleBookmark('station', s.id) ? 'Station saved' : 'Removed', 'bookmark');
+        }}
+      />
+    </div>
+  );
+}
+
 export function RadioView() {
+  const current = useStore(playerStore, (s) => (s.track?.isRadio ? s.track : null));
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
+  const hero = current ?? STATIONS[0];
+
   return (
     <div>
-      <PageHeader title="Live Radio" subtitle="Non-stop global high-fidelity streams." />
-      <Grid min={240}>
-        {STATIONS.map((s) => (
-          <div
-            key={s.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => playTrack(s, STATIONS)}
-            className="glass press flex cursor-pointer items-center gap-4 rounded-[var(--radius-xl)] p-4 hover:bg-surface-2"
-          >
-            <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-16 [--art-r:14px]" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-base font-semibold">{s.title}</div>
-              <div className="truncate text-xs text-fg-3">{s.artist}</div>
-              <div className="mt-2"><LiveBadge /></div>
-            </div>
-            <PlayFab onClick={() => playTrack(s, STATIONS)} />
+      <PageHeader title="Radio" eyebrow={<span className="inline-flex items-center gap-2"><span className="anim-live size-1.5 rounded-full bg-live" /> {STATIONS.length} stations on air</span>} />
+
+      <section className="anim-rise relative mb-9 overflow-hidden rounded-[var(--radius-2xl)] bg-surface p-6 md:p-8">
+        <Artwork seed={hero.id} color={hero.dominantColorHex} src={hero.coverUrl} className="absolute inset-0 !rounded-none opacity-40 blur-3xl saturate-150" />
+        <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 md:gap-8">
+          <Artwork seed={hero.id} color={hero.dominantColorHex} src={hero.coverUrl} className="size-20 shadow-[var(--shadow-2)] [--art-r:18px] md:size-44 md:[--art-r:24px]" />
+          <div className="min-w-0">
+            <LiveBadge />
+            <div className="mt-2 truncate text-[24px] font-semibold leading-none tracking-[-0.04em] md:mt-3 md:text-[44px]">{hero.title}</div>
+            <div className="mt-1.5 truncate text-[14px] text-fg-2 md:text-[15px]">{hero.artist}</div>
+            <Visualizer bars={40} className="mt-5 hidden h-10 w-full max-w-md md:block" />
           </div>
-        ))}
-      </Grid>
+          <IconButton
+            icon={current && isPlaying ? Pause : Play}
+            label={current && isPlaying ? 'Pause' : 'Tune in'}
+            size="xl"
+            variant="accent"
+            className="[&_svg]:fill-current max-md:!size-12"
+            onClick={() => (current ? togglePlay() : playTrack(hero, STATIONS))}
+          />
+          <Visualizer bars={32} className="col-span-3 h-8 w-full md:hidden" />
+        </div>
+      </section>
+
+      <Section title="Agent stations">
+        <div className="flex flex-wrap gap-2">
+          {MOOD_STATIONS.map((m) => (
+            <Chip key={m} icon={Sparkles} onClick={() => ask(`Play ${m.toLowerCase()}`)}>
+              {m}
+            </Chip>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Stations" icon={RadioTower}>
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+          {STATIONS.map((s) => (
+            <StationTile key={s.id} s={s} />
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }
 
 // ── Podcasts View ────────────────────────────────────────────
 export function PodcastsView() {
+  const [cat, setCat] = useState('All');
+  const cats = ['All', ...new Set(SHOWS.map((s) => s.category))];
+  const featured = SHOWS[0];
+  const shows = SHOWS.filter((s) => cat === 'All' || s.category === cat);
+
   return (
     <div>
       <PageHeader title="Podcasts" subtitle="Conversations on music tech, sound and brain science." />
+      <button
+        type="button"
+        onClick={() => navigate({ name: 'show', id: featured.id })}
+        className="anim-rise press relative mb-9 flex w-full flex-col justify-end overflow-hidden rounded-[var(--radius-2xl)] p-6 text-left text-white md:aspect-[3/1] md:p-8"
+        style={{ backgroundImage: meshGradient(featured.id, featured.color) }}
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgb(0_0_0/0.5),transparent)]" />
+        <div className="relative mt-24 md:mt-0">
+          <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/70">New episode</div>
+          <div className="text-[28px] font-semibold tracking-[-0.035em] md:text-[40px]">{featured.title}</div>
+          <div className="mt-1 max-w-lg text-[14px] text-white/75">
+            {featured.episodes[0].title} — {featured.episodes[0].summary}
+          </div>
+        </div>
+      </button>
+
+      <div className="scrollbar-none -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+        {cats.map((c) => (
+          <Chip key={c} active={cat === c} onClick={() => setCat(c)}>
+            {c}
+          </Chip>
+        ))}
+      </div>
+
       <Grid min={240}>
-        {SHOWS.map((s) => (
+        {shows.map((s) => (
           <MediaCard
             key={s.id}
             entity={{ kind: 'show', id: s.id, title: s.title, subtitle: s.host, color: s.color, route: { name: 'show', id: s.id } }}
@@ -82,6 +181,39 @@ export function PodcastsView() {
           />
         ))}
       </Grid>
+    </div>
+  );
+}
+
+function EpisodeRow({ show, ep }: { show: Show; ep: Show['episodes'][number] }) {
+  const isCurrent = useStore(playerStore, (s) => s.track?.id === ep.id);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying && s.track?.id === ep.id);
+  const pos = useStore(libraryStore, (s) => s.progress[ep.id] ?? 0);
+  const pct = Math.min(1, pos / ep.durationSeconds);
+  const done = pct > 0.95;
+  return (
+    <div className="flex gap-4 border-b border-line py-5 last:border-0">
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] text-fg-3">{new Date(ep.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+        <div className={cn('mt-0.5 text-[16px] font-semibold tracking-[-0.015em]', isCurrent && 'text-accent-ink')}>{ep.title}</div>
+        <p className="mt-1 line-clamp-2 text-[14px] text-fg-2">{ep.summary}</p>
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => (isCurrent ? togglePlay() : playTrack(episodeToTrack(show, ep), show.episodes.map((e) => episodeToTrack(show, e))))}
+            className="press flex h-8 items-center gap-1.5 rounded-full bg-surface-2 pl-2.5 pr-3.5 text-[12.5px] font-semibold hover:bg-surface-3"
+          >
+            {isPlaying ? <Pause size={13} className="fill-current" /> : done ? <Check size={13} /> : <Play size={13} className="fill-current" />}
+            {pct > 0 && !done ? `${formatDuration(ep.durationSeconds - pos)} left` : formatDuration(ep.durationSeconds)}
+          </button>
+          {pct > 0 && !done && (
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-surface-3">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${pct * 100}%` }} />
+            </div>
+          )}
+        </div>
+      </div>
+      <Artwork seed={ep.id} color={show.color} className="hidden size-20 [--art-r:14px] sm:block" />
     </div>
   );
 }
@@ -99,52 +231,151 @@ export function ShowView({ id }: { id?: string }) {
         eyebrow={`Podcast · ${show.category}`}
         title={show.title}
         color={show.color}
-        meta={show.about}
+        meta={
+          <>
+            <span className="block">{show.about}</span>
+            <span className="text-fg-3">Hosted by {show.host}</span>
+          </>
+        }
         tracks={tracks}
       />
       <Section title="Episodes">
-        <TrackList tracks={tracks} numbered={false} />
+        <div className="max-w-3xl">
+          {show.episodes.map((ep) => (
+            <EpisodeRow key={ep.id} show={show} ep={ep} />
+          ))}
+        </div>
       </Section>
     </div>
   );
 }
 
 // ── Audiobooks View ──────────────────────────────────────────
+function bookProgress(book: Audiobook, progress: Record<string, number>) {
+  const total = book.chapters.reduce((a, c) => a + c.durationSeconds, 0);
+  let listened = 0;
+  let resume = book.chapters[0];
+  for (const c of book.chapters) {
+    const p = progress[c.id] ?? 0;
+    listened += p;
+    if (p > 0) resume = c;
+  }
+  return { pct: total ? listened / total : 0, resume, left: total - listened };
+}
+
+function Ring({ pct }: { pct: number }) {
+  const r = 22;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 52 52" className="size-14 -rotate-90" aria-hidden>
+      <circle cx="26" cy="26" r={r} fill="none" stroke="var(--surface-3)" strokeWidth="4" />
+      <circle cx="26" cy="26" r={r} fill="none" stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
+    </svg>
+  );
+}
+
 export function AudiobooksView() {
+  const progress = useStore(libraryStore, (s) => s.progress);
+  const reading = BOOKS.map((b) => ({ b, ...bookProgress(b, progress) })).filter((x) => x.pct > 0);
+
   return (
     <div>
       <PageHeader title="Audiobooks" subtitle="Narrated classics and sonic philosophies." />
-      <Grid min={220}>
-        {BOOKS.map((b) => (
-          <MediaCard
-            key={b.id}
-            entity={{ kind: 'book', id: b.id, title: b.title, subtitle: b.author, color: b.color, route: { name: 'book', id: b.id } }}
-            onPlay={() => playTrack(chapterToTrack(b, b.chapters[0]))}
-          />
-        ))}
-      </Grid>
+      {reading.length > 0 && (
+        <Section title="Continue">
+          <div className="grid gap-3 md:grid-cols-2">
+            {reading.map(({ b, pct, resume, left }) => (
+              <div key={b.id} className="glass anim-rise flex items-center gap-4 rounded-[var(--radius-xl)] p-3 pr-4">
+                <button type="button" onClick={() => navigate({ name: 'book', id: b.id })} className="press">
+                  <Artwork seed={b.id} color={b.color} title={b.title} className="aspect-[3/4] w-16 [--art-r:10px]" />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-semibold">{b.title}</div>
+                  <div className="truncate text-[13px] text-fg-3">
+                    {resume.title} · {formatDuration(left)} left
+                  </div>
+                </div>
+                <div className="relative flex items-center justify-center">
+                  <Ring pct={pct} />
+                  <PlayFab className="!absolute !size-10" onClick={() => playTrack(chapterToTrack(b, resume), b.chapters.map((c) => chapterToTrack(b, c)))} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+      <Section title="Classics">
+        <Grid min={150}>
+          {BOOKS.map((b) => (
+            <MediaCard
+              key={b.id}
+              entity={{ kind: 'book', id: b.id, title: b.title, subtitle: b.author, color: b.color, route: { name: 'book', id: b.id } }}
+              onPlay={() => playTrack(chapterToTrack(b, b.chapters[0]))}
+            />
+          ))}
+        </Grid>
+      </Section>
     </div>
   );
 }
 
 export function BookView({ id }: { id?: string }) {
   const book = BOOKS.find((b) => b.id === id);
+  const progress = useStore(libraryStore, (s) => s.progress);
+  const currentId = useStore(playerStore, (s) => s.track?.id);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   if (!book) return <EmptyState icon={RadioTower} title="Book not found" />;
   const tracks = book.chapters.map((c) => chapterToTrack(book, c));
+  const total = book.chapters.reduce((a, c) => a + c.durationSeconds, 0);
 
   return (
     <div>
       <CollectionHeader
         kind="book"
         id={book.id}
-        eyebrow={`Audiobook · ${book.author}`}
+        eyebrow={`Audiobook · ${book.year}`}
         title={book.title}
         color={book.color}
-        meta={book.about}
+        tall
+        artTitle={{ title: book.title, subtitle: book.author }}
+        meta={
+          <>
+            <span className="block">{book.about}</span>
+            <span className="text-fg-3">
+              {book.author} · Narrated by {book.narrator} · {formatDuration(total)}
+            </span>
+          </>
+        }
         tracks={tracks}
       />
       <Section title="Chapters">
-        <TrackList tracks={tracks} numbered={false} />
+        <div className="flex max-w-3xl flex-col">
+          {book.chapters.map((c, i) => {
+            const on = currentId === c.id;
+            const pct = Math.min(1, (progress[c.id] ?? 0) / c.durationSeconds);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => (on ? togglePlay() : playTrack(tracks[i], tracks))}
+                className={cn('press flex items-center gap-4 rounded-[var(--radius-md)] p-3 text-left hover:bg-surface-2', on && 'bg-surface')}
+              >
+                <span className="flex size-10 items-center justify-center rounded-full bg-surface-2">
+                  {on && isPlaying ? <Pause size={15} className="fill-current" /> : <Play size={15} className="ml-0.5 fill-current" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className={cn('block truncate text-[15px] font-medium', on && 'text-accent-ink')}>{c.title}</span>
+                  {pct > 0 && (
+                    <span className="mt-1.5 block h-1 w-32 overflow-hidden rounded-full bg-surface-3">
+                      <span className="block h-full rounded-full bg-accent" style={{ width: `${pct * 100}%` }} />
+                    </span>
+                  )}
+                </span>
+                <span className="text-[13px] text-fg-3 tabular">{formatDuration(c.durationSeconds)}</span>
+              </button>
+            );
+          })}
+        </div>
       </Section>
     </div>
   );
@@ -272,6 +503,19 @@ export function PlaylistView({ id }: { id?: string }) {
         color={p.color}
         meta={p.description}
         tracks={tracks}
+        actions={
+          <IconButton
+            icon={Trash2}
+            label="Delete playlist"
+            size="lg"
+            variant="soft"
+            onClick={() => {
+              deletePlaylist(p.id);
+              toast('Playlist deleted', 'check');
+              navigate({ name: 'library' });
+            }}
+          />
+        }
       />
       <Section title="Tracks">
         <TrackList tracks={tracks} />

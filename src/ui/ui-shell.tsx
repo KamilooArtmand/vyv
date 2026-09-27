@@ -2,15 +2,13 @@
 // ui-shell.tsx: TopBar, Sidebar, PlayerDock, Modals & Toast
 // ─────────────────────────────────────────────────────────────
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Bell,
   Bookmark,
   Check,
   ChevronLeft,
   ChevronRight,
-  Cloud,
-  Database,
   Heart,
   History,
   House,
@@ -37,7 +35,6 @@ import {
   UserRound,
   Volume2,
   VolumeX,
-  X,
   Disc,
   Mic,
   Podcast,
@@ -51,7 +48,6 @@ import type { RouteName } from '../core/core-types';
 import {
   applyTheme,
   authStore,
-  closeSheet,
   cyclePlayerMode,
   goBack,
   goForward,
@@ -60,7 +56,6 @@ import {
   resolveTheme,
   setMode,
   settingsStore,
-  toast,
   togglePanel,
   uiStore,
 } from '../state/state-ui';
@@ -77,7 +72,7 @@ import {
   toggleShuffle,
 } from '../state/state-player';
 import { toggleFavorite, useIsFavorite, useUnreadCount } from '../state/state-catalog';
-import { Artwork, IconButton, LiveBadge, LogoMark, Sheet, Slider, Wordmark } from './ui-components';
+import { Artwork, IconButton, LiveBadge, LogoMark, Slider, Wordmark } from './ui-components';
 
 // ── Navigation Structure ─────────────────────────────────────
 export interface NavItem {
@@ -111,7 +106,6 @@ export const NAV_GROUPS: NavItem[][] = [
 
 // ── TopBar ───────────────────────────────────────────────────
 export function TopBar({ onAgent }: { onAgent?: () => void }) {
-  const route = useStore(uiStore, (s) => s.route.name);
   const user = useStore(authStore, (s) => s.user);
   const unread = useUnreadCount();
   const pref = useStore(settingsStore, (s) => s.theme);

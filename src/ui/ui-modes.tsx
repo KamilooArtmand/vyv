@@ -5,12 +5,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ChevronDown,
-  Disc3,
   Heart,
-  ListMusic,
-  Maximize2,
   MicVocal,
-  Minus,
   Moon,
   Pause,
   Play,
@@ -19,13 +15,10 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
-  Sparkles,
   Volume2,
   VolumeX,
-  X,
-  Radio,
-  Sliders,
   Check,
+  Gauge,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { formatTime } from '../core/core-utils';
@@ -37,14 +30,16 @@ import {
   playerStore,
   prev,
   seek,
+  setSleep,
+  setSpeed,
   setVolume,
   timeStore,
   toggleMute,
   togglePlay,
   toggleShuffle,
 } from '../state/state-player';
-import { cyclePlayerMode, setMode, toast } from '../state/state-ui';
-import { Artwork, IconButton, LogoMark, Slider, Visualizer } from './ui-components';
+import { cyclePlayerMode, settingsStore, setMode, toast } from '../state/state-ui';
+import { Artwork, IconButton, LogoMark, LyricsView, Slider, Visualizer } from './ui-components';
 
 /** Miniature interactive Logo Button with Left-Click Cycle, Long-Press Menu, and Right-Click Context Menu */
 function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
@@ -161,9 +156,25 @@ export function CoverPlayer() {
   const volume = useStore(playerStore, (s) => s.volume);
   const muted = useStore(playerStore, (s) => s.muted);
   const lyrics = useStore(playerStore, (s) => s.lyrics);
+  const sleepAt = useStore(playerStore, (s) => s.sleepAt);
+  const speed = useStore(settingsStore, (s) => s.speed);
   const { time, duration } = useStore(timeStore, (s) => s);
   const fav = useIsFavorite(currentTrack?.id);
   const [showLyrics, setShowLyrics] = useState(false);
+  const [sleepIdx, setSleepIdx] = useState(0);
+  const spoken = currentTrack.kind === 'podcast' || currentTrack.kind === 'audiobook';
+  const sleepMins = sleepAt ? Math.max(1, Math.round((sleepAt - Date.now()) / 60_000)) : null;
+
+  const cycleSpeed = () => {
+    const speeds = [0.75, 1, 1.25, 1.5, 2];
+    setSpeed(speeds[(speeds.indexOf(speed) + 1) % speeds.length] ?? 1);
+  };
+  const cycleSleep = () => {
+    const options = [null, 15, 30, 60] as const;
+    const n = (sleepIdx + 1) % options.length;
+    setSleepIdx(n);
+    setSleep(options[n]);
+  };
 
   return (
     <div className="anim-fade fixed inset-0 z-50 flex flex-col bg-bg text-fg select-none overflow-hidden">
@@ -286,46 +297,51 @@ export function CoverPlayer() {
             />
           </div>
 
-          {/* Secondary bar: Volume & Lyrics */}
-          <div className="mt-8 flex w-full items-center justify-between border-t border-line-2 pt-6">
-            <div className="flex items-center gap-2 w-40">
+          {/* Secondary bar: Volume, Speed, Sleep & Lyrics */}
+          <div className="mt-8 flex w-full flex-wrap items-center justify-between gap-3 border-t border-line-2 pt-6">
+            <div className="flex w-40 items-center gap-2">
               <IconButton icon={muted ? VolumeX : Volume2} label="Mute" size="sm" onClick={toggleMute} />
               <Slider value={muted ? 0 : volume} max={1} step={0.01} onChange={setVolume} label="Volume" />
             </div>
 
-            {lyrics.length > 0 && (
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => setShowLyrics(!showLyrics)}
-                className={`press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                  showLyrics ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-surface-3'
-                }`}
+                onClick={cycleSpeed}
+                aria-label="Playback speed"
+                className={`press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold tabular hover:bg-surface-2 ${speed !== 1 ? 'text-accent-ink' : 'text-fg-3'}`}
               >
-                <MicVocal size={14} />
-                <span>Lyrics</span>
+                <Gauge size={15} strokeWidth={1.75} />
+                {speed !== 1 && `${speed}×`}
               </button>
-            )}
+              {spoken && (
+                <button
+                  type="button"
+                  onClick={cycleSleep}
+                  aria-label="Sleep timer"
+                  className={`press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold tabular hover:bg-surface-2 ${sleepMins ? 'text-accent-ink' : 'text-fg-3'}`}
+                >
+                  <Moon size={15} strokeWidth={1.75} />
+                  {sleepMins && `${sleepMins}m`}
+                </button>
+              )}
+              {lyrics.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowLyrics(!showLyrics)}
+                  className={`press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                    showLyrics ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-surface-3'
+                  }`}
+                >
+                  <MicVocal size={14} />
+                  <span>Lyrics</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Synchronized lyrics container */}
-          {showLyrics && lyrics.length > 0 && (
-            <div className="mt-4 w-full rounded-2xl bg-surface-2/60 backdrop-blur-md p-4 max-h-36 overflow-y-auto text-center space-y-2">
-              {lyrics.map((l, i) => {
-                const isCurrent = l.time <= time && (i === lyrics.length - 1 || lyrics[i + 1].time > time);
-                return (
-                  <p
-                    key={i}
-                    onClick={() => seek(l.time)}
-                    className={`cursor-pointer text-sm font-medium transition-all ${
-                      isCurrent ? 'text-fg font-bold scale-105' : 'text-fg-3 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    {l.text}
-                  </p>
-                );
-              })}
-            </div>
-          )}
+          {showLyrics && lyrics.length > 0 && <LyricsView className="mt-4 h-48 w-full rounded-2xl bg-surface-2/60 px-2 text-center backdrop-blur-md" />}
         </div>
       </main>
     </div>

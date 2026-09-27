@@ -3,7 +3,7 @@
 // history, playlists, notifications) — fully local, no backend.
 // ─────────────────────────────────────────────────────────────
 
-import { BookOpen, Disc3, Landmark, ListMusic, Mic2, Music2, Podcast, RadioTower, Shapes, type LucideIcon } from 'lucide-react';
+import { Disc3, Landmark, ListMusic, Mic2, Podcast, RadioTower, Shapes } from 'lucide-react';
 import { createStore, useStore } from '../core/core-store';
 import type { Entity } from '../core/core-utils';
 import type {

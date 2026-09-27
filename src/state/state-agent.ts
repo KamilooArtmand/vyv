@@ -5,7 +5,7 @@
 import { ALBUMS, ARTISTS, BOOKS, GENRES, SHOWS, STATIONS, TIMELINE, WIKI, artistById, createPlaylist, allTracks, libraryStore, toggleBookmark, toggleFavorite } from './state-catalog';
 import { AudioEngine, cycleRepeat, next, playQueue, playTrack, playerStore, prev, setSleep, setSpeed, setVolume, toggleShuffle } from './state-player';
 import { applyTheme, navigate, setMode, settingsStore, toast, uiStore } from './state-ui';
-import type { AgentAction, AgentContext, AgentMessage, AgentReply, Mood, Playlist, RouteName, Track } from '../core/core-types';
+import type { AgentAction, AgentContext, AgentMessage, AgentReply, Mood, Playlist, RouteName } from '../core/core-types';
 
 const SECTIONS: [RegExp, RouteName][] = [
   [/setting|preference|تنظیم/, 'settings'],

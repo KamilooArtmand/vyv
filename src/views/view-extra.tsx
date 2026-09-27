@@ -2,20 +2,22 @@
 // view-extra.tsx: Bookmarks, Notifications, Timeline & Deep Wiki
 // ─────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  ArrowUpRight,
   Bell,
-  BookOpen,
+  BellOff,
   Bookmark,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
   Disc,
-  History,
-  Landmark,
   Radio,
-  ScrollText,
-  Share2,
+  Settings2,
+  Sparkles,
   Trash2,
+  Users,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { relativeTime } from '../core/core-utils';
@@ -29,9 +31,10 @@ import {
   toggleBookmark,
   wikiById,
 } from '../state/state-catalog';
-import { navigate, toast } from '../state/state-ui';
+import { ask } from '../state/state-agent';
+import { navigate, settingsStore, toast } from '../state/state-ui';
 import { EmptyState, Grid, IconButton, MediaCard, PageHeader, Section, meshGradient } from '../ui/ui-components';
-import type { BookmarkKind, NotificationItem } from '../core/core-types';
+import type { NotificationItem, NotificationType } from '../core/core-types';
 
 export function BookmarksView() {
   const bookmarks = useStore(libraryStore, (s) => s.bookmarks);
@@ -66,98 +69,239 @@ export function BookmarksView() {
   );
 }
 
+// Only the agent gets the brand accent — every other type stays neutral gray.
+const NOTIF_TYPE: Record<NotificationType, { icon: typeof Bell; color: string; label: string }> = {
+  agent: { icon: Sparkles, color: 'var(--accent)', label: 'Agent' },
+  release: { icon: Disc, color: 'var(--gray)', label: 'Releases' },
+  podcast: { icon: Radio, color: 'var(--gray)', label: 'Podcasts' },
+  social: { icon: Users, color: 'var(--gray)', label: 'Social' },
+  system: { icon: Settings2, color: 'var(--gray)', label: 'System' },
+};
+
+function bucket(iso: string) {
+  const h = (Date.now() - new Date(iso).getTime()) / 3_600_000;
+  return h < 24 ? 'Today' : h < 24 * 7 ? 'This week' : 'Earlier';
+}
+
+function NotificationRow({ n }: { n: NotificationItem }) {
+  const t = NOTIF_TYPE[n.type];
+  const Icon = t.icon;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        markRead(n.id);
+        n.route && navigate(n.route);
+      }}
+      className="press group flex w-full items-start gap-3.5 rounded-[var(--radius-lg)] p-3 text-left hover:bg-surface-2"
+    >
+      <span className="relative flex size-11 shrink-0 items-center justify-center rounded-full" style={{ background: `color-mix(in oklab, ${t.color} 16%, transparent)`, color: t.color }}>
+        <Icon size={19} strokeWidth={1.75} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className={n.read ? 'truncate text-[14.5px] font-medium text-fg-2' : 'truncate text-[14.5px] font-semibold'}>{n.title}</span>
+          <span className="shrink-0 text-[12px] text-fg-3 tabular">{relativeTime(n.time)}</span>
+        </span>
+        <span className="mt-0.5 line-clamp-2 block text-[13.5px] text-fg-3">{n.content}</span>
+      </span>
+      <span className={`mt-2 size-2 shrink-0 rounded-full bg-accent transition-opacity ${n.read ? 'opacity-0' : ''}`} />
+    </button>
+  );
+}
+
 export function NotificationsView() {
   const items = useStore(libraryStore, (s) => s.notifications);
+  const enabled = useStore(settingsStore, (s) => s.notifications);
+  const [filter, setFilter] = useState<NotificationType | 'all'>('all');
+  const shown = items.filter((n) => filter === 'all' || n.type === filter);
+  const groups = ['Today', 'This week', 'Earlier']
+    .map((g) => [g, shown.filter((n) => bucket(n.time) === g)] as const)
+    .filter(([, list]) => list.length);
 
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Inbox"
-        subtitle={`${items.filter((n) => !n.read).length} unread notifications.`}
+        subtitle={`${items.filter((n) => !n.read).length} unread`}
         actions={
           <>
+            <IconButton icon={enabled ? Bell : BellOff} label={enabled ? 'Mute' : 'Unmute'} variant="soft" active={enabled} onClick={() => settingsStore.set({ notifications: !enabled })} />
             <IconButton icon={CheckCheck} label="Mark all read" variant="soft" onClick={() => markRead()} />
             <IconButton icon={Trash2} label="Clear" variant="soft" onClick={clearNotifications} />
           </>
         }
       />
-      {items.length === 0 ? (
+      <div className="scrollbar-none anim-rise -mx-4 mb-6 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:px-0">
+        {(['all', ...Object.keys(NOTIF_TYPE)] as (NotificationType | 'all')[]).map((k) => {
+          const meta = k === 'all' ? { icon: Bell, label: 'All' } : NOTIF_TYPE[k];
+          const Icon = meta.icon;
+          return (
+            <button
+              key={k}
+              type="button"
+              aria-label={meta.label}
+              onClick={() => setFilter(k)}
+              className={`press flex size-9 shrink-0 items-center justify-center rounded-full ${filter === k ? 'bg-fg text-bg' : 'bg-surface-2 text-fg-2 hover:text-fg'}`}
+            >
+              <Icon size={16} strokeWidth={1.75} />
+            </button>
+          );
+        })}
+      </div>
+
+      {groups.length === 0 ? (
         <EmptyState icon={Bell} title="All caught up" />
       ) : (
-        <div className="space-y-3">
-          {items.map((n) => (
-            <div
-              key={n.id}
-              onClick={() => {
-                markRead(n.id);
-                n.route && navigate(n.route);
-              }}
-              className="glass press flex items-start gap-4 rounded-[var(--radius-xl)] p-4 cursor-pointer hover:bg-surface-2"
-            >
-              <div className="size-10 rounded-full bg-surface-2 flex items-center justify-center shrink-0">
-                <Bell size={18} className="text-fg-2" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex justify-between items-baseline">
-                  <div className="text-sm font-semibold truncate">{n.title}</div>
-                  <span className="text-xs text-fg-3">{relativeTime(n.time)}</span>
-                </div>
-                <div className="text-xs text-fg-3 mt-1 line-clamp-2">{n.content}</div>
-              </div>
+        groups.map(([g, list]) => (
+          <section key={g} className="mb-6">
+            <h2 className="mb-1 px-3 text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">{g}</h2>
+            <div className="flex flex-col">
+              {list.map((n) => (
+                <NotificationRow key={n.id} n={n} />
+              ))}
             </div>
-          ))}
-        </div>
+          </section>
+        ))
       )}
     </div>
   );
 }
 
-export function TimelineView() {
+const TL_START = 1870;
+const TL_END = 2030;
+const TL_PX = 16; // pixels per year on the ruler
+
+export function TimelineView({ id }: { id?: string }) {
+  const idx = Math.max(0, TIMELINE.findIndex((y) => String(y.year) === id));
+  const entry = TIMELINE[id ? idx : TIMELINE.length - 1];
+  const i = TIMELINE.indexOf(entry);
+  const ruler = useRef<HTMLDivElement>(null);
+  const go = (n: number) => navigate({ name: 'timeline', id: String(TIMELINE[(n + TIMELINE.length) % TIMELINE.length].year) });
+
+  useEffect(() => {
+    const el = ruler.current;
+    if (!el) return;
+    el.scrollTo({ left: (entry.year - TL_START) * TL_PX - el.clientWidth / 2, behavior: 'smooth' });
+  }, [entry.year]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+      if (e.key === 'ArrowLeft') go(i - 1);
+      if (e.key === 'ArrowRight') go(i + 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const article = wikiById(entry.wikiId);
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <PageHeader
-        title="Sonic Timeline"
-        subtitle="Chronological milestones of musical synthesis, acoustic revolution & digital philosophy."
-      />
-      <div className="relative pl-6 md:pl-8 border-l border-line-2 space-y-8 mt-6">
-        {TIMELINE.map((t) => (
-          <div key={t.year} className="relative group">
-            {/* Timeline node dot */}
-            <div className="absolute -left-[31px] md:-left-[39px] top-1.5 size-4 rounded-full border-4 border-bg bg-accent group-hover:scale-125 transition-transform" />
+    <div>
+      <div className="anim-rise mb-2 text-xs font-medium uppercase tracking-[0.14em] text-fg-3">Timeline · year by year</div>
 
-            <div className="glass rounded-[var(--radius-2xl)] p-6 shadow-sm border border-line-2">
-              <div className="flex items-baseline justify-between flex-wrap gap-2">
-                <span className="text-3xl md:text-4xl font-extralight text-fg tracking-tight">{t.year}</span>
-                <div className="flex gap-1.5">
-                  {t.wave.map((w) => (
-                    <span key={w} className="rounded-full bg-surface-3 px-2.5 py-0.5 text-[11px] font-semibold text-fg-2">
-                      {w}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold mt-2 text-fg">{t.headline}</h3>
-              <ul className="mt-3 list-disc list-inside text-sm text-fg-2 space-y-1.5 leading-relaxed">
-                {t.events.map((e, idx) => (
-                  <li key={idx}>{e}</li>
-                ))}
-              </ul>
-
-              {t.wikiId && (
-                <button
-                  type="button"
-                  onClick={() => navigate({ name: 'article', id: t.wikiId })}
-                  className="press mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-accent hover:underline"
-                >
-                  <BookOpen size={14} />
-                  <span>Read Wiki Essay</span>
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+      {/* The year */}
+      <div className="flex items-center justify-between gap-4">
+        <h1 key={entry.year} className="anim-rise text-[96px] font-extralight leading-[0.9] tracking-[-0.07em] tabular md:text-[180px]">
+          {entry.year}
+        </h1>
+        <div className="flex gap-1.5">
+          <IconButton icon={ChevronLeft} label="Earlier" variant="soft" size="lg" onClick={() => go(i - 1)} />
+          <IconButton icon={ChevronRight} label="Later" variant="soft" size="lg" onClick={() => go(i + 1)} />
+        </div>
       </div>
+
+      {/* Ruler */}
+      <div ref={ruler} className="scrollbar-none relative -mx-4 mb-10 mt-4 overflow-x-auto md:-mx-8" aria-label="Years" style={{ maskImage: 'linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 32px), transparent)' }}>
+        <div className="relative h-20" style={{ width: (TL_END - TL_START) * TL_PX }}>
+          {Array.from({ length: (TL_END - TL_START) / 10 + 1 }, (_, d) => TL_START + d * 10).map((y) => (
+            <div key={y} className="absolute bottom-0 top-8 flex flex-col items-start" style={{ left: (y - TL_START) * TL_PX }}>
+              <span className="h-full w-px bg-line-2" />
+              <span className="absolute -top-6 -translate-x-1/2 text-[11px] text-fg-3 tabular">{y}</span>
+            </div>
+          ))}
+          <div className="absolute inset-x-0 top-[52px] h-px bg-line-2" />
+          {TIMELINE.map((t) => {
+            const on = t.year === entry.year;
+            return (
+              <button
+                key={t.year}
+                type="button"
+                aria-label={String(t.year)}
+                title={`${t.year} · ${t.headline}`}
+                onClick={() => navigate({ name: 'timeline', id: String(t.year) })}
+                className="group absolute top-[52px] -translate-x-1/2 -translate-y-1/2 p-2"
+                style={{ left: (t.year - TL_START) * TL_PX }}
+              >
+                <span
+                  className={`block rounded-full transition-all duration-500 ${on ? 'size-4 bg-accent shadow-[0_0_0_6px_var(--accent-soft)]' : 'size-2 bg-fg-3 group-hover:size-3 group-hover:bg-fg'}`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* The story of the year */}
+      <div key={`c-${entry.year}`} className="anim-rise grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="glass rounded-[var(--radius-2xl)] border border-line-2 p-6 md:p-8">
+          <h2 className="text-[26px] font-semibold tracking-[-0.035em] md:text-[34px]">{entry.headline}</h2>
+          <ul className="mt-4 flex flex-col gap-3">
+            {entry.events.map((e) => (
+              <li key={e} className="flex gap-3 text-[15.5px] leading-relaxed text-fg-2">
+                <span className="mt-2.5 size-1.5 shrink-0 rounded-full bg-accent" />
+                {e}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <button type="button" onClick={() => ask(`What happened in music in ${entry.year}?`)} className="press flex h-10 items-center gap-2 rounded-full bg-fg px-4 text-[13.5px] font-medium text-bg">
+              <Sparkles size={15} /> Ask agent
+            </button>
+            {article && (
+              <button type="button" onClick={() => navigate({ name: 'article', id: article.id })} className="press flex h-10 items-center gap-2 rounded-full bg-surface-2 px-4 text-[13.5px] font-medium hover:bg-surface-3">
+                {article.title} <ArrowUpRight size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="glass rounded-[var(--radius-2xl)] border border-line-2 p-6">
+          <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">Sound of the year</div>
+          <div className="flex flex-wrap gap-2">
+            {entry.wave.map((w) => (
+              <button key={w} type="button" onClick={() => ask(`Play ${w}`)} className="press rounded-full border border-line-2 px-3.5 py-1.5 text-[13.5px] hover:bg-surface-2">
+                {w}
+              </button>
+            ))}
+          </div>
+          <div className="mt-6 text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">Milestone</div>
+          <div className="mt-1 text-[32px] font-extralight tabular tracking-[-0.04em]">
+            {i + 1}
+            <span className="text-fg-3">/{TIMELINE.length}</span>
+          </div>
+        </div>
+      </div>
+
+      <Section title="Decades">
+        <div className="stagger grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-8">
+          {[1870, 1880, 1910, 1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020].map((d) => {
+            const first = TIMELINE.find((t) => t.year >= d && t.year < d + 10);
+            const on = entry.year >= d && entry.year < d + 10;
+            return (
+              <button
+                key={d}
+                type="button"
+                disabled={!first}
+                onClick={() => first && navigate({ name: 'timeline', id: String(first.year) })}
+                className={`press rounded-[var(--radius-md)] py-3 text-[15px] font-medium tabular disabled:opacity-30 ${on ? 'bg-fg text-bg' : 'bg-surface-2 hover:bg-surface-3'}`}
+              >
+                {d}s
+              </button>
+            );
+          })}
+        </div>
+      </Section>
     </div>
   );
 }

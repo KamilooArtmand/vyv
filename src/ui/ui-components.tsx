@@ -2,30 +2,50 @@
 // ui-components.tsx: Buttons, Artwork, Cards, Visualizers & Sheet
 // ─────────────────────────────────────────────────────────────
 
-import { forwardRef, memo, useEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type ReactNode } from 'react';
-import { Bookmark, Heart, MoreHorizontal, Pause, Play, Shuffle, X, type LucideIcon } from 'lucide-react';
+import { forwardRef, memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Bookmark, Heart, MicVocal, MoreHorizontal, Pause, Play, Shuffle, X, type LucideIcon } from 'lucide-react';
 import type { BookmarkKind, Track } from '../core/core-types';
-import { cn, formatDuration, formatTime, hash } from '../core/core-utils';
-import { playQueue, playTrack, playerStore, togglePlay, AudioEngine } from '../state/state-player';
+import { cn, formatTime, hash } from '../core/core-utils';
+import { useStore } from '../core/core-store';
+import { getActiveLyricIndex, playQueue, playTrack, playerStore, seek, timeStore, togglePlay, AudioEngine } from '../state/state-player';
 import { toggleBookmark, toggleFavorite, useIsBookmarked, useIsFavorite } from '../state/state-catalog';
-import { navigate, openSheet, toast } from '../state/state-ui';
+import { navigate, openSheet } from '../state/state-ui';
 
 // ── Artwork & Generative Mesh Gradient ───────────────────────
+function hexToHue(hex: string): number | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return null;
+  const r = parseInt(m[1].slice(0, 2), 16) / 255;
+  const g = parseInt(m[1].slice(2, 4), 16) / 255;
+  const b = parseInt(m[1].slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === min) return null;
+  const d = max - min;
+  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  return h < 0 ? h + 360 : h;
+}
+
 export function meshGradient(seed: string, color?: string): string {
   const k = hash(seed);
   const x1 = 15 + (k % 50);
   const y1 = 10 + ((k >> 3) % 40);
   const x2 = 50 + ((k >> 5) % 45);
   const y2 = 55 + ((k >> 7) % 40);
+  const baseHue = color ? hexToHue(color) : null;
+  const hue1 = baseHue == null ? 0 : (baseHue + ((k >> 9) % 24) - 12 + 360) % 360;
+  const hue2 = baseHue == null ? 0 : (baseHue + ((k >> 12) % 36) - 18 + 360) % 360;
+  const sat = baseHue == null ? 0 : 62 + (k % 20);
   const lum1 = 65 + (k % 25);
   const lum2 = 35 + ((k >> 2) % 30);
   const lum3 = 18 + ((k >> 4) % 20);
   const lum4 = 8 + ((k >> 6) % 15);
   return [
-    `radial-gradient(at ${x1}% ${y1}%, hsl(0 0% ${lum1}% / 0.95) 0px, transparent 55%)`,
-    `radial-gradient(at ${x2}% ${y2}%, hsl(0 0% ${lum2}% / 0.9) 0px, transparent 60%)`,
-    `radial-gradient(at ${100 - x1}% ${100 - y1 / 2}%, hsl(0 0% ${lum3}% / 0.85) 0px, transparent 50%)`,
-    `linear-gradient(${(k % 180)}deg, hsl(0 0% ${lum4}%), hsl(0 0% ${lum2}%))`,
+    `radial-gradient(at ${x1}% ${y1}%, hsl(${hue1} ${sat}% ${lum1}% / 0.95) 0px, transparent 55%)`,
+    `radial-gradient(at ${x2}% ${y2}%, hsl(${hue2} ${sat}% ${lum2}% / 0.9) 0px, transparent 60%)`,
+    `radial-gradient(at ${100 - x1}% ${100 - y1 / 2}%, hsl(${hue1} ${sat}% ${lum3}% / 0.85) 0px, transparent 50%)`,
+    `linear-gradient(${k % 180}deg, hsl(${hue2} ${sat}% ${lum4}%), hsl(${hue1} ${sat}% ${lum2}%))`,
   ].join(',');
 }
 
@@ -341,6 +361,8 @@ export function CollectionHeader({
   glyph,
   tracks,
   actions,
+  tall,
+  artTitle,
 }: {
   kind?: BookmarkKind;
   id: string;
@@ -352,17 +374,41 @@ export function CollectionHeader({
   glyph?: LucideIcon;
   tracks?: Track[];
   actions?: ReactNode;
+  /** Use a 3:4 portrait cover instead of a square — book jackets, etc. */
+  tall?: boolean;
+  /** Fallback text baked into the generated artwork when there is no image. */
+  artTitle?: { title: string; subtitle: string };
 }) {
   const saved = useIsBookmarked(kind ?? 'album', id);
   return (
     <header className="anim-rise relative mb-8 flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
-      <Artwork seed={id} color={color} src={src} glyph={glyph} className="mx-auto w-[min(62vw,240px)] aspect-square shadow-[0_30px_70px_-28px_rgb(0_0_0/0.55)] [--art-r:24px] md:mx-0 md:w-[232px]" />
+      <Artwork
+        seed={id}
+        color={color}
+        src={src}
+        glyph={glyph}
+        title={artTitle?.title}
+        subtitle={artTitle?.subtitle}
+        className={cn('mx-auto w-[min(62vw,240px)] shadow-[0_30px_70px_-28px_rgb(0_0_0/0.55)] [--art-r:24px] md:mx-0 md:w-[232px]', tall ? 'aspect-[3/4]' : 'aspect-square')}
+      />
       <div className="min-w-0 flex-1 text-center md:text-left">
         <div className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-fg-3">{eyebrow}</div>
         <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.04em] md:text-[56px]">{title}</h1>
         {meta && <div className="mt-3 text-[14px] text-fg-2">{meta}</div>}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:justify-start">
           {tracks && tracks.length > 0 && <PlayFab size="lg" onClick={() => playQueue(tracks)} />}
+          {tracks && tracks.length > 1 && (
+            <IconButton
+              icon={Shuffle}
+              label="Shuffle"
+              size="lg"
+              variant="soft"
+              onClick={() => {
+                playerStore.set({ shuffle: true });
+                playQueue(tracks);
+              }}
+            />
+          )}
           <IconButton icon={Bookmark} label={saved ? 'Saved' : 'Save'} size="lg" variant="soft" active={saved} filled={saved} onClick={() => toggleBookmark(kind ?? 'album', id)} />
           {actions}
         </div>
@@ -595,6 +641,51 @@ export function Fader({ value, min, max, onChange, label }: { value: number; min
         className="absolute left-1/2 size-5 -translate-x-1/2 translate-y-1/2 rounded-full bg-fg shadow-[0_2px_10px_rgb(0_0_0/0.3)] ring-4 ring-transparent transition-[bottom,box-shadow] duration-150 group-focus-visible:ring-accent-soft"
         style={{ bottom: `${pct}%` }}
       />
+    </div>
+  );
+}
+
+/** Karaoke-style synced lyrics, shared by Cover mode and the desktop side panel. */
+export function LyricsView({ className, large }: { className?: string; large?: boolean }) {
+  const lyrics = useStore(playerStore, (s) => s.lyrics);
+  const time = useStore(timeStore, (s) => s.time);
+  const active = useMemo(() => getActiveLyricIndex(lyrics, time), [lyrics, time]);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [active]);
+
+  if (!lyrics.length) {
+    return (
+      <div className={cn('flex flex-col items-center justify-center gap-3 text-fg-3', className)}>
+        <MicVocal size={28} strokeWidth={1.5} />
+        <span className="text-sm">No lyrics</span>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className={cn('scrollbar-none overflow-y-auto py-[35%]', className)} style={{ maskImage: 'linear-gradient(transparent,#000 18%,#000 82%,transparent)' }}>
+      {lyrics.map((l, i) => {
+        const d = Math.abs(i - active);
+        return (
+          <button
+            key={i}
+            data-i={i}
+            type="button"
+            onClick={() => seek(l.time)}
+            className={cn(
+              'block w-full origin-left text-left font-semibold tracking-[-0.025em] transition-[opacity,transform,filter] duration-500',
+              large ? 'py-2.5 text-[28px] leading-[1.18] md:text-[40px]' : 'py-2 text-[20px] leading-snug',
+              i === active ? 'scale-100 text-fg opacity-100' : 'scale-[0.97] text-fg opacity-30 hover:opacity-60',
+            )}
+            style={{ filter: i === active ? 'none' : `blur(${Math.min(d, 3) * 0.6}px)` }}
+          >
+            {l.text}
+          </button>
+        );
+      })}
     </div>
   );
 }

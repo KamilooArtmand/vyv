@@ -2,7 +2,7 @@
 // state-ui.ts: UI Routes, Navigation, Settings & Auth State
 // ─────────────────────────────────────────────────────────────
 
-import { createStore, useStore } from '../core/core-store';
+import { createStore } from '../core/core-store';
 import type { AgentMessage, PlayerMode, Route, RouteName, ThemePref, User } from '../core/core-types';
 
 const ROUTES: RouteName[] = [
