@@ -2,7 +2,8 @@
 // ui-shell.tsx: TopBar, Sidebar, PlayerDock, Modals & Toast
 // ─────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useBackdropTone } from './ui-backdrop';
 import {
   Bell,
   Bookmark,
@@ -42,6 +43,7 @@ import {
   PictureInPicture2,
   Circle,
   Clapperboard,
+  Compass,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { cn, formatTime } from '../core/core-utils';
@@ -86,6 +88,7 @@ export interface NavItem {
 export const NAV_GROUPS: NavItem[][] = [
   [
     { name: 'home', label: 'Home', icon: House },
+    { name: 'discover', label: 'Discover', icon: Compass },
     { name: 'library', label: 'Library', icon: Library },
     { name: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
   ],
@@ -302,10 +305,17 @@ export function PlayerDock() {
   const muted = useStore(playerStore, (s) => s.muted);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   const hasLyrics = useStore(playerStore, (s) => s.lyrics.length > 0);
+  const ref = useRef<HTMLDivElement>(null);
+  const { tone, busy } = useBackdropTone(ref, !!track);
   if (!track) return null;
 
   return (
-    <div className="glass anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 rounded-full px-[var(--dock-gap)]">
+    <div
+      ref={ref}
+      data-tone={tone}
+      style={{ '--busy': busy } as React.CSSProperties}
+      className="dock-surface anim-rise pointer-events-auto grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-[var(--dock-gap)]"
+    >
       <NowPlayingMeta />
       <div className="flex w-[min(40vw,500px)] flex-col items-center">
         <div className="flex items-center gap-1.5">
@@ -336,9 +346,19 @@ export function MiniPlayer() {
   const track = useStore(playerStore, (s) => s.track);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   const progress = useProgress();
+  const ref = useRef<HTMLDivElement>(null);
+  const { tone, busy } = useBackdropTone(ref, !!track);
   if (!track) return null;
   return (
-    <div role="button" tabIndex={0} onClick={() => setMode('Cover')} className="glass anim-rise relative flex h-16 items-center gap-3 overflow-hidden rounded-[22px] pl-2 pr-1.5">
+    <div
+      ref={ref}
+      role="button"
+      tabIndex={0}
+      onClick={() => setMode('Cover')}
+      data-tone={tone}
+      style={{ '--busy': busy } as React.CSSProperties}
+      className="dock-surface anim-rise flex h-16 items-center gap-3 overflow-hidden !rounded-[22px] pl-2 pr-1.5"
+    >
       <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} className="size-12 [--art-r:14px]" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-medium">{track.title}</div>

@@ -2,7 +2,7 @@
 // view-settings.tsx: Equalizer & App Preferences
 // ─────────────────────────────────────────────────────────────
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Blend,
   Bot,
@@ -11,6 +11,7 @@ import {
   EyeOff,
   Gauge,
   Globe,
+  Cloud,
   Infinity as InfinityIcon,
   Mic,
   MicVocal,
@@ -40,6 +41,8 @@ import { playerStore, setDevice, setEQ, setSpeed } from '../state/state-player';
 import { AuthService, DEFAULT_SETTINGS, EQ_PRESETS, applyTheme, authStore, settingsStore, toast, type Settings as S } from '../state/state-ui';
 import { SOURCE_META, sourceReady } from '../services/sources';
 import { isConfigured } from '../services/auth';
+import { cloudEnabled } from '../services/cloud';
+import { onSyncState, type SyncState } from '../services/sync';
 import { PROVIDERS } from '../ui/ui-sheets';
 import { Chip, Fader, LogoMark, PageHeader, Segmented, Switch, Wordmark } from '../ui/ui-components';
 
@@ -227,11 +230,26 @@ export default function SettingsView() {
 }
 
 /** vyv accounts are Google or Facebook identities — nothing else, no passwords. */
+function useSyncState() {
+  const [state, setState] = useState<SyncState>('off');
+  useEffect(() => onSyncState(setState), []);
+  return state;
+}
+
 function AccountsGroup() {
   const user = useStore(authStore, (s) => s.user);
   const busy = useStore(authStore, (s) => s.busy);
+  const sync = useSyncState();
+  const syncHint = !cloudEnabled
+    ? 'This device only — add Supabase to sync across devices'
+    : !user
+      ? 'Sign in to sync your library'
+      : { off: 'Off', syncing: 'Syncing…', synced: 'Library synced to your account', error: 'Sync paused — will retry' }[sync];
   return (
     <Group title="Account">
+      <Row icon={Cloud} label="Cloud sync" hint={syncHint}>
+        <span className={cn('size-2 rounded-full', cloudEnabled && user && sync === 'synced' ? 'bg-[#10b981]' : sync === 'error' ? 'bg-[#ff3c00]' : 'bg-fg-3')} />
+      </Row>
       {PROVIDERS.map(({ id, label, glyph: Glyph }) => {
         const acc = user?.accounts.find((a) => a.provider === id);
         return (

@@ -1,0 +1,22 @@
+# Keeps libraries, build tools and CI actions up to date with weekly PRs.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    groups:
+      react:
+        patterns: ['react', 'react-dom', '@types/react*']
+      build-tools:
+        patterns: ['vite', '@vitejs/*', 'tailwindcss', '@tailwindcss/*', 'typescript']
+      desktop:
+        patterns: ['electron', 'electron-builder', 'electron-updater']
+      minor-and-patch:
+        update-types: ['minor', 'patch']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

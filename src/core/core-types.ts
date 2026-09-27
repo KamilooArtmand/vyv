@@ -191,7 +191,8 @@ export type RouteName =
   | 'article'
   | 'profile'
   | 'settings'
-  | 'video';
+  | 'video'
+  | 'discover';
 
 export interface Route {
   name: RouteName;

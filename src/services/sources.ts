@@ -14,6 +14,7 @@
 
 import type { SourceId, Track } from '../core/core-types';
 import { hash } from '../core/core-utils';
+import { loadSnapshot, matches, type CatalogSnapshot } from './snapshot';
 
 const env = import.meta.env;
 export const YOUTUBE_API_KEY = env.VITE_YOUTUBE_API_KEY ?? '';
@@ -36,13 +37,39 @@ const cache = new Map<string, { at: number; data: unknown }>();
 async function getJSON<T>(url: string, ttl = 5 * 60_000, signal?: AbortSignal): Promise<T> {
   const hit = cache.get(url);
   if (hit && Date.now() - hit.at < ttl) return hit.data as T;
-  // A hung mirror must not stall a whole section: give each request 10 s.
-  const timeout = AbortSignal.timeout(10_000);
-  const r = await fetch(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
-  if (!r.ok) throw new Error(`${r.status} ${new URL(url).host}`);
-  const data = (await r.json()) as T;
-  cache.set(url, { at: Date.now(), data });
-  return data;
+  let lastErr: unknown;
+  // Two attempts with a short backoff; each attempt gets 10 s so a hung
+  // mirror or CDN never stalls a whole section.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const timeout = AbortSignal.timeout(10_000);
+    try {
+      const r = await fetch(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+      if (!r.ok) throw new Error(`${r.status} ${new URL(url).host}`);
+      const data = (await r.json()) as T;
+      cache.set(url, { at: Date.now(), data });
+      return data;
+    } catch (e) {
+      if (signal?.aborted) throw e;
+      lastErr = e;
+      if (hit) return hit.data as T; // stale beats nothing
+      await new Promise((res) => setTimeout(res, 600 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+/** Run a live query; if it fails or comes back empty, answer from the bundled snapshot. */
+async function withFallback<T>(live: () => Promise<T[]>, fallback: (s: CatalogSnapshot) => T[] | undefined, signal?: AbortSignal): Promise<T[]> {
+  try {
+    const out = await live();
+    if (out.length) return out;
+  } catch (e) {
+    if (signal?.aborted) throw e;
+  }
+  const snap = await loadSnapshot();
+  const out = snap ? fallback(snap) ?? [] : [];
+  if (!out.length) throw new Error('Source unavailable — check your connection');
+  return out;
 }
 
 const https = (u?: string) => (u && u.startsWith('http://') ? u.replace('http://', 'https://') : u);
@@ -108,29 +135,44 @@ export function stationToTrack(s: RBStation): Track {
 }
 
 const RB_Q = 'hidebroken=true&order=clickcount&reverse=true';
+const allSnapshotStations = (s: CatalogSnapshot) =>
+  s.radio ? [...s.radio.kurdish, ...s.radio.world, ...Object.values(s.radio.byTag).flat()] : [];
 const dedupe = (list: RBStation[]) => [...new Map(list.map((s) => [s.stationuuid, s])).values()];
 
 export const RadioBrowser = {
   async search(q: string, limit = 40, signal?: AbortSignal): Promise<Track[]> {
-    const [byName, byTag] = await Promise.all([
-      rb<RBStation[]>(`/json/stations/search?name=${encodeURIComponent(q)}&${RB_Q}&limit=${limit}`, signal),
-      rb<RBStation[]>(`/json/stations/search?tag=${encodeURIComponent(q.toLowerCase())}&${RB_Q}&limit=${limit}`, signal).catch(() => []),
-    ]);
-    return dedupe([...byName, ...byTag]).filter(playableStream).slice(0, limit).map(stationToTrack);
+    return withFallback(
+      async () => {
+        const [byName, byTag] = await Promise.all([
+          rb<RBStation[]>(`/json/stations/search?name=${encodeURIComponent(q)}&${RB_Q}&limit=${limit}`, signal),
+          rb<RBStation[]>(`/json/stations/search?tag=${encodeURIComponent(q.toLowerCase())}&${RB_Q}&limit=${limit}`, signal).catch(() => []),
+        ]);
+        return dedupe([...byName, ...byTag]).filter(playableStream).slice(0, limit).map(stationToTrack);
+      },
+      (s) => allSnapshotStations(s).filter((t) => matches(q, t.title, t.artist, t.album)).slice(0, limit),
+      signal,
+    );
   },
   /** Kurdish-language and Kurdish-tagged stations, most listened first. */
   async kurdish(limit = 40): Promise<Track[]> {
-    const [lang, tag, sorani, kurmanji] = await Promise.all([
-      rb<RBStation[]>(`/json/stations/search?language=kurdish&${RB_Q}&limit=${limit}`),
-      rb<RBStation[]>(`/json/stations/search?tag=kurdish&${RB_Q}&limit=${limit}`).catch(() => []),
-      rb<RBStation[]>(`/json/stations/search?language=sorani&${RB_Q}&limit=20`).catch(() => []),
-      rb<RBStation[]>(`/json/stations/search?language=kurmanji&${RB_Q}&limit=20`).catch(() => []),
-    ]);
-    return dedupe([...lang, ...tag, ...sorani, ...kurmanji]).filter(playableStream).slice(0, limit).map(stationToTrack);
+    return withFallback(
+      async () => {
+        const [lang, tag, sorani, kurmanji] = await Promise.all([
+          rb<RBStation[]>(`/json/stations/search?language=kurdish&${RB_Q}&limit=${limit}`),
+          rb<RBStation[]>(`/json/stations/search?tag=kurdish&${RB_Q}&limit=${limit}`).catch(() => []),
+          rb<RBStation[]>(`/json/stations/search?language=sorani&${RB_Q}&limit=20`).catch(() => []),
+          rb<RBStation[]>(`/json/stations/search?language=kurmanji&${RB_Q}&limit=20`).catch(() => []),
+        ]);
+        return dedupe([...lang, ...tag, ...sorani, ...kurmanji]).filter(playableStream).slice(0, limit).map(stationToTrack);
+      },
+      (s) => s.radio?.kurdish.slice(0, limit),
+    );
   },
   async top(limit = 30): Promise<Track[]> {
-    const list = await rb<RBStation[]>(`/json/stations/topclick/${limit * 2}?hidebroken=true`);
-    return list.filter(playableStream).slice(0, limit).map(stationToTrack);
+    return withFallback(
+      async () => (await rb<RBStation[]>(`/json/stations/topclick/${limit * 2}?hidebroken=true`)).filter(playableStream).slice(0, limit).map(stationToTrack),
+      (s) => s.radio?.world.slice(0, limit),
+    );
   },
   async byCountry(code: string, limit = 30): Promise<Track[]> {
     const list = await rb<RBStation[]>(`/json/stations/search?countrycode=${code}&${RB_Q}&limit=${limit * 2}`);
@@ -183,13 +225,24 @@ function audiusToTrack(t: AudiusTrack): Track {
 
 export const Audius = {
   async search(q: string, limit = 30, signal?: AbortSignal): Promise<Track[]> {
-    const r = await getJSON<{ data: AudiusTrack[] }>(`${AUDIUS}/tracks/search?query=${encodeURIComponent(q)}&app_name=${APP}&limit=${limit}`, 5 * 60_000, signal);
-    return r.data.filter((t) => t.is_streamable !== false).slice(0, limit).map(audiusToTrack);
+    return withFallback(
+      async () => {
+        const r = await getJSON<{ data: AudiusTrack[] }>(`${AUDIUS}/tracks/search?query=${encodeURIComponent(q)}&app_name=${APP}&limit=${limit}`, 5 * 60_000, signal);
+        return r.data.filter((t) => t.is_streamable !== false).slice(0, limit).map(audiusToTrack);
+      },
+      (s) => Object.values(s.music ?? {}).flat().filter((t) => matches(q, t.title, t.artist, t.album)).slice(0, limit),
+      signal,
+    );
   },
   async trending(genre?: string, limit = 24): Promise<Track[]> {
-    const g = genre ? `&genre=${encodeURIComponent(genre)}` : '';
-    const r = await getJSON<{ data: AudiusTrack[] }>(`${AUDIUS}/tracks/trending?app_name=${APP}&time=week${g}`, 30 * 60_000);
-    return r.data.filter((t) => t.is_streamable !== false).slice(0, limit).map(audiusToTrack);
+    return withFallback(
+      async () => {
+        const g = genre ? `&genre=${encodeURIComponent(genre)}` : '';
+        const r = await getJSON<{ data: AudiusTrack[] }>(`${AUDIUS}/tracks/trending?app_name=${APP}&time=week${g}`, 30 * 60_000);
+        return r.data.filter((t) => t.is_streamable !== false).slice(0, limit).map(audiusToTrack);
+      },
+      (s) => s.music?.[genre || 'Trending']?.slice(0, limit),
+    );
   },
 };
 
@@ -241,12 +294,18 @@ const toShow = (p: ITunesPodcast): RemoteShow => ({
 
 export const Podcasts = {
   async search(q: string, limit = 24, signal?: AbortSignal): Promise<RemoteShow[]> {
-    const r = await getJSON<{ results: ITunesPodcast[] }>(
-      `https://itunes.apple.com/search?media=podcast&entity=podcast&term=${encodeURIComponent(q)}&limit=${limit}`,
-      30 * 60_000,
+    return withFallback(
+      async () => {
+        const r = await getJSON<{ results: ITunesPodcast[] }>(
+          `https://itunes.apple.com/search?media=podcast&entity=podcast&term=${encodeURIComponent(q)}&limit=${limit}`,
+          30 * 60_000,
+          signal,
+        );
+        return r.results.map(toShow);
+      },
+      (s) => (s.podcasts ?? []).filter((p) => matches(q, p.title, p.host, p.category, p.group)).slice(0, limit),
       signal,
     );
-    return r.results.map(toShow);
   },
   async episodes(showId: string, limit = 60): Promise<{ show: RemoteShow; episodes: Track[] }> {
     const id = showId.replace(/^it:/, '');
@@ -313,6 +372,15 @@ const parseLength = (l?: string) => {
   return Math.round(Number(l)) || 0;
 };
 
+const docToItem = (d: ArchiveDoc): ArchiveItem => ({
+  id: d.identifier,
+  title: d.title ?? d.identifier,
+  creator: (Array.isArray(d.creator) ? d.creator[0] : d.creator) ?? 'Internet Archive',
+  mediatype: d.mediatype === 'movies' ? 'movies' : 'audio',
+  year: d.year ? Number(String(d.year).slice(0, 4)) : undefined,
+  thumb: archiveThumb(d.identifier),
+});
+
 export const Archive = {
   async search(q: string, kind: 'audio' | 'movies' | 'audiobooks' = 'audio', limit = 24, signal?: AbortSignal): Promise<ArchiveItem[]> {
     const scope = kind === 'audiobooks' ? 'collection:(librivoxaudio)' : `mediatype:(${kind})`;
@@ -322,15 +390,18 @@ export const Archive = {
       `https://archive.org/advancedsearch.php?q=${encodeURIComponent(query)}` +
       '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=mediatype&fl[]=year&sort[]=downloads+desc' +
       `&rows=${limit}&output=json`;
-    const r = await getJSON<{ response: { docs: ArchiveDoc[] } }>(url, 30 * 60_000, signal);
-    return r.response.docs.map((d) => ({
-      id: d.identifier,
-      title: d.title ?? d.identifier,
-      creator: (Array.isArray(d.creator) ? d.creator[0] : d.creator) ?? 'Internet Archive',
-      mediatype: d.mediatype === 'movies' ? 'movies' : 'audio',
-      year: d.year ? Number(String(d.year).slice(0, 4)) : undefined,
-      thumb: archiveThumb(d.identifier),
-    }));
+    const bucket = kind === 'audiobooks' ? 'books' : kind === 'movies' ? 'films' : null;
+    return withFallback(
+      async () => (await getJSON<{ response: { docs: ArchiveDoc[] } }>(url, 30 * 60_000, signal)).response.docs.map(docToItem),
+      (s) => {
+        const h = s.heritage;
+        if (!h) return [];
+        const pool = bucket ? h[bucket] : [...h.kurdish, ...h.world];
+        const hits = pool.filter((it) => matches(q, it.title, it.creator));
+        return (hits.length ? hits : pool).slice(0, limit);
+      },
+      signal,
+    );
   },
 
   /** Resolve an item into playable tracks (one per audio file, or the best video file). */

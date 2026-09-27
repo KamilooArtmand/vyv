@@ -1,0 +1,18 @@
+# Supabase CLI project config (used by `supabase start` / `supabase db push`).
+project_id = "vyv"
+
+[auth]
+site_url = "http://localhost:3000"
+# Web origins + the desktop app's loopback callback.
+additional_redirect_urls = ["http://localhost:3000", "https://*.vercel.app", "http://127.0.0.1:47824/callback"]
+enable_manual_linking = true
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_GOOGLE_SECRET)"
+
+[auth.external.facebook]
+enabled = true
+client_id = "env(SUPABASE_AUTH_FACEBOOK_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_FACEBOOK_SECRET)"

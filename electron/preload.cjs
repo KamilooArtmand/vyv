@@ -26,4 +26,12 @@ contextBridge.exposeInMainWorld('vyvDesktop', {
   },
   oauth: (provider, clientId, scope) => ipcRenderer.invoke('auth:oauth', { provider, clientId, scope }),
   openExternal: (url) => ipcRenderer.send('open-external', url),
+  loopback: (url) => ipcRenderer.invoke('auth:loopback', url),
+  onUpdate: (cb) => {
+    const fn = (_e, s) => cb(s);
+    ipcRenderer.on('update:state', fn);
+    return () => ipcRenderer.off('update:state', fn);
+  },
+  installUpdate: () => ipcRenderer.send('update:install'),
+  version: () => ipcRenderer.invoke('app:version'),
 });

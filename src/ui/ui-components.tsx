@@ -84,6 +84,7 @@ export const Artwork = memo(function Artwork({
         className,
       )}
       style={{ backgroundImage: meshGradient(seed, color) }}
+      data-tone-color={color}
     >
       {showImg && (
         <img src={src} alt={alt} loading="lazy" decoding="async" draggable={false} onError={() => setFailed(true)} className="absolute inset-0 size-full object-cover" />
@@ -473,7 +474,8 @@ export function Slider({
         {...rest}
       />
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
-        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+        {/* --track-fill lets adaptive surfaces (dock, cover) force a legible ink. */}
+        <div className="h-full rounded-full bg-[var(--track-fill,var(--accent))]" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

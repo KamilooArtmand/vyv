@@ -25,6 +25,12 @@ export interface DesktopBridge {
   onSetMode: (cb: (m: PlayerMode) => void) => () => void;
   oauth: (provider: 'google' | 'facebook', clientId: string, scope: string) => Promise<{ accessToken: string; expiresIn?: number }>;
   openExternal: (url: string) => void;
+  /** Open `url` in the system browser and resolve with the query of the loopback callback (OAuth PKCE). */
+  loopback: (url: string) => Promise<{ code?: string; error?: string }>;
+  /** Auto-update status from the desktop shell. */
+  onUpdate: (cb: (s: { state: 'available' | 'downloaded' | 'none' | 'error'; version?: string }) => void) => () => void;
+  installUpdate: () => void;
+  version: () => Promise<string>;
 }
 
 export const desktop: DesktopBridge | undefined =

@@ -11,6 +11,7 @@ import {
   ListEnd,
   Loader2,
   Clapperboard,
+  Compass,
   ListStart,
   Mic,
   Radio,
@@ -185,6 +186,7 @@ export function AuthSheet({ onDone }: { onDone?: () => void }) {
 /** More Menu Sheet: Direct access to Wiki, Timeline, Audiobooks, Podcasts, Radio, Genres, etc. */
 export function MoreNavigationSheet() {
   const links = [
+    { name: 'discover', label: 'Discover', desc: 'Hundreds of tracks, stations, podcasts and films', icon: Compass },
     { name: 'wiki', label: 'Music Wiki & Essays', desc: 'Modal systems, Persian dastgah & ambient history', icon: ScrollText },
     { name: 'timeline', label: 'Sonic Timeline', desc: 'Chronological music history from 1968 to 2026', icon: History },
     { name: 'podcasts', label: 'Podcasts', desc: 'Audio shows, episodes & music theory stories', icon: Mic },

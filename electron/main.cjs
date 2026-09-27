@@ -73,7 +73,7 @@ async function createWindow() {
     roundedCorners: true,
     show: false,
     title: 'vyv',
-    icon: path.join(__dirname, '..', 'public', 'favicon.png'),
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -290,7 +290,66 @@ ipcMain.handle('auth:oauth', async (_e, { provider, clientId, scope }) => {
   throw new Error('unknown provider');
 });
 ipcMain.on('open-external', (_e, url) => /^https:\/\//.test(url) && shell.openExternal(url));
+ipcMain.handle('app:version', () => app.getVersion());
 
-app.whenReady().then(createWindow);
+/**
+ * Supabase OAuth on desktop (RFC 8252): open the provider in the system
+ * browser and wait for the PKCE code on a fixed loopback port. The port
+ * must be allow-listed in Supabase → Auth → URL Configuration.
+ */
+let loopbackServer = null;
+ipcMain.handle('auth:loopback', (_e, url) => {
+  if (!/^https:\/\//.test(url)) throw new Error('bad url');
+  loopbackServer?.close();
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      const u = new URL(req.url, 'http://127.0.0.1');
+      if (u.pathname !== '/callback') return res.end();
+      const code = u.searchParams.get('code');
+      const error = u.searchParams.get('error_description') || u.searchParams.get('error');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(`<body style="font:15px system-ui;background:#07080a;color:#f5f5f7;display:grid;place-items:center;height:100vh;margin:0"><p>${code ? 'Signed in to vyv. You can close this tab.' : 'Sign-in was cancelled. You can close this tab.'}</p></body>`);
+      server.close();
+      win?.focus();
+      resolve({ code: code || undefined, error: error || undefined });
+    });
+    loopbackServer = server;
+    server.on('error', () => resolve({ error: 'Port 47824 is busy' }));
+    server.listen(47824, '127.0.0.1', () => shell.openExternal(url));
+    setTimeout(() => {
+      server.close();
+      resolve({ error: 'timeout' });
+    }, 5 * 60_000);
+  });
+});
+
+// ── Auto-update (GitHub Releases, signed builds) ─────────────
+// Packaged builds check on launch and every 6 hours, download in the
+// background and tell the renderer; the user restarts when ready.
+function setupUpdates() {
+  if (DEV || !app.isPackaged) return;
+  let autoUpdater;
+  try {
+    ({ autoUpdater } = require('electron-updater'));
+  } catch {
+    return;
+  }
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  const send = (state, info) => win?.webContents.send('update:state', { state, version: info?.version });
+  autoUpdater.on('update-available', (i) => send('available', i));
+  autoUpdater.on('update-downloaded', (i) => send('downloaded', i));
+  autoUpdater.on('update-not-available', (i) => send('none', i));
+  autoUpdater.on('error', () => send('error'));
+  ipcMain.on('update:install', () => autoUpdater.quitAndInstall());
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  check();
+  setInterval(check, 6 * 60 * 60_000);
+}
+
+app.whenReady().then(async () => {
+  await createWindow();
+  setupUpdates();
+});
 app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit());
 app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && createWindow());

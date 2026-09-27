@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { desktop } from '../core/core-desktop';
+import { cloudEnabled } from './cloud';
 import type { AuthProvider, LinkedAccount } from '../core/core-types';
 
 const env = import.meta.env;
@@ -30,6 +31,8 @@ export class AuthError extends Error {
 }
 
 export function isConfigured(provider: AuthProvider): boolean {
+  // With Supabase, provider credentials live in the Supabase dashboard, not in the app.
+  if (cloudEnabled) return true;
   return provider === 'google' ? !!(desktop ? GOOGLE_DESKTOP_CLIENT_ID : GOOGLE_CLIENT_ID) : !!FACEBOOK_APP_ID;
 }
 

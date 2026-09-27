@@ -71,6 +71,7 @@ export class AudioEngine {
   private static onTimeUpdateCallbacks: ((time: number, duration: number) => void)[] = [];
   private static onStateChangeCallbacks: ((isPlaying: boolean) => void)[] = [];
   private static onErrorCallbacks: (() => void)[] = [];
+  private static onStallCallbacks: (() => void)[] = [];
   private static isInitialized = false;
   private static dataArray: Uint8Array | null = null;
 
@@ -112,6 +113,16 @@ export class AudioEngine {
       this.isPlaying = false;
       this.notifyState();
     });
+    let stallTimer: number | undefined;
+    const clearStall = () => window.clearTimeout(stallTimer);
+    el.addEventListener('waiting', () => {
+      if (el !== this.audio) return;
+      clearStall();
+      stallTimer = window.setTimeout(() => el === this.audio && this.onStallCallbacks.forEach((cb) => cb()), 12_000);
+    });
+    el.addEventListener('playing', clearStall);
+    el.addEventListener('timeupdate', clearStall);
+    el.addEventListener('emptied', clearStall);
     el.addEventListener('error', () => {
       if (el !== this.audio || !el.getAttribute('src')) return;
       this.isPlaying = false;
@@ -261,6 +272,7 @@ export class AudioEngine {
   static onTimeUpdate(cb: (t: number, d: number) => void) { this.onTimeUpdateCallbacks.push(cb); }
   static onStateChange(cb: (p: boolean) => void) { this.onStateChangeCallbacks.push(cb); }
   static onError(cb: () => void) { this.onErrorCallbacks.push(cb); }
+  static onStall(cb: () => void) { this.onStallCallbacks.push(cb); }
 
   private static notifyState(): void {
     this.onStateChangeCallbacks.forEach((cb) => cb(this.isPlaying));
@@ -338,6 +350,7 @@ function scheduleSleep(mins: number | null) {
 }
 
 let booted = false;
+let retriedId: string | null = null;
 export function bootPlayer() {
   if (booted) return;
   booted = true;
@@ -355,9 +368,26 @@ export function bootPlayer() {
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   });
   AudioEngine.onEnded(() => next(true));
+  // Stream resilience: reconnect once (radio drops, CDN hiccups), then move on.
   AudioEngine.onError(() => {
     const t = playerStore.get().track;
-    toast(t?.isRadio ? 'This station is offline right now' : 'Could not play this item');
+    if (!t) return;
+    if (retriedId !== t.id) {
+      retriedId = t.id;
+      window.setTimeout(() => {
+        if (playerStore.get().track?.id === t.id) AudioEngine.loadTrack(t.filePath, true, t.cors !== false);
+      }, 1500);
+      return;
+    }
+    const { queue } = playerStore.get();
+    const hasNext = queue.findIndex((q) => q.id === t.id) < queue.length - 1;
+    toast(t.isRadio ? 'Station offline — trying the next one' : hasNext ? 'Could not play this — skipping' : 'Could not play this item');
+    if (hasNext) window.setTimeout(() => next(true), 600);
+  });
+  // A live stream that stalls for 12 s gets reconnected.
+  AudioEngine.onStall(() => {
+    const t = playerStore.get().track;
+    if (t?.isRadio && playerStore.get().isPlaying) AudioEngine.loadTrack(t.filePath, true, t.cors !== false);
   });
 
   // Audio outputs
@@ -382,6 +412,7 @@ export function playTrack(track: Track, newQueue?: Track[]) {
   timeStore.set({ time: 0, duration: track.durationSeconds });
   applyAccent(track);
   updateMediaSession(track);
+  retriedId = null;
   AudioEngine.loadTrack(track.filePath, true, track.cors !== false);
 
   remember(track);

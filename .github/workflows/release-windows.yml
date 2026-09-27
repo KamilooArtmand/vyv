@@ -1,0 +1,76 @@
+# Builds the signed Windows installer and publishes it to GitHub Releases.
+# Installed apps update themselves from these releases (electron-updater).
+#
+# Trigger: push a tag like v2.0.1   (git tag v2.0.1 && git push origin v2.0.1)
+#
+# Code signing (strongly recommended — see docs/GUIDE-fa.md §7):
+#   Option A · Azure Artifact Signing (Trusted Signing), Microsoft's own service:
+#     secrets AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,
+#             AZURE_SIGNING_ENDPOINT, AZURE_SIGNING_ACCOUNT, AZURE_CERT_PROFILE
+#   Option B · an OV/EV code-signing certificate exported as .pfx:
+#     secrets WIN_CSC_LINK (base64 of the .pfx), WIN_CSC_KEY_PASSWORD
+# Without either, the build is unsigned (fine for testing, but SmartScreen will warn).
+
+name: Release · Windows
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build web bundle
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.VITE_GOOGLE_DESKTOP_CLIENT_ID }}
+          VITE_FACEBOOK_APP_ID: ${{ secrets.VITE_FACEBOOK_APP_ID }}
+          VITE_YOUTUBE_API_KEY: ${{ secrets.VITE_YOUTUBE_API_KEY }}
+      - name: Package, sign and publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          ARGS=(--win nsis --publish always)
+          if [ -n "$AZURE_CLIENT_ID" ]; then
+            echo "Signing with Azure Artifact Signing"
+            ARGS+=(-c.win.azureSignOptions.endpoint="$AZURE_SIGNING_ENDPOINT"
+                   -c.win.azureSignOptions.codeSigningAccountName="$AZURE_SIGNING_ACCOUNT"
+                   -c.win.azureSignOptions.certificateProfileName="$AZURE_CERT_PROFILE"
+                   -c.win.azureSignOptions.publisherName="KRD")
+          elif [ -n "$WIN_CSC_LINK" ]; then
+            echo "Signing with the .pfx certificate"
+            export CSC_LINK="$WIN_CSC_LINK" CSC_KEY_PASSWORD="$WIN_CSC_KEY_PASSWORD"
+          else
+            echo "::warning::No signing secrets — building an UNSIGNED installer (SmartScreen will warn)."
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
+          npx electron-builder "${ARGS[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vyv-windows
+          path: |
+            release/*.exe
+            release/latest.yml

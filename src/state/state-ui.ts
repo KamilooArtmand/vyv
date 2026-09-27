@@ -4,6 +4,7 @@
 
 import { createStore } from '../core/core-store';
 import { signInWith, signOutProviders } from '../services/auth';
+import { cloudEnabled, cloudSignIn, cloudSignOut, cloudUnlink, onCloudUser, saveProfile } from '../services/cloud';
 import type { AgentMessage, AuthProvider, LinkedAccount, PlayerMode, Route, RouteName, ThemePref, User } from '../core/core-types';
 
 const ROUTES: RouteName[] = [
@@ -30,6 +31,7 @@ const ROUTES: RouteName[] = [
   'profile',
   'settings',
   'video',
+  'discover',
 ];
 
 const toHash = (r: Route) => `#/${r.name}${r.id ? `/${encodeURIComponent(r.id)}` : ''}`;
@@ -279,6 +281,12 @@ export const AuthService = {
     if (authStore.get().busy) return false;
     authStore.set({ busy: provider });
     try {
+      if (cloudEnabled) {
+        // Supabase: the web redirects away and back; desktop resolves in place.
+        // The account then arrives through onCloudUser below.
+        await cloudSignIn(provider, !!authStore.get().user);
+        return true;
+      }
       const account = await signInWith(provider);
       const current = authStore.get().user;
       if (current) {
@@ -303,6 +311,13 @@ export const AuthService = {
   disconnect(provider: AuthProvider) {
     const current = authStore.get().user;
     if (!current) return;
+    if (cloudEnabled) {
+      if (current.accounts.length <= 1) return AuthService.logout();
+      cloudUnlink(provider)
+        .then(() => toast(`${PROVIDER_NAME[provider]} disconnected`, 'check'))
+        .catch((e: Error) => toast(e.message));
+      return;
+    }
     const accounts = current.accounts.filter((a) => a.provider !== provider);
     if (!accounts.length) return AuthService.logout();
     saveUser({ ...current, accounts, provider: accounts[0].provider });
@@ -312,6 +327,7 @@ export const AuthService = {
   updateUserProfile: (username: string, handle: string, bio: string, avatarUrl: string, coverUrl: string) => {
     const current = authStore.get().user;
     if (!current) return;
+    if (cloudEnabled) saveProfile(current.id, { username, handle: handle.startsWith('@') ? handle : `@${handle}`, bio, avatarUrl, coverUrl });
     saveUser({
       ...current,
       username,
@@ -323,10 +339,14 @@ export const AuthService = {
   },
 
   logout: () => {
+    if (cloudEnabled) cloudSignOut();
     signOutProviders();
     saveUser(null);
   },
 };
+
+// Supabase is the source of truth for the account when configured.
+onCloudUser((user) => saveUser(user));
 
 // Drop the old simulated accounts from earlier prototypes.
 try {

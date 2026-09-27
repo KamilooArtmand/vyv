@@ -12,7 +12,10 @@ import { CoverPlayer, MicroPlayer, NanoPlayer } from './ui/ui-modes';
 import { AgentOverlay, SidePanel } from './ui/ui-panels';
 import { Sheets } from './ui/ui-sheets';
 import { ResizeEdges } from './ui/ui-window';
+import { UpdateBanner } from './ui/ui-update';
 import { desktop } from './core/core-desktop';
+import { loadSnapshot } from './services/snapshot';
+import { startSync } from './services/sync';
 import type { RouteName } from './core/core-types';
 
 const named = <K extends string>(p: Promise<Record<K, ComponentType<{ id?: string }>>>, k: K) =>
@@ -24,6 +27,7 @@ const VIEWS: Record<RouteName, ComponentType<{ id?: string }>> = {
   library: lazy(() => named(import('./views/view-media'), 'LibraryView')),
   playlist: lazy(() => named(import('./views/view-media'), 'PlaylistView')),
   video: lazy(() => import('./views/view-video')),
+  discover: lazy(() => import('./views/view-discover')),
   bookmarks: lazy(() => named(import('./views/view-extra'), 'BookmarksView')),
   notifications: lazy(() => named(import('./views/view-extra'), 'NotificationsView')),
   podcasts: lazy(() => named(import('./views/view-media'), 'PodcastsView')),
@@ -55,7 +59,9 @@ export function App() {
 
   useEffect(() => {
     bootPlayer();
+    loadSnapshot(); // warm the bundled catalogue so fallbacks are instant
   }, []);
+  useEffect(() => startSync(), []);
 
   // Desktop: every player mode is a real OS window shape (square, pill, orb).
   useEffect(() => {
@@ -142,6 +148,7 @@ export function App() {
 
       <Sheets />
       <Toast />
+      <UpdateBanner />
     </div>
   );
 }

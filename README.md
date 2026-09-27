@@ -1,5 +1,7 @@
 # vyv
 
+> **راهنمای فارسی کامل (اجرا، دیتابیس، ورود با Gmail/Facebook، انتشار، نصب‌کنندهٔ ویندوز، گواهی امضا): [docs/GUIDE-fa.md](docs/GUIDE-fa.md)**
+
 A minimal, agent-powered player for music, radio, podcasts and audiobooks.
 Icon-only UI, two themes (**Obsidian** dark · **Porcelain** light), rounded everything, and an AI agent that understands moods, years, questions and commands.
 
@@ -24,6 +26,16 @@ npm run dist:win      # NSIS installer + MSIX (Microsoft Store) in release/
 
 The desktop shell (`electron/`) is a frameless, transparent window: the app draws its own curved body (`--win-r`) and minimal close / minimise / maximise glyphs straight on the header — no title bar, no button fills. The header is the drag handle (double-click maximises) and the edges resize. Player modes reshape the real OS window: **Cover** becomes a square, **Micro** a floating pill and **Nano** a floating orb, both always on top; right-click the vyv mark for a native mode menu. Add a 256 px+ icon to `build.win.icon` before shipping installers.
 
+## Deploy & release
+
+- **Web** — Vercel (`vercel.json`; every push to `main` deploys). Netlify / Cloudflare Pages work with the same build (`netlify.toml`). Open tabs offer a reload when a new deploy lands.
+- **Windows** — push a `v*` tag: `.github/workflows/release-windows.yml` builds the NSIS installer on a Windows runner, signs it (Azure Artifact Signing or a .pfx, via secrets) and publishes to GitHub Releases. Installed apps auto-update from there (`electron-updater`). `npm run dist:store` builds the MSIX for the Microsoft Store.
+- **Keeping current** — Dependabot opens weekly grouped update PRs; CI builds every PR; `refresh-catalog.yml` refreshes the bundled catalogue daily.
+
+## Database (Supabase)
+
+`supabase/migrations/` creates `profiles` and `libraries` (one row per user: likes, bookmarks, playlists, history, resume positions, saved live-source items, settings) with Row Level Security — a user can only touch their own rows. With `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` set, sign-in goes through Supabase Auth (Google / Facebook OAuth, PKCE; desktop via a loopback callback on `127.0.0.1:47824`) and the library syncs across devices in real time (`src/services/sync.ts`). Without them, everything stays on the device.
+
 ## Accounts
 
 There are no usernames or passwords. The account **is** the user's Google (Gmail) or Facebook identity; either can be linked to the same profile later (Settings → Account, or Profile).
@@ -43,6 +55,10 @@ Real services, real playback — results map onto the app's own `Track` type, so
 | Apple Podcasts directory | Any podcast: search, show pages, real episode audio, resume | none |
 | Internet Archive | Heritage recordings, LibriVox audiobooks, public-domain films | none |
 | YouTube | Video search + official embedded player | `VITE_YOUTUBE_API_KEY` |
+
+A bundled snapshot (`public/catalog/snapshot.json`, 1,200+ real items: ~380 stations, ~390 full tracks, ~280 Archive recordings/books/films, ~170 podcasts) renders instantly on **Discover** and is the automatic fallback whenever a live API is down; `npm run catalog` regenerates it. Streams reconnect once on error or a 12 s stall, then skip.
+
+The **player dock** samples what is actually behind it (`src/ui/ui-backdrop.ts`: element hit-testing, image pixels, gradient stops, artwork colour hints) and switches its own ink and veil strength, independent of the app theme, so it stays legible over white, black, neon or busy content.
 
 Hosts that send no CORS headers (most radio streams and podcast CDNs) play through a second audio element outside the Web Audio graph, so they never go silent; CORS-enabled sources (Audius, Archive) keep the EQ and visualiser. `src/services/sources.ts` is the single integration point.
 
