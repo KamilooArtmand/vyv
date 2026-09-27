@@ -8,7 +8,7 @@ import type { BookmarkKind, Track } from '../core/core-types';
 import { cn, formatTime, hash } from '../core/core-utils';
 import { useStore } from '../core/core-store';
 import { getActiveLyricIndex, playQueue, playTrack, playerStore, seek, timeStore, togglePlay, AudioEngine } from '../state/state-player';
-import { toggleBookmark, toggleFavorite, useIsBookmarked, useIsFavorite } from '../state/state-catalog';
+import { remember, toggleBookmark, toggleFavorite, useIsBookmarked, useIsFavorite } from '../state/state-catalog';
 import { navigate, openSheet } from '../state/state-ui';
 
 // ── Artwork & Generative Mesh Gradient ───────────────────────
@@ -112,13 +112,15 @@ const VARIANTS = {
   solid: 'bg-fg text-bg hover:opacity-90 shadow-[var(--shadow-1)]',
   accent: 'bg-accent text-on-accent hover:brightness-110 shadow-[0_10px_30px_-10px_var(--accent)]',
   glass: 'glass text-fg hover:bg-surface-2',
+  /** Icon drawn straight on the background — no chip, no fill, not even on hover. */
+  bare: 'text-fg-2 hover:text-fg',
 };
 
 export const IconButton = forwardRef<HTMLButtonElement, {
   icon: LucideIcon;
   label: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'ghost' | 'soft' | 'solid' | 'accent' | 'glass';
+  variant?: 'ghost' | 'soft' | 'solid' | 'accent' | 'glass' | 'bare';
   active?: boolean;
   filled?: boolean;
   tip?: 'top' | 'right' | 'bottom' | false;
@@ -135,12 +137,12 @@ export const IconButton = forwardRef<HTMLButtonElement, {
       aria-pressed={active}
       data-tip={tip ? label : undefined}
       data-tip-side={tip && tip !== 'top' ? tip : undefined}
-      className={cn('press relative inline-flex shrink-0 items-center justify-center rounded-full outline-none disabled:pointer-events-none disabled:opacity-35', SIZES[size], VARIANTS[variant], active && variant === 'ghost' && '!text-accent-ink', className)}
+      className={cn('press relative inline-flex shrink-0 items-center justify-center rounded-full outline-none disabled:pointer-events-none disabled:opacity-35', SIZES[size], VARIANTS[variant], active && (variant === 'ghost' || variant === 'bare') && '!text-accent-ink', className)}
       {...rest}
     >
       <Icon size={ICON_SIZES[size]} strokeWidth={1.75} className={cn(filled && 'fill-current')} />
       {badge ? (
-        <span className="absolute right-1.5 top-1.5 flex min-w-2 items-center justify-center rounded-full bg-live px-[3px] text-[9px] font-semibold leading-[14px] text-white ring-2 ring-bg">
+        <span className="absolute right-1.5 top-1.5 flex min-w-2 items-center justify-center rounded-full bg-[#ff3c00] px-[3px] text-[9px] font-semibold leading-[14px] text-white ring-2 ring-bg">
           {typeof badge === 'number' ? (badge > 9 ? '9+' : badge) : null}
         </span>
       ) : null}
@@ -320,7 +322,7 @@ export function TrackRow({ track, queue, numbered, index }: { track: Track; queu
         filled={fav}
         onClick={(e) => {
           e.stopPropagation();
-          toggleFavorite(track.id);
+          toggleFavorite(track.id, track);
         }}
         className={cn(!fav && 'opacity-0 group-hover/row:opacity-100')}
       />
@@ -332,6 +334,7 @@ export function TrackRow({ track, queue, numbered, index }: { track: Track; queu
         tip={false}
         onClick={(e) => {
           e.stopPropagation();
+          remember(track);
           openSheet('addto', track.id);
         }}
       />
@@ -532,12 +535,22 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
   );
 }
 
-export function LogoMark({ className, animated }: { className?: string; animated?: boolean }) {
+export function LogoMark({ className, animated, bare }: { className?: string; animated?: boolean; bare?: boolean }) {
+  // Bare: the mark sits straight on the background, no tile. The dot is the
+  // only place brand orange appears (Bible § Logo & Mark).
+  if (bare) {
+    return (
+      <svg viewBox="6 6 20 20" className={cn('size-7', className)} aria-hidden>
+        <path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="var(--fg)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="16" cy="11" r="2.3" fill="#ff3c00" className={animated ? 'anim-live origin-center [transform-box:fill-box]' : undefined} />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 32 32" className={cn('size-8', className)} aria-hidden>
       <rect width="32" height="32" rx="10" fill="var(--fg)" />
       <path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="var(--bg)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="16" cy="11" r="2.3" fill="var(--fg)" className={animated ? 'anim-live origin-center' : undefined} />
+      <circle cx="16" cy="11" r="2.3" fill="#ff3c00" className={animated ? 'anim-live origin-center [transform-box:fill-box]' : undefined} />
     </svg>
   );
 }

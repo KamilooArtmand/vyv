@@ -2,7 +2,10 @@
 // core-types.ts: Universal Data Contracts & Domain Types
 // ─────────────────────────────────────────────────────────────
 
-export type MediaKind = 'music' | 'radio' | 'podcast' | 'audiobook';
+export type MediaKind = 'music' | 'radio' | 'podcast' | 'audiobook' | 'video';
+
+/** Where a playable item comes from. Everything except `vyv` and `local` is a live, real service. */
+export type SourceId = 'vyv' | 'local' | 'radiobrowser' | 'audius' | 'itunes' | 'archive' | 'youtube';
 
 export type Mood = 'calm' | 'focus' | 'energy' | 'night' | 'happy' | 'melancholy';
 
@@ -25,6 +28,28 @@ export interface Track {
   genreId?: string;
   year?: number;
   moods?: Mood[];
+  /** Origin service; absent means the built-in vyv catalogue. */
+  source?: SourceId;
+  /** False when the media host sends no CORS headers: play it outside the Web Audio graph. */
+  cors?: boolean;
+  /** Page on the origin service (attribution / "open in"). */
+  pageUrl?: string;
+  /** YouTube video id (video items rendered with the IFrame player). */
+  youtubeId?: string;
+  description?: string;
+}
+
+export type AuthProvider = 'google' | 'facebook';
+
+/** A social identity linked to the vyv profile. vyv has no passwords: these ARE the account. */
+export interface LinkedAccount {
+  provider: AuthProvider;
+  /** Provider's stable subject id. */
+  sub: string;
+  name: string;
+  email?: string;
+  picture?: string;
+  linkedAt: string;
 }
 
 export interface User {
@@ -37,6 +62,9 @@ export interface User {
   bio: string;
   followersCount: number;
   followingCount: number;
+  /** Provider used to create the account. */
+  provider: AuthProvider;
+  accounts: LinkedAccount[];
 }
 
 export interface LyricLine {
@@ -162,7 +190,8 @@ export type RouteName =
   | 'wiki'
   | 'article'
   | 'profile'
-  | 'settings';
+  | 'settings'
+  | 'video';
 
 export interface Route {
   name: RouteName;
@@ -180,7 +209,7 @@ export interface NotificationItem {
   imageUrl?: string;
 }
 
-export type BookmarkKind = 'track' | 'artist' | 'album' | 'playlist' | 'show' | 'book' | 'station' | 'wiki' | 'genre';
+export type BookmarkKind = 'track' | 'artist' | 'album' | 'playlist' | 'show' | 'book' | 'station' | 'wiki' | 'genre' | 'video';
 
 export interface Bookmark {
   kind: BookmarkKind;

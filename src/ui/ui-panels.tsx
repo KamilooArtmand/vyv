@@ -54,7 +54,7 @@ export function SidePanel() {
   if (!panel) return null;
 
   return (
-    <aside className="glass my-3 mr-3 hidden w-[360px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] lg:flex p-3">
+    <aside className="glass mb-[calc(var(--dock-h)+var(--dock-gap)*2)] mr-3 mt-1 hidden w-[360px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] lg:flex p-3">
       <div className="flex items-center justify-between gap-2 mb-3">
         <Segmented
           value={panel}

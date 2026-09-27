@@ -19,6 +19,7 @@ import {
   VolumeX,
   Check,
   Gauge,
+  Maximize2,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { formatTime } from '../core/core-utils';
@@ -39,7 +40,9 @@ import {
   toggleShuffle,
 } from '../state/state-player';
 import { cyclePlayerMode, settingsStore, setMode, toast } from '../state/state-ui';
-import { Artwork, IconButton, LogoMark, LyricsView, Slider, Visualizer } from './ui-components';
+import { Artwork, IconButton, LogoMark, LyricsView, Slider } from './ui-components';
+import { ResizeEdges } from './ui-window';
+import { desktop } from '../core/core-desktop';
 
 /** Miniature interactive Logo Button with Left-Click Cycle, Long-Press Menu, and Right-Click Context Menu */
 function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
@@ -51,8 +54,8 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
     isLongPress.current = false;
     longPressTimer.current = window.setTimeout(() => {
       isLongPress.current = true;
-      setMenuOpen(true);
-      toast('Mode options', 'sparkles');
+      if (desktop) desktop.showModeMenu(currentMode);
+      else setMenuOpen(true);
     }, 450);
   };
 
@@ -71,10 +74,12 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
     cyclePlayerMode();
   };
 
+  // On desktop the menu is native, so it can extend past a tiny Micro/Nano window.
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setMenuOpen(true);
+    if (desktop) desktop.showModeMenu(currentMode);
+    else setMenuOpen(true);
   };
 
   useEffect(() => {
@@ -102,18 +107,18 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
         onTouchEnd={endPress}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
-        className="press group relative flex size-8 items-center justify-center rounded-full bg-surface-2 hover:bg-surface-3 transition-colors shadow-sm"
-        title="Left click: Next mode | Long press or Right click: Mode menu"
+        className="press group relative flex size-8 items-center justify-center rounded-full"
+        title="Click: next mode · Right click: all modes"
         aria-label="Player mode"
       >
-        <LogoMark className="size-4.5 group-hover:scale-105 transition-transform" />
+        <LogoMark bare className="size-5 transition-transform group-hover:scale-110" />
       </button>
 
       {/* Popover / Context Menu */}
       {menuOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="glass-strong anim-pop absolute bottom-full mb-2 right-0 z-[100] w-48 rounded-2xl p-1.5 shadow-2xl border border-line-2 text-left"
+          className="glass-strong anim-pop absolute right-0 top-full mt-2 z-[100] w-48 rounded-2xl p-1.5 shadow-2xl border border-line-2 text-left"
         >
           <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-3">
             Switch Display Mode
@@ -148,6 +153,35 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
   );
 }
 
+/** White-on-art ink: local token overrides so every shared control reads on the cover. */
+const ON_ART = {
+  '--fg': '#ffffff',
+  '--fg-2': 'rgb(255 255 255 / 0.82)',
+  '--fg-3': 'rgb(255 255 255 / 0.62)',
+  '--bg': '#000000',
+  '--surface-2': 'rgb(255 255 255 / 0.16)',
+  '--surface-3': 'rgb(255 255 255 / 0.28)',
+  '--accent-ink': '#ffffff',
+  '--track-fill': '#ffffff',
+} as React.CSSProperties;
+
+/** Controls stay visible for a moment after the pointer moves, like a video player. */
+function useIdleReveal(ms = 2400) {
+  const [awake, setAwake] = useState(false);
+  const t = useRef<number | undefined>(undefined);
+  const poke = () => {
+    setAwake(true);
+    window.clearTimeout(t.current);
+    t.current = window.setTimeout(() => setAwake(false), ms);
+  };
+  useEffect(() => () => window.clearTimeout(t.current), []);
+  return [awake, poke] as const;
+}
+
+/**
+ * Cover: a square, opaque window that is nothing but the artwork. Transport,
+ * scrubber, volume and extras fade in only while the pointer is over it.
+ */
 export function CoverPlayer() {
   const currentTrack = useStore(playerStore, (s) => s.track) || SEED_TRACKS[0];
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
@@ -162,7 +196,9 @@ export function CoverPlayer() {
   const fav = useIsFavorite(currentTrack?.id);
   const [showLyrics, setShowLyrics] = useState(false);
   const [sleepIdx, setSleepIdx] = useState(0);
+  const [awake, poke] = useIdleReveal();
   const spoken = currentTrack.kind === 'podcast' || currentTrack.kind === 'audiobook';
+  const live = !!currentTrack.isRadio;
   const sleepMins = sleepAt ? Math.max(1, Math.round((sleepAt - Date.now()) / 60_000)) : null;
 
   const cycleSpeed = () => {
@@ -175,179 +211,108 @@ export function CoverPlayer() {
     setSleepIdx(n);
     setSleep(options[n]);
   };
+  const pill = 'press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-1.5 text-[12px] font-semibold tabular text-fg-2 hover:text-fg';
 
   return (
-    <div className="anim-fade fixed inset-0 z-50 flex flex-col bg-bg text-fg select-none overflow-hidden">
-      {/* Background ambient blur */}
+    <div className="mode-stage anim-fade">
+      <ResizeEdges />
       <div
-        className="pointer-events-none absolute inset-0 opacity-25 blur-3xl scale-125 transition-all duration-700"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 40%, ${currentTrack.dominantColorHex || 'var(--accent)'} 0%, transparent 60%)`,
-        }}
-      />
+        className="mode-cover mode-surface reveal-host anim-pop select-none"
+        data-show={awake || showLyrics}
+        onPointerMove={poke}
+        onPointerDown={poke}
+        style={ON_ART}
+      >
+        <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} className="absolute inset-0 size-full !rounded-none" />
 
-      {/* Top Header Bar */}
-      <header className="relative z-10 flex h-16 items-center justify-between px-6 md:px-10 border-b border-line-2 bg-bg/40 backdrop-blur-md">
-        <IconButton
-          icon={ChevronDown}
-          label="Back to Full App"
-          size="md"
-          variant="soft"
-          onClick={() => setMode('Full')}
-        />
-        <div className="text-center min-w-0 px-4">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-fg-3">Now Playing</div>
-          <div className="text-xs font-medium text-fg truncate">{currentTrack.album}</div>
+        {/* Drag handle for the desktop window (top centre, clear of the controls). */}
+        <div className="drag absolute inset-x-[22%] top-0 z-10 h-14" aria-hidden />
+
+        {showLyrics && lyrics.length > 0 && (
+          <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-xl">
+            <LyricsView className="h-full px-10 py-20 text-center" large />
+          </div>
+        )}
+
+        {/* Top: back to the app, like, modes. */}
+        <div className="reveal absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-[linear-gradient(to_bottom,rgb(0_0_0/0.5),transparent)] px-6 pb-10 pt-5 text-fg">
+          <IconButton icon={ChevronDown} label="Back to app" size="sm" variant="bare" tip="bottom" onClick={() => setMode('Full')} />
+          <div className="flex items-center gap-1">
+            {!live && (
+              <IconButton
+                icon={Heart}
+                label={fav ? 'Liked' : 'Like'}
+                size="sm"
+                variant="bare"
+                tip="bottom"
+                active={fav}
+                filled={fav}
+                onClick={() => {
+                  toggleFavorite(currentTrack.id, currentTrack);
+                  toast(fav ? 'Removed from liked' : 'Added to liked', 'heart');
+                }}
+              />
+            )}
+            <MiniModeLogo currentMode="Cover" />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <MiniModeLogo currentMode="Cover" />
-        </div>
-      </header>
 
-      {/* Main Center Section */}
-      <main className="relative z-10 flex flex-1 flex-col items-center justify-center p-6 md:p-12 overflow-y-auto">
-        <div className="flex flex-col items-center max-w-lg w-full">
-          {/* Large Artwork */}
-          <div className="relative group/art aspect-square w-64 sm:w-80 md:w-96 shadow-[0_30px_90px_-20px_rgba(0,0,0,0.6)] rounded-[28px] overflow-hidden">
-            <Artwork
-              seed={currentTrack.id}
-              color={currentTrack.dominantColorHex}
-              src={currentTrack.coverUrl}
-              className="size-full [--art-r:28px]"
-            />
-            {/* Visualizer overlay */}
-            <Visualizer
-              bars={32}
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 opacity-30"
-              mirror
-            />
+        {/* Bottom: meta, scrubber, transport, volume & extras. */}
+        <div className="reveal absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,rgb(0_0_0/0.72),rgb(0_0_0/0.35)_65%,transparent)] px-[clamp(22px,7%,40px)] pb-[clamp(20px,6%,34px)] pt-24 text-fg">
+          <div className="min-w-0">
+            <div className="truncate text-[clamp(17px,4.2vmin,26px)] font-semibold tracking-[-0.03em]">{currentTrack.title}</div>
+            <div className="truncate text-[13.5px] text-fg-2">{currentTrack.artist}</div>
           </div>
 
-          {/* Title & Artist & Favorite */}
-          <div className="mt-8 flex w-full items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight truncate">{currentTrack.title}</h1>
-              <p className="text-base text-fg-3 mt-1 truncate">{currentTrack.artist}</p>
+          {live ? (
+            <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-fg-2">
+              <span className="anim-live size-1.5 rounded-full bg-[#ff3c00]" /> Live
             </div>
-            <IconButton
-              icon={Heart}
-              label={fav ? 'Liked' : 'Like'}
-              size="lg"
-              variant="soft"
-              active={fav}
-              filled={fav}
-              onClick={() => {
-                toggleFavorite(currentTrack.id);
-                toast(fav ? 'Removed from liked' : 'Added to favorites', 'heart');
-              }}
-            />
-          </div>
-
-          {/* Scrubber & Time */}
-          <div className="w-full mt-6">
-            <Slider
-              value={time}
-              max={duration || 1}
-              step={0.1}
-              onChange={seek}
-              label="Seek timeline"
-              className="h-6"
-            />
-            <div className="flex justify-between text-xs text-fg-3 tabular font-medium mt-1">
-              <span>{formatTime(time)}</span>
-              <span>{formatTime(duration)}</span>
+          ) : (
+            <div className="mt-2">
+              <Slider value={time} max={duration || 1} step={0.1} onChange={seek} label="Seek" />
+              <div className="flex justify-between text-[11px] font-medium tabular text-fg-3">
+                <span>{formatTime(time)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Transport playback controls */}
-          <div className="flex w-full items-center justify-between mt-6 px-2">
-            <IconButton
-              icon={Shuffle}
-              label="Shuffle"
-              size="md"
-              active={shuffle}
-              onClick={toggleShuffle}
-            />
-            <IconButton
-              icon={SkipBack}
-              label="Previous"
-              size="lg"
-              onClick={prev}
-            />
-            <IconButton
-              icon={isPlaying ? Pause : Play}
-              label={isPlaying ? 'Pause' : 'Play'}
-              variant="solid"
-              size="xl"
-              onClick={togglePlay}
-              className="shadow-xl"
-            />
-            <IconButton
-              icon={SkipForward}
-              label="Next"
-              size="lg"
-              onClick={() => next()}
-            />
-            <IconButton
-              icon={repeat === 'one' ? Repeat1 : Repeat}
-              label="Repeat"
-              size="md"
-              active={repeat !== 'off'}
-              onClick={cycleRepeat}
-            />
-          </div>
-
-          {/* Secondary bar: Volume, Speed, Sleep & Lyrics */}
-          <div className="mt-8 flex w-full flex-wrap items-center justify-between gap-3 border-t border-line-2 pt-6">
-            <div className="flex w-40 items-center gap-2">
-              <IconButton icon={muted ? VolumeX : Volume2} label="Mute" size="sm" onClick={toggleMute} />
-              <Slider value={muted ? 0 : volume} max={1} step={0.01} onChange={setVolume} label="Volume" />
+          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center">
+            <div className="flex items-center gap-1">
+              <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} />
+              <Slider value={muted ? 0 : volume} onChange={setVolume} label="Volume" className="w-[min(88px,13vmin)]" />
             </div>
-
             <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={cycleSpeed}
-                aria-label="Playback speed"
-                className={`press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold tabular hover:bg-surface-2 ${speed !== 1 ? 'text-accent-ink' : 'text-fg-3'}`}
-              >
-                <Gauge size={15} strokeWidth={1.75} />
-                {speed !== 1 && `${speed}×`}
-              </button>
+              <IconButton icon={SkipBack} label="Previous" variant="bare" onClick={prev} className="[&_svg]:fill-current" />
+              <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" size="lg" onClick={togglePlay} className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'} />
+              <IconButton icon={SkipForward} label="Next" variant="bare" onClick={() => next()} className="[&_svg]:fill-current" />
+            </div>
+            <div className="flex items-center justify-end">
+              {!live && <IconButton icon={Shuffle} label="Shuffle" size="sm" variant="bare" active={shuffle} onClick={toggleShuffle} />}
+              {!live && <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label="Repeat" size="sm" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />}
+              {!live && (
+                <button type="button" onClick={cycleSpeed} aria-label="Playback speed" className={pill}>
+                  <Gauge size={15} strokeWidth={1.75} />
+                  {speed !== 1 && `${speed}×`}
+                </button>
+              )}
               {spoken && (
-                <button
-                  type="button"
-                  onClick={cycleSleep}
-                  aria-label="Sleep timer"
-                  className={`press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold tabular hover:bg-surface-2 ${sleepMins ? 'text-accent-ink' : 'text-fg-3'}`}
-                >
+                <button type="button" onClick={cycleSleep} aria-label="Sleep timer" className={pill}>
                   <Moon size={15} strokeWidth={1.75} />
                   {sleepMins && `${sleepMins}m`}
                 </button>
               )}
-              {lyrics.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowLyrics(!showLyrics)}
-                  className={`press flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    showLyrics ? 'bg-fg text-bg' : 'bg-surface-2 text-fg hover:bg-surface-3'
-                  }`}
-                >
-                  <MicVocal size={14} />
-                  <span>Lyrics</span>
-                </button>
-              )}
+              {lyrics.length > 0 && <IconButton icon={MicVocal} label="Lyrics" size="sm" variant="bare" active={showLyrics} onClick={() => setShowLyrics(!showLyrics)} />}
             </div>
           </div>
-
-          {/* Synchronized lyrics container */}
-          {showLyrics && lyrics.length > 0 && <LyricsView className="mt-4 h-48 w-full rounded-2xl bg-surface-2/60 px-2 text-center backdrop-blur-md" />}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
 
+/** Micro: an opaque capsule — art, title, transport. Floats on top on desktop. */
 export function MicroPlayer() {
   const currentTrack = useStore(playerStore, (s) => s.track) || SEED_TRACKS[0];
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
@@ -355,110 +320,75 @@ export function MicroPlayer() {
   const progress = duration ? Math.min(100, (time / duration) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="glass-strong anim-pop relative flex w-full max-w-[420px] items-center gap-3.5 rounded-[28px] p-3.5 shadow-2xl border border-line-2">
-        <Artwork
-          seed={currentTrack.id}
-          color={currentTrack.dominantColorHex}
-          src={currentTrack.coverUrl}
-          className="size-14 [--art-r:16px] shrink-0"
-        />
+    <div className="mode-stage anim-fade">
+      <div className="mode-micro mode-surface drag anim-pop flex items-center gap-3 pl-3 pr-4">
+        {/* 64px circle inset 12px: concentric with the capsule's 44px ends. */}
+        <button type="button" aria-label="Open cover" onClick={() => setMode('Cover')} className="press shrink-0">
+          <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} shape="circle" className="size-16" />
+        </button>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-bold text-fg">{currentTrack.title}</div>
+          <div className="truncate text-[14px] font-semibold text-fg">{currentTrack.title}</div>
           <div className="truncate text-[12px] text-fg-3">{currentTrack.artist}</div>
-          {/* Progress bar */}
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-surface-3">
-            <div
-              className="h-full rounded-full bg-accent transition-[width] duration-300"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-surface-3">
+            {currentTrack.isRadio ? <div className="skeleton size-full" /> : <div className="h-full rounded-full bg-fg transition-[width] duration-300" style={{ width: `${progress}%` }} />}
           </div>
         </div>
 
-        <IconButton icon={SkipBack} label="Previous" size="sm" onClick={prev} />
-        <IconButton
-          icon={isPlaying ? Pause : Play}
-          label={isPlaying ? 'Pause' : 'Play'}
-          variant="solid"
-          size="md"
-          onClick={togglePlay}
-        />
-        <IconButton icon={SkipForward} label="Next" size="sm" onClick={() => next()} />
-
-        {/* Clean Single Mode Trigger: Mini Logo */}
-        <MiniModeLogo currentMode="Micro" />
+        <div className="flex items-center">
+          <IconButton icon={SkipBack} label="Previous" size="sm" variant="bare" tip={false} onClick={prev} className="[&_svg]:fill-current" />
+          <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" tip={false} onClick={togglePlay} className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'} />
+          <IconButton icon={SkipForward} label="Next" size="sm" variant="bare" tip={false} onClick={() => next()} className="[&_svg]:fill-current" />
+          <MiniModeLogo currentMode="Micro" />
+        </div>
       </div>
     </div>
   );
 }
 
+/** Nano: an opaque orb with a progress ring. Hover reveals play/pause; the rim drags. */
 export function NanoPlayer() {
   const currentTrack = useStore(playerStore, (s) => s.track) || SEED_TRACKS[0];
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   const { time, duration } = useStore(timeStore, (s) => s);
-  const progress = duration ? Math.min(1, time / duration) : 0;
-
-  const R = 64;
+  const progress = currentTrack.isRadio ? 1 : duration ? Math.min(1, time / duration) : 0;
+  const R = 78;
   const C = 2 * Math.PI * R;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/50 backdrop-blur-md">
-      <div className="relative flex flex-col items-center">
-        {/* Circular Progress Ring */}
-        <div className="relative size-[152px] flex items-center justify-center">
-          <svg className="absolute inset-0 size-full -rotate-90" viewBox="0 0 152 152">
-            <circle
-              cx="76"
-              cy="76"
-              r={R}
-              fill="none"
-              stroke="var(--surface-3)"
-              strokeWidth="4"
-            />
-            <circle
-              cx="76"
-              cy="76"
-              r={R}
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth="4"
-              strokeDasharray={C}
-              strokeDashoffset={C * (1 - progress)}
-              strokeLinecap="round"
-              className="transition-[stroke-dashoffset] duration-300"
-            />
-          </svg>
+    <div className="mode-stage anim-fade">
+      <div className="mode-nano mode-surface drag reveal-host anim-pop">
+        <svg className="pointer-events-none absolute inset-0 size-full -rotate-90" viewBox="0 0 168 168" aria-hidden>
+          <circle cx="84" cy="84" r={R} fill="none" stroke="var(--surface-3)" strokeWidth="3" />
+          <circle cx="84" cy="84" r={R} fill="none" stroke="#ff3c00" strokeWidth="3" strokeDasharray={C} strokeDashoffset={C * (1 - progress)} strokeLinecap="round" className="transition-[stroke-dashoffset] duration-300" />
+        </svg>
 
-          {/* Central Play/Pause Orb */}
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="press group relative size-[132px] rounded-full overflow-hidden shadow-2xl p-1"
-          >
-            <Artwork
-              seed={currentTrack.id}
-              color={currentTrack.dominantColorHex}
-              src={currentTrack.coverUrl}
-              shape="circle"
-              className="size-full"
-            />
-            <span className="absolute inset-0 flex items-center justify-center bg-black/45 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white">
-              {isPlaying ? <Pause size={32} className="fill-current" /> : <Play size={32} className="ml-1 fill-current" />}
-            </span>
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+          onClick={togglePlay}
+          onDoubleClick={() => setMode('Full')}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            if (desktop) desktop.showModeMenu('Nano');
+            else cyclePlayerMode();
+          }}
+          className="press absolute inset-[12px] overflow-hidden rounded-full"
+        >
+          <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} shape="circle" className="size-full" />
+          <span className="reveal absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white">
+            {isPlaying ? <Pause size={30} className="fill-current" /> : <Play size={30} className="ml-1 fill-current" />}
+          </span>
+        </button>
 
-        {/* Track Label */}
-        <div className="mt-3 text-center max-w-[200px]">
-          <div className="truncate text-sm font-bold text-fg">{currentTrack.title}</div>
-          <div className="truncate text-xs text-fg-3">{currentTrack.artist}</div>
-        </div>
-
-        {/* Clean Single Mode Trigger: Mini Logo */}
-        <div className="mt-4 flex items-center justify-center">
-          <MiniModeLogo currentMode="Nano" />
-        </div>
+        <button
+          type="button"
+          aria-label="Open full app"
+          onClick={() => setMode('Full')}
+          className="reveal press absolute bottom-[26px] left-1/2 flex size-7 -translate-x-1/2 items-center justify-center text-white/85 hover:text-white"
+        >
+          <Maximize2 size={14} />
+        </button>
       </div>
     </div>
   );

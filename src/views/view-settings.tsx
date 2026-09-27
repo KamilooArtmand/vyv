@@ -10,6 +10,7 @@ import {
   Download,
   EyeOff,
   Gauge,
+  Globe,
   Infinity as InfinityIcon,
   Mic,
   MicVocal,
@@ -36,7 +37,10 @@ import { cn } from '../core/core-utils';
 import type { ThemePref } from '../core/core-types';
 import { libraryStore } from '../state/state-catalog';
 import { playerStore, setDevice, setEQ, setSpeed } from '../state/state-player';
-import { DEFAULT_SETTINGS, EQ_PRESETS, applyTheme, settingsStore, toast, type Settings as S } from '../state/state-ui';
+import { AuthService, DEFAULT_SETTINGS, EQ_PRESETS, applyTheme, authStore, settingsStore, toast, type Settings as S } from '../state/state-ui';
+import { SOURCE_META, sourceReady } from '../services/sources';
+import { isConfigured } from '../services/auth';
+import { PROVIDERS } from '../ui/ui-sheets';
 import { Chip, Fader, LogoMark, PageHeader, Segmented, Switch, Wordmark } from '../ui/ui-components';
 
 function Group({ title, children }: { title: string; children: ReactNode }) {
@@ -111,6 +115,9 @@ export default function SettingsView() {
         <Toggle k="aura" icon={Wind} label="Ambient aura" />
         <Toggle k="reduceMotion" icon={Rabbit} label="Reduce motion" />
       </Group>
+
+      <AccountsGroup />
+      <SourcesGroup />
 
       <Group title="Sound">
         <div className="px-4 py-4">
@@ -208,7 +215,7 @@ export default function SettingsView() {
 
       <footer className="flex flex-col items-center gap-2 py-8 text-fg-3">
         <div className="flex items-center gap-2 text-fg">
-          <LogoMark className="size-7" />
+          <LogoMark bare className="size-7" />
           <Wordmark />
         </div>
         <span className="flex items-center gap-1.5 text-[12px]">
@@ -216,5 +223,57 @@ export default function SettingsView() {
         </span>
       </footer>
     </div>
+  );
+}
+
+/** vyv accounts are Google or Facebook identities — nothing else, no passwords. */
+function AccountsGroup() {
+  const user = useStore(authStore, (s) => s.user);
+  const busy = useStore(authStore, (s) => s.busy);
+  return (
+    <Group title="Account">
+      {PROVIDERS.map(({ id, label, glyph: Glyph }) => {
+        const acc = user?.accounts.find((a) => a.provider === id);
+        return (
+          <div key={id} className="flex min-h-[60px] items-center gap-3.5 px-4 py-2.5">
+            <span className="flex size-8 shrink-0 items-center justify-center">
+              <Glyph className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[15px]">{label}</div>
+              <div className="truncate text-[12.5px] text-fg-3">{acc ? acc.email || acc.name : isConfigured(id) ? 'Not connected' : 'Add the app id to .env to enable'}</div>
+            </div>
+            {acc ? (
+              <button type="button" onClick={() => AuthService.disconnect(id)} className="press rounded-full px-3 py-1.5 text-[13px] font-semibold text-fg-3 hover:text-fg">
+                Disconnect
+              </button>
+            ) : (
+              <button type="button" disabled={!!busy} onClick={() => AuthService.continueWith(id)} className="press rounded-full bg-surface-2 px-3.5 py-1.5 text-[13px] font-semibold hover:bg-surface-3 disabled:opacity-50">
+                {user ? 'Connect' : 'Sign in'}
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </Group>
+  );
+}
+
+function SourcesGroup() {
+  return (
+    <Group title="Sources">
+      {(Object.keys(SOURCE_META) as (keyof typeof SOURCE_META)[]).map((id) => {
+        const m = SOURCE_META[id];
+        const ready = sourceReady(id);
+        return (
+          <Row key={id} icon={Globe} label={m.name} hint={ready ? m.what : `Needs ${m.needsKey}`}>
+            <span className={cn('flex items-center gap-1.5 text-[12.5px] font-medium', ready ? 'text-fg-2' : 'text-fg-3')}>
+              <span className={cn('size-1.5 rounded-full', ready ? 'bg-[#10b981]' : 'bg-fg-3')} />
+              {ready ? 'Live' : 'Off'}
+            </span>
+          </Row>
+        );
+      })}
+    </Group>
   );
 }

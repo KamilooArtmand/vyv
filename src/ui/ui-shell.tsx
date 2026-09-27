@@ -41,6 +41,7 @@ import {
   BookOpen,
   PictureInPicture2,
   Circle,
+  Clapperboard,
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { cn, formatTime } from '../core/core-utils';
@@ -48,7 +49,6 @@ import type { RouteName } from '../core/core-types';
 import {
   applyTheme,
   authStore,
-  cyclePlayerMode,
   goBack,
   goForward,
   navigate,
@@ -73,6 +73,8 @@ import {
 } from '../state/state-player';
 import { toggleFavorite, useIsFavorite, useUnreadCount } from '../state/state-catalog';
 import { Artwork, IconButton, LiveBadge, LogoMark, Slider, Wordmark } from './ui-components';
+import { WindowControls } from './ui-window';
+import { desktop } from '../core/core-desktop';
 
 // ── Navigation Structure ─────────────────────────────────────
 export interface NavItem {
@@ -84,7 +86,6 @@ export interface NavItem {
 export const NAV_GROUPS: NavItem[][] = [
   [
     { name: 'home', label: 'Home', icon: House },
-    { name: 'search', label: 'Search', icon: Search },
     { name: 'library', label: 'Library', icon: Library },
     { name: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
   ],
@@ -92,6 +93,7 @@ export const NAV_GROUPS: NavItem[][] = [
     { name: 'radio', label: 'Radio', icon: Radio },
     { name: 'podcasts', label: 'Podcasts', icon: Podcast },
     { name: 'audiobooks', label: 'Audiobooks', icon: BookOpen },
+    { name: 'video', label: 'Video', icon: Clapperboard },
   ],
   [
     { name: 'albums', label: 'Albums', icon: Disc },
@@ -105,55 +107,63 @@ export const NAV_GROUPS: NavItem[][] = [
 ];
 
 // ── TopBar ───────────────────────────────────────────────────
+/**
+ * The header is part of the window body: logo and icons sit straight on the
+ * background with no bar, chips or button fills. On desktop it is also the
+ * drag handle and carries the minimal window controls.
+ */
 export function TopBar({ onAgent }: { onAgent?: () => void }) {
   const user = useStore(authStore, (s) => s.user);
   const unread = useUnreadCount();
   const pref = useStore(settingsStore, (s) => s.theme);
+  const route = useStore(uiStore, (s) => s.route.name);
+  const panel = useStore(uiStore, (s) => s.panel);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   const dark = resolveTheme(pref) === 'dark';
 
   return (
-    <header className="glass sticky top-0 z-30 flex h-[var(--header-h)] items-center px-4 md:px-8">
-      <button type="button" onClick={cyclePlayerMode} className="press flex items-center gap-2 md:hidden">
-        <LogoMark className="size-8" />
-        <Wordmark />
+    <header
+      className="drag relative z-30 flex h-[var(--header-h)] shrink-0 items-center pl-5 pr-3 md:pl-[26px]"
+      onDoubleClick={(e) => e.target === e.currentTarget && desktop?.toggleMaximize()}
+    >
+      <button type="button" aria-label="vyv home" onClick={() => navigate({ name: 'home' })} className="press flex items-center gap-1.5">
+        <LogoMark bare animated={isPlaying} className="size-6" />
+        <Wordmark className="text-[18px]" />
       </button>
 
-      <div className="hidden items-center gap-1 md:flex">
-        <IconButton icon={ChevronLeft} label="Back" size="sm" variant="soft" onClick={goBack} />
-        <IconButton icon={ChevronRight} label="Forward" size="sm" variant="soft" onClick={goForward} />
+      <div className="ml-6 hidden items-center md:flex">
+        <IconButton icon={ChevronLeft} label="Back" size="sm" variant="bare" tip="bottom" onClick={goBack} />
+        <IconButton icon={ChevronRight} label="Forward" size="sm" variant="bare" tip="bottom" onClick={goForward} />
       </div>
 
-      <button
-        type="button"
-        onClick={onAgent}
-        className="press group ml-2 hidden h-10 max-w-md flex-1 items-center gap-2.5 rounded-full bg-surface-2 pl-3.5 pr-2 text-left text-[14px] text-fg-3 hover:bg-surface-3 md:flex"
-      >
-        <Sparkles size={16} className="text-accent-ink" />
-        <span className="flex-1 truncate">Ask vyv anything…</span>
-        <kbd className="rounded-md border border-line-2 px-1.5 py-0.5 text-[11px] text-fg-3">⌘K</kbd>
-      </button>
-
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center">
+        <IconButton icon={Search} label="Search" variant="bare" tip="bottom" active={route === 'search'} onClick={() => navigate({ name: 'search' })} />
+        <IconButton icon={Sparkles} label="Agent  ⌘K" variant="bare" tip="bottom" active={panel === 'agent'} onClick={onAgent} />
+        <IconButton icon={Bell} label="Inbox" variant="bare" tip="bottom" badge={unread} active={route === 'notifications'} onClick={() => navigate({ name: 'notifications' })} />
         <IconButton
           icon={dark ? Sun : Moon}
           label={dark ? 'Light mode' : 'Dark mode'}
-          size="md"
-          onClick={() => {
+          variant="bare"
+          tip="bottom"
+          onClick={(e) => {
             const nextTheme = dark ? 'light' : 'dark';
             settingsStore.set({ theme: nextTheme });
-            applyTheme(nextTheme);
+            applyTheme(nextTheme, { x: e.clientX, y: e.clientY });
           }}
         />
-        <IconButton icon={Bell} label="Inbox" size="md" badge={unread} onClick={() => navigate({ name: 'notifications' })} />
-        <button type="button" onClick={() => navigate({ name: 'profile' })} className="press ml-1">
-          {user ? (
-            <img src={user.avatarUrl} alt="" className="size-8 rounded-full object-cover" />
-          ) : (
-            <span className="flex size-8 items-center justify-center rounded-full bg-surface-2 text-fg-2">
-              <UserRound size={16} />
-            </span>
-          )}
+        <IconButton icon={Settings2} label="Settings" variant="bare" tip="bottom" active={route === 'settings'} onClick={() => navigate({ name: 'settings' })} />
+        <button
+          type="button"
+          aria-label={user ? user.username : 'Sign in'}
+          data-tip={user ? user.username : 'Sign in'}
+          data-tip-side="bottom"
+          onClick={() => (user ? navigate({ name: 'profile' }) : openSheet('auth'))}
+          className={cn('press ml-1.5 flex size-8 items-center justify-center rounded-full', route === 'profile' ? 'text-fg' : 'text-fg-2 hover:text-fg')}
+        >
+          {user?.avatarUrl ? <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" className="size-7 rounded-full object-cover" /> : <UserRound size={19} strokeWidth={1.75} />}
         </button>
+        {desktop && <span className="ml-3 mr-1 h-4 w-px bg-line-2" aria-hidden />}
+        <WindowControls />
       </div>
     </header>
   );
@@ -162,38 +172,30 @@ export function TopBar({ onAgent }: { onAgent?: () => void }) {
 // ── Sidebar Rail ─────────────────────────────────────────────
 export function Sidebar() {
   const route = useStore(uiStore, (s) => s.route.name);
-  const panel = useStore(uiStore, (s) => s.panel);
-  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
 
   return (
-    <nav aria-label="Primary" className="scrollbar-none relative z-30 flex h-full w-[76px] shrink-0 flex-col items-center gap-1 overflow-y-auto py-4">
-      <button type="button" onClick={cyclePlayerMode} className="press group relative mb-3">
-        <LogoMark className="size-9" animated={isPlaying} />
-      </button>
-
+    <nav aria-label="Primary" className="scrollbar-none relative z-30 flex h-full w-[76px] shrink-0 flex-col items-center gap-0.5 overflow-y-auto pb-[calc(var(--dock-h)+var(--dock-gap)*2)] pt-1">
       {NAV_GROUPS.map((group, gi) => (
-        <div key={gi} className="flex flex-col items-center gap-1">
-          {gi > 0 && <span className="my-2 h-px w-6 bg-line-2" />}
+        <div key={gi} className="flex flex-col items-center gap-0.5">
+          {gi > 0 && <span className="my-2 h-px w-5 bg-line-2" />}
           {group.map((item) => {
             const on = route === item.name;
             return (
-              <IconButton
-                key={item.name}
-                icon={item.icon}
-                label={item.label}
-                tip="right"
-                className={cn('!rounded-[14px]', on && '!bg-surface-2 !text-fg')}
-                onClick={() => navigate({ name: item.name })}
-              />
+              <div key={item.name} className="relative">
+                {on && <span className="absolute -left-[13px] top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-fg" aria-hidden />}
+                <IconButton
+                  icon={item.icon}
+                  label={item.label}
+                  tip="right"
+                  variant="bare"
+                  className={on ? '!text-fg' : '!text-fg-3 hover:!text-fg'}
+                  onClick={() => navigate({ name: item.name })}
+                />
+              </div>
             );
           })}
         </div>
       ))}
-
-      <div className="mt-auto flex flex-col items-center gap-1 pt-4">
-        <IconButton icon={Sparkles} label="Agent" tip="right" active={panel === 'agent'} onClick={() => togglePanel('agent')} />
-        <IconButton icon={Settings2} label="Settings" tip="right" onClick={() => navigate({ name: 'settings' })} />
-      </div>
     </nav>
   );
 }
@@ -267,10 +269,11 @@ function NowPlayingMeta() {
   if (!track) return <div className="flex-1" />;
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <button type="button" aria-label="Open now playing" onClick={() => setMode('Cover')} className="press group/art relative">
-        <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} className="size-12 shadow-[var(--shadow-1)] [--art-r:12px]" />
-        <span className="absolute inset-0 flex items-center justify-center rounded-[12px] bg-black/40 text-white opacity-0 transition-opacity group-hover/art:opacity-100">
-          <Maximize2 size={16} />
+      {/* Circular art, concentric with the dock's round end. */}
+      <button type="button" aria-label="Open cover" onClick={() => setMode('Cover')} className="press group/art relative shrink-0">
+        <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} shape="circle" className="size-[calc(var(--dock-h)-var(--dock-gap)*2)]" />
+        <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/art:opacity-100">
+          <Maximize2 size={15} />
         </span>
       </button>
       <div className="min-w-0">
@@ -281,12 +284,15 @@ function NowPlayingMeta() {
           {track.artist}
         </button>
       </div>
-      {!track.isRadio && <IconButton icon={Heart} label={fav ? 'Unlike' : 'Like'} size="sm" active={fav} filled={fav} onClick={() => toggleFavorite(track.id)} />}
+      {!track.isRadio && <IconButton icon={Heart} label={fav ? 'Unlike' : 'Like'} size="sm" variant="bare" active={fav} filled={fav} onClick={() => toggleFavorite(track.id, track)} />}
     </div>
   );
 }
 
-/** Floating desktop player capsule — round on every side, not a flat toolbar. */
+/**
+ * Floating desktop player: a true capsule (radius = height / 2) whose two
+ * round ends sit concentric inside the window's curved bottom corners.
+ */
 export function PlayerDock() {
   const track = useStore(playerStore, (s) => s.track);
   const panel = useStore(uiStore, (s) => s.panel);
@@ -299,31 +305,27 @@ export function PlayerDock() {
   if (!track) return null;
 
   return (
-    <div className="glass anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 overflow-hidden rounded-[var(--radius-xl)] px-3 pr-4">
+    <div className="glass anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 rounded-full px-[var(--dock-gap)]">
       <NowPlayingMeta />
-      <div className="flex w-[min(44vw,520px)] flex-col items-center gap-0.5">
-        <div className="flex items-center gap-2">
-          <IconButton icon={Shuffle} label="Shuffle" size="sm" active={shuffle} onClick={toggleShuffle} />
-          <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label={`Repeat ${repeat}`} size="sm" active={repeat !== 'off'} onClick={cycleRepeat} />
-          <div className="mx-1 flex items-center gap-2">
-            <IconButton icon={SkipBack} label="Previous" size="md" onClick={prev} className="[&_svg]:fill-current" />
-            <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" size="lg" onClick={togglePlay} className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')} />
-            <IconButton icon={SkipForward} label="Next" size="md" onClick={() => next()} className="[&_svg]:fill-current" />
-          </div>
-          <span className="w-16" aria-hidden />
+      <div className="flex w-[min(40vw,500px)] flex-col items-center">
+        <div className="flex items-center gap-1.5">
+          <IconButton icon={Shuffle} label="Shuffle" size="xs" variant="bare" active={shuffle} onClick={toggleShuffle} />
+          <IconButton icon={SkipBack} label="Previous" size="sm" variant="bare" onClick={prev} className="[&_svg]:fill-current" />
+          <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" size="md" onClick={togglePlay} className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')} />
+          <IconButton icon={SkipForward} label="Next" size="sm" variant="bare" onClick={() => next()} className="[&_svg]:fill-current" />
+          <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label={`Repeat ${repeat}`} size="xs" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />
         </div>
-        <Scrubber className="w-full -mt-1" />
+        <Scrubber className="-mt-0.5 w-full" />
       </div>
       <div className="flex items-center justify-end gap-0.5">
-        <IconButton icon={MicVocal} label="Lyrics" size="sm" active={panel === 'lyrics'} disabled={!hasLyrics} onClick={() => togglePanel('lyrics')} />
-        <IconButton icon={ListMusic} label="Queue" size="sm" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
-        <IconButton icon={Sparkles} label="Agent" size="sm" active={panel === 'agent'} onClick={() => togglePanel('agent')} className="max-xl:hidden" />
-        <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" onClick={toggleMute} className="ml-1" />
+        <IconButton icon={MicVocal} label="Lyrics" size="sm" variant="bare" active={panel === 'lyrics'} disabled={!hasLyrics} onClick={() => togglePanel('lyrics')} />
+        <IconButton icon={ListMusic} label="Queue" size="sm" variant="bare" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
+        <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} className="ml-1" />
         <Slider label="Volume" value={muted ? 0 : volume} onChange={setVolume} className="w-24 max-xl:hidden" />
-        <span className="mx-1 h-5 w-px bg-line-2" />
-        <IconButton icon={PictureInPicture2} label="Micro" size="sm" onClick={() => setMode('Micro')} />
-        <IconButton icon={Circle} label="Nano" size="sm" onClick={() => setMode('Nano')} />
-        <IconButton icon={Maximize2} label="Full screen" size="sm" onClick={() => setMode('Cover')} />
+        <IconButton icon={PictureInPicture2} label="Micro" size="sm" variant="bare" onClick={() => setMode('Micro')} className="ml-1" />
+        <IconButton icon={Circle} label="Nano" size="sm" variant="bare" onClick={() => setMode('Nano')} />
+        {/* Right end: a round control concentric with the capsule's end. */}
+        <IconButton icon={Maximize2} label="Cover" variant="bare" onClick={() => setMode('Cover')} className="!size-[calc(var(--dock-h)-var(--dock-gap)*2)]" />
       </div>
     </div>
   );
@@ -360,9 +362,13 @@ export function Toast() {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-5 z-[80] flex justify-center px-4">
       <div className="glass-strong anim-pop flex max-w-md items-center gap-2.5 rounded-full py-2 pl-3 pr-4 text-[13.5px] font-medium shadow-xl">
-        <span className="flex size-5 items-center justify-center rounded-full bg-accent text-on-accent">
-          <Check size={12} strokeWidth={2.5} />
-        </span>
+        {toastItem.icon ? (
+          <span className="flex size-5 items-center justify-center rounded-full bg-accent text-on-accent">
+            <Check size={12} strokeWidth={2.5} />
+          </span>
+        ) : (
+          <span className="ml-1 size-1.5 rounded-full bg-[#ff3c00]" />
+        )}
         <span>{toastItem.text}</span>
       </div>
     </div>
@@ -375,7 +381,7 @@ export function Aura() {
   const playing = useStore(playerStore, (s) => s.isPlaying);
   if (!on) return null;
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-30">
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-30">
       <div
         className="anim-drift absolute -left-[10%] -top-[20%] size-[60vmax] rounded-full blur-[110px]"
         style={{ background: 'radial-gradient(circle, var(--fg) 0%, transparent 65%)', opacity: 0.1, animationPlayState: playing ? 'running' : 'paused' }}

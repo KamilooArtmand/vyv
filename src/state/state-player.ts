@@ -4,8 +4,9 @@
 
 import { createStore } from '../core/core-store';
 import type { AudioDevice, LyricLine, RepeatMode, Track } from '../core/core-types';
-import { libraryStore, pushHistory, saveProgress, SEED_TRACKS } from './state-catalog';
-import { settingsStore } from './state-ui';
+import { libraryStore, pushHistory, remember, saveProgress, SEED_TRACKS } from './state-catalog';
+import { settingsStore, toast } from './state-ui';
+import { RadioBrowser } from '../services/sources';
 
 const isSpoken = (t?: Track | null) => t?.kind === 'podcast' || t?.kind === 'audiobook';
 
@@ -69,47 +70,66 @@ export class AudioEngine {
   private static onEndedCallbacks: (() => void)[] = [];
   private static onTimeUpdateCallbacks: ((time: number, duration: number) => void)[] = [];
   private static onStateChangeCallbacks: ((isPlaying: boolean) => void)[] = [];
+  private static onErrorCallbacks: (() => void)[] = [];
   private static isInitialized = false;
   private static dataArray: Uint8Array | null = null;
 
-  static initialize(): void {
-    if (this.isInitialized) return;
-    this.isInitialized = true;
+  /**
+   * Two elements: `graphEl` is CORS-enabled and routed through the EQ and
+   * analyser; `plainEl` plays hosts that send no CORS headers (most radio
+   * streams and podcast CDNs), which would otherwise play silent through
+   * Web Audio. `audio` always points at the active one.
+   */
+  private static graphEl: HTMLAudioElement | null = null;
+  private static plainEl: HTMLAudioElement | null = null;
 
-    this.audio = new Audio();
-    this.audio.crossOrigin = 'anonymous';
-    this.audio.volume = this.volume;
-    this.audio.preload = 'auto';
-
+  private static makeElement(cors: boolean): HTMLAudioElement {
+    const el = new Audio();
+    if (cors) el.crossOrigin = 'anonymous';
+    el.volume = this.volume;
+    el.preload = 'auto';
     const emitTime = () => {
-      if (this.audio) {
-        this.currentTime = this.audio.currentTime || 0;
-        this.duration = Number.isFinite(this.audio.duration) ? this.audio.duration : 0;
-        this.onTimeUpdateCallbacks.forEach((cb) => cb(this.currentTime, this.duration));
-      }
+      if (el !== this.audio) return;
+      this.currentTime = el.currentTime || 0;
+      this.duration = Number.isFinite(el.duration) ? el.duration : 0;
+      this.onTimeUpdateCallbacks.forEach((cb) => cb(this.currentTime, this.duration));
     };
-    this.audio.addEventListener('timeupdate', emitTime);
-    this.audio.addEventListener('loadedmetadata', emitTime);
-
-    this.audio.addEventListener('ended', () => {
+    el.addEventListener('timeupdate', emitTime);
+    el.addEventListener('loadedmetadata', emitTime);
+    el.addEventListener('ended', () => {
+      if (el !== this.audio) return;
       this.isPlaying = false;
       this.notifyState();
       this.onEndedCallbacks.forEach((cb) => cb());
     });
-
-    this.audio.addEventListener('play', () => {
+    el.addEventListener('play', () => {
+      if (el !== this.audio) return;
       this.isPlaying = true;
       this.notifyState();
     });
-
-    this.audio.addEventListener('pause', () => {
+    el.addEventListener('pause', () => {
+      if (el !== this.audio) return;
       this.isPlaying = false;
       this.notifyState();
     });
+    el.addEventListener('error', () => {
+      if (el !== this.audio || !el.getAttribute('src')) return;
+      this.isPlaying = false;
+      this.notifyState();
+      this.onErrorCallbacks.forEach((cb) => cb());
+    });
+    return el;
+  }
+
+  static initialize(): void {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+    this.graphEl = this.makeElement(true);
+    this.audio = this.graphEl;
   }
 
   private static setupAudioContext(): void {
-    if (this.audioContext || !this.audio) return;
+    if (this.audioContext || !this.graphEl) return;
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.audioContext = new AudioCtx();
@@ -133,7 +153,7 @@ export class AudioEngine {
       this.highFilter.frequency.value = 3200;
       this.highFilter.gain.value = this.eq[2];
 
-      this.sourceNode = this.audioContext.createMediaElementSource(this.audio);
+      this.sourceNode = this.audioContext.createMediaElementSource(this.graphEl!);
       this.sourceNode.connect(this.lowFilter);
       this.lowFilter.connect(this.midFilter);
       this.midFilter.connect(this.highFilter);
@@ -144,9 +164,18 @@ export class AudioEngine {
     }
   }
 
-  static async loadTrack(url: string, autoPlay: boolean = false): Promise<void> {
+  static async loadTrack(url: string, autoPlay: boolean = false, cors = true): Promise<void> {
     this.initialize();
-    if (!this.audio) return;
+    const target = cors ? this.graphEl! : (this.plainEl ??= this.makeElement(false));
+    if (this.audio && this.audio !== target) {
+      const old = this.audio;
+      this.audio = target;
+      old.pause();
+      old.removeAttribute('src');
+      old.load();
+    }
+    this.audio = target;
+    this.audio.volume = this.volume;
     this.audio.src = url;
     this.audio.playbackRate = this.rate;
     this.audio.load();
@@ -205,7 +234,9 @@ export class AudioEngine {
   static async setSinkId(deviceId: string): Promise<boolean> {
     if (this.audio && 'setSinkId' in this.audio) {
       try {
-        await (this.audio as unknown as { setSinkId: (id: string) => Promise<void> }).setSinkId(deviceId);
+        for (const el of [this.graphEl, this.plainEl]) {
+          if (el) await (el as unknown as { setSinkId: (id: string) => Promise<void> }).setSinkId(deviceId);
+        }
         return true;
       } catch {
         return false;
@@ -215,7 +246,7 @@ export class AudioEngine {
   }
 
   static fillSpectrum(out: Float32Array): void {
-    if (!this.analyserNode || !this.isPlaying || !this.dataArray) {
+    if (!this.analyserNode || !this.isPlaying || !this.dataArray || this.audio !== this.graphEl) {
       out.fill(0);
       return;
     }
@@ -229,6 +260,7 @@ export class AudioEngine {
   static onEnded(cb: () => void) { this.onEndedCallbacks.push(cb); }
   static onTimeUpdate(cb: (t: number, d: number) => void) { this.onTimeUpdateCallbacks.push(cb); }
   static onStateChange(cb: (p: boolean) => void) { this.onStateChangeCallbacks.push(cb); }
+  static onError(cb: () => void) { this.onErrorCallbacks.push(cb); }
 
   private static notifyState(): void {
     this.onStateChangeCallbacks.forEach((cb) => cb(this.isPlaying));
@@ -323,6 +355,10 @@ export function bootPlayer() {
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   });
   AudioEngine.onEnded(() => next(true));
+  AudioEngine.onError(() => {
+    const t = playerStore.get().track;
+    toast(t?.isRadio ? 'This station is offline right now' : 'Could not play this item');
+  });
 
   // Audio outputs
   if (navigator.mediaDevices?.enumerateDevices) {
@@ -346,8 +382,10 @@ export function playTrack(track: Track, newQueue?: Track[]) {
   timeStore.set({ time: 0, duration: track.durationSeconds });
   applyAccent(track);
   updateMediaSession(track);
-  AudioEngine.loadTrack(track.filePath, true);
+  AudioEngine.loadTrack(track.filePath, true, track.cors !== false);
 
+  remember(track);
+  if (track.source === 'radiobrowser') RadioBrowser.click(track.id);
   if (!settingsStore.get().privateSession && !track.isRadio) pushHistory(track.id);
 
   // Resume podcasts/audiobooks from where you left off.

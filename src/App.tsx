@@ -11,6 +11,8 @@ import { Aura, BottomNav, MiniPlayer, PlayerDock, Sidebar, Toast, TopBar } from 
 import { CoverPlayer, MicroPlayer, NanoPlayer } from './ui/ui-modes';
 import { AgentOverlay, SidePanel } from './ui/ui-panels';
 import { Sheets } from './ui/ui-sheets';
+import { ResizeEdges } from './ui/ui-window';
+import { desktop } from './core/core-desktop';
 import type { RouteName } from './core/core-types';
 
 const named = <K extends string>(p: Promise<Record<K, ComponentType<{ id?: string }>>>, k: K) =>
@@ -21,6 +23,7 @@ const VIEWS: Record<RouteName, ComponentType<{ id?: string }>> = {
   search: lazy(() => import('./views/view-search')),
   library: lazy(() => named(import('./views/view-media'), 'LibraryView')),
   playlist: lazy(() => named(import('./views/view-media'), 'PlaylistView')),
+  video: lazy(() => import('./views/view-video')),
   bookmarks: lazy(() => named(import('./views/view-extra'), 'BookmarksView')),
   notifications: lazy(() => named(import('./views/view-extra'), 'NotificationsView')),
   podcasts: lazy(() => named(import('./views/view-media'), 'PodcastsView')),
@@ -53,6 +56,12 @@ export function App() {
   useEffect(() => {
     bootPlayer();
   }, []);
+
+  // Desktop: every player mode is a real OS window shape (square, pill, orb).
+  useEffect(() => {
+    desktop?.setMode(mode);
+  }, [mode]);
+  useEffect(() => desktop?.onSetMode(setMode), []);
 
   useEffect(() => {
     applyTheme(themePref);
@@ -104,29 +113,30 @@ export function App() {
   const ViewComponent = VIEWS[route.name] || VIEWS.home;
 
   return (
-    <div className="relative flex h-dvh w-full overflow-hidden bg-bg text-fg font-sans select-none antialiased">
+    <div className="app-frame relative isolate flex h-dvh w-full flex-col overflow-hidden font-sans text-fg antialiased select-none">
       <Aura />
-      <div className="hidden md:flex">
-        <Sidebar />
-      </div>
+      <ResizeEdges />
+      <TopBar onAgent={openAgent} />
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar onAgent={openAgent} />
-        <main id="main-scroll" className="scrollbar-none flex-1 overflow-y-auto px-4 pb-28 pt-4 md:px-8">
+      <div className="flex min-h-0 flex-1">
+        <div className="hidden md:flex">
+          <Sidebar />
+        </div>
+        <main id="main-scroll" className="scrollbar-none min-w-0 flex-1 overflow-y-auto px-4 pb-40 pt-2 md:px-8 md:pb-[calc(var(--dock-h)+var(--dock-gap)*2+24px)]">
           <Suspense fallback={<div className="p-8 text-center text-fg-3">Loading…</div>}>
             <ViewComponent id={route.id} />
           </Suspense>
         </main>
+        <SidePanel />
       </div>
 
-      <SidePanel />
       <AgentOverlay open={agentOpen} onClose={() => setAgentOpen(false)} />
       <div className="fixed inset-x-3 bottom-3 z-40 md:hidden">
         <MiniPlayer />
         <BottomNav onAgent={openAgent} />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 z-30 hidden md:block">
+      <div className="pointer-events-none absolute inset-x-[var(--dock-gap)] bottom-[var(--dock-gap)] z-30 hidden md:block">
         <PlayerDock />
       </div>
 

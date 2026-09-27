@@ -12,7 +12,39 @@ npm run build      # typecheck + production build
 npm run preview
 ```
 
-Installable as a PWA (Chrome / Edge / Safari → *Install app*). Wraps cleanly in Tauri or Electron for desktop builds.
+Installable as a PWA (Chrome / Edge / Safari → *Install app*).
+
+### Desktop (Windows · macOS · Linux)
+
+```bash
+npm run desktop       # build, then open the frameless desktop app
+npm run desktop:dev   # with `npm run dev` running: live-reload inside the desktop shell
+npm run dist:win      # NSIS installer + MSIX (Microsoft Store) in release/
+```
+
+The desktop shell (`electron/`) is a frameless, transparent window: the app draws its own curved body (`--win-r`) and minimal close / minimise / maximise glyphs straight on the header — no title bar, no button fills. The header is the drag handle (double-click maximises) and the edges resize. Player modes reshape the real OS window: **Cover** becomes a square, **Micro** a floating pill and **Nano** a floating orb, both always on top; right-click the vyv mark for a native mode menu. Add a 256 px+ icon to `build.win.icon` before shipping installers.
+
+## Accounts
+
+There are no usernames or passwords. The account **is** the user's Google (Gmail) or Facebook identity; either can be linked to the same profile later (Settings → Account, or Profile).
+
+- **Web** — Google Identity Services token client and the Facebook JS SDK (popup).
+- **Desktop** — Google opens in the system browser with a loopback redirect + PKCE (RFC 8252, required by Google for installed apps); Facebook uses its manual login dialog.
+- Tokens are used once to read name, email and photo, and are never stored. Configure the client ids in `.env` (see `.env.example`); without them the buttons explain what to set.
+
+## Live sources
+
+Real services, real playback — results map onto the app's own `Track` type, so play, queue, like, bookmark, playlists and history all work on them, and saved items survive reloads (`remoteStore`).
+
+| Source | What | Key |
+| --- | --- | --- |
+| Radio Browser | ~50k live stations; Kurdish (Sorani / Kurmanji) first on Radio and Home | none |
+| Audius | Full-length tracks from independent artists; search + weekly trending | none |
+| Apple Podcasts directory | Any podcast: search, show pages, real episode audio, resume | none |
+| Internet Archive | Heritage recordings, LibriVox audiobooks, public-domain films | none |
+| YouTube | Video search + official embedded player | `VITE_YOUTUBE_API_KEY` |
+
+Hosts that send no CORS headers (most radio streams and podcast CDNs) play through a second audio element outside the Web Audio graph, so they never go silent; CORS-enabled sources (Audius, Archive) keep the EQ and visualiser. `src/services/sources.ts` is the single integration point.
 
 ## Design system
 
@@ -24,7 +56,8 @@ Installable as a PWA (Chrome / Edge / Safari → *Install app*). Wraps cleanly i
 | `--line` | white @ 7 % | ink @ 7 % |
 | `--accent` | adaptive — tinted live from the playing artwork (base `#8b7cff`) | |
 
-- **Radii** 10 · 14 · 20 · 28 · 36 px, pills for every control.
+- **Radii** 10 · 14 · 20 · 28 · 36 px, pills for every control. Window body `--win-r` 44 px; the dock is a full capsule whose radius + `--dock-gap` equals `--win-r`, so its round ends sit concentric in the window's bottom corners.
+- **Header** logo and icons sit directly on the background — no bar, chips or fills (`IconButton variant="bare"`).
 - **Motion** one spring curve (`--ease-spring`) for press, toggles and thumbs; `ease-out` for entrances. Honors OS *reduce motion* and an in-app switch.
 - **Theme switch** circular reveal from the tap point (View Transitions API), no-flash boot script, *Auto* follows the OS.
 - **Ambient aura** soft blobs tinted by the artwork drift behind the UI while music plays.
@@ -34,9 +67,9 @@ Installable as a PWA (Chrome / Edge / Safari → *Install app*). Wraps cleanly i
 
 ## Sections
 
-Home · Search · Library & Playlists · Bookmarks (artists, albums, shows, books, stations, wiki…) · Inbox (notifications) · Podcasts · Radio · Audiobooks · Albums · Artists · Genres · Timeline (year by year) · Wiki (music history) · Profile (sound persona, listening DNA) · Settings (switches, EQ faders, output, speed).
+Home · Search · Library & Playlists · Bookmarks (artists, albums, shows, books, stations, videos, wiki…) · Inbox (notifications) · Podcasts · Radio · Audiobooks · Video · Albums · Artists · Genres · Timeline (year by year) · Wiki (music history) · Profile (sound persona, listening DNA, linked accounts) · Settings (account, sources, switches, EQ faders, output, speed).
 
-Player modes: **Dock** (desktop capsule) / **Mini** (phone), **Cover** (full-screen, synced karaoke lyrics, queue, speed, sleep timer), **Micro** (floating capsule) and **Nano** (orb with progress ring).
+Player modes: **Dock** (desktop capsule) / **Mini** (phone), **Cover** (square, artwork only — transport, scrubber, volume, speed, sleep and lyrics appear on hover), **Micro** (opaque floating capsule) and **Nano** (opaque orb with progress ring).
 
 ## Agent
 
@@ -60,4 +93,4 @@ Player modes: **Dock** (desktop capsule) / **Mini** (phone), **Cover** (full-scr
 
 ## Notes
 
-Catalog, artists, podcasts and user accounts are demo data (`src/data/catalog.ts`); audio uses short royalty-free previews. The *Lossless*, *Normalize*, *Gapless*, *Crossfade*, *Explicit*, *Data saver*, *Offline* and *Downloads* settings are stored preferences that don't change playback yet.
+The built-in catalogue (`src/state/state-catalog.ts`) is demo data with short royalty-free previews; everything under *Live sources* is real. The *Lossless*, *Normalize*, *Gapless*, *Crossfade*, *Explicit*, *Data saver*, *Offline* and *Downloads* settings are stored preferences that don't change playback yet.

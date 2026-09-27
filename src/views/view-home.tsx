@@ -22,6 +22,8 @@ import { ask, predict } from '../state/state-agent';
 import { authStore, navigate, settingsStore } from '../state/state-ui';
 import { Artwork, LiveBadge, MediaCard, PlayFab, Section, Shelf, SHELF_ITEM, meshGradient } from '../ui/ui-components';
 import type { Mood, Track } from '../core/core-types';
+import { Audius, RadioBrowser } from '../services/sources';
+import { SourceTag, useLive } from '../ui/ui-live';
 
 // One brand color for every tile — each still reads distinct because
 // meshGradient() jitters hue per seed, so the family stays cohesive.
@@ -171,13 +173,7 @@ export default function HomeView() {
         </Section>
       )}
 
-      <Section title="Live now" icon={RadioTower} action={<SeeAll to="radio" />}>
-        <Shelf>
-          {STATIONS.map((s) => (
-            <MediaCard key={s.id} className={SHELF_ITEM} entity={resolveEntity('station', s.id)!} badge={<LiveBadge />} onPlay={() => playTrack(s, STATIONS)} />
-          ))}
-        </Shelf>
-      </Section>
+      <LiveShelves />
 
       <Section title="On this day in music">
         <button
@@ -212,5 +208,43 @@ export function SeeAll({ to }: { to: Parameters<typeof navigate>[0]['name'] }) {
     <button type="button" onClick={() => navigate({ name: to })} aria-label="See all" className="press flex size-8 items-center justify-center rounded-full text-fg-3 hover:bg-surface-2 hover:text-fg">
       <ArrowUpRight size={18} strokeWidth={1.75} />
     </button>
+  );
+}
+
+/** Real, live content on Home: Kurdish radio on air now and what is trending on Audius. */
+function LiveShelves() {
+  const radio = useLive('rb:kurdish', () => RadioBrowser.kurdish(30));
+  const trending = useLive('au:trending', () => Audius.trending(undefined, 20));
+  const stations = radio.data?.length ? radio.data.slice(0, 16) : STATIONS;
+  return (
+    <>
+      <Section title="Live now" icon={RadioTower} action={<SeeAll to="radio" />}>
+        <Shelf>
+          {stations.map((s) => (
+            <MediaCard
+              key={s.id}
+              className={SHELF_ITEM}
+              entity={{ kind: 'station', id: s.id, title: s.title, subtitle: s.artist, color: s.dominantColorHex, src: s.coverUrl, glyph: RadioTower, route: { name: 'radio' } }}
+              badge={<LiveBadge />}
+              onPlay={() => playTrack(s, stations)}
+            />
+          ))}
+        </Shelf>
+      </Section>
+      {(trending.data?.length ?? 0) > 0 && (
+        <Section title="Trending this week" action={<SourceTag source="audius" />}>
+          <Shelf>
+            {trending.data!.map((t) => (
+              <MediaCard
+                key={t.id}
+                className={SHELF_ITEM}
+                entity={{ kind: 'track', id: t.id, title: t.title, subtitle: t.artist, color: t.dominantColorHex, src: t.coverUrl }}
+                onPlay={() => playTrack(t, trending.data)}
+              />
+            ))}
+          </Shelf>
+        </Section>
+      )}
+    </>
   );
 }

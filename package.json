@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 3000"
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "desktop": "npm run build && electron .",
+    "desktop:dev": "electron . --dev",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -20,8 +25,49 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^38.8.6",
+    "electron-builder": "^26.15.3",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0"
+  },
+  "main": "electron/main.cjs",
+  "description": "vyv \u2014 KRD PLY national multimedia player (web + desktop)",
+  "build": {
+    "appId": "io.krd.vyv",
+    "productName": "vyv",
+    "files": [
+      "dist/**",
+      "electron/**",
+      "public/favicon.png",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "appx"
+      ]
+    },
+    "appx": {
+      "identityName": "KRD.vyv",
+      "publisherDisplayName": "KRD",
+      "displayName": "vyv",
+      "backgroundColor": "#07080A"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.music"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Audio"
+    }
   }
 }

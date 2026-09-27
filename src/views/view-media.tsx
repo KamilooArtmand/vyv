@@ -2,10 +2,12 @@
 // view-media.tsx: Podcasts, Audiobooks, Radio, Library & Profile
 // ─────────────────────────────────────────────────────────────
 
-import { useRef, useState } from 'react';
-import { Bookmark, Check, FolderPlus, Heart, ListMusic, LogOut, Pause, Pencil, Play, RadioTower, Share2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { Bookmark, Check, FolderPlus, Heart, ListMusic, LogOut, Pause, Pencil, Play, RadioTower, Search as SearchIcon, Share2, Sparkles, Trash2, Upload } from 'lucide-react';
+import { Archive, Podcasts, RadioBrowser } from '../services/sources';
+import { ArchiveCard, LiveState, OpenSource, ShowCard, StationGrid, useLive } from '../ui/ui-live';
 import { useStore } from '../core/core-store';
-import { cn, formatDuration } from '../core/core-utils';
+import { cn, formatDuration, initials } from '../core/core-utils';
 import { ask } from '../state/state-agent';
 import {
   ARTISTS,
@@ -18,6 +20,7 @@ import {
   genreById,
   importFiles,
   libraryStore,
+  rememberShow,
   smartMix,
   toggleBookmark,
   trackById,
@@ -25,7 +28,8 @@ import {
   useIsBookmarked,
 } from '../state/state-catalog';
 import { playQueue, playTrack, playerStore, togglePlay } from '../state/state-player';
-import { AuthService, authStore, navigate, openSheet, toast } from '../state/state-ui';
+import { AuthService, authStore, navigate, toast } from '../state/state-ui';
+import { PROVIDERS, SocialSignIn } from '../ui/ui-sheets';
 import {
   Artwork,
   Chip,
@@ -34,6 +38,7 @@ import {
   Grid,
   IconButton,
   LiveBadge,
+  LogoMark,
   MediaCard,
   PageHeader,
   PlayFab,
@@ -127,7 +132,9 @@ export function RadioView() {
         </div>
       </Section>
 
-      <Section title="Stations" icon={RadioTower}>
+      <LiveRadio />
+
+      <Section title="Curated" icon={RadioTower}>
         <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {STATIONS.map((s) => (
             <StationTile key={s.id} s={s} />
@@ -135,6 +142,45 @@ export function RadioView() {
         </div>
       </Section>
     </div>
+  );
+}
+
+/** Real, live stations from Radio Browser: Kurdish first, then search and the world's most played. */
+function LiveRadio() {
+  const [q, setQ] = useState('');
+  const query = useDeferredValue(q.trim());
+  const kurdish = useLive('rb:kurdish', () => RadioBrowser.kurdish(30));
+  const found = useLive(query.length > 1 ? `rb:q:${query}` : null, (sig) => RadioBrowser.search(query, 30, sig));
+  const top = useLive('rb:top', () => RadioBrowser.top(18));
+
+  return (
+    <>
+      <label className="glass mb-8 flex h-12 items-center gap-3 rounded-full px-5">
+        <SearchIcon size={18} strokeWidth={1.75} className="text-fg-3" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find any station, city or genre…" aria-label="Search stations" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-fg-3" />
+      </label>
+
+      {query.length > 1 ? (
+        <Section title={`Stations for “${query}”`}>
+          <LiveState loading={found.loading} error={found.error} empty={!found.data?.length}>
+            <StationGrid stations={found.data ?? []} />
+          </LiveState>
+        </Section>
+      ) : (
+        <>
+          <Section title="Kurdish stations · live" icon={RadioTower}>
+            <LiveState loading={kurdish.loading} error={kurdish.error} empty={!kurdish.data?.length} rows={2}>
+              <StationGrid stations={kurdish.data ?? []} />
+            </LiveState>
+          </Section>
+          <Section title="Most listened worldwide">
+            <LiveState loading={top.loading} error={top.error} empty={!top.data?.length}>
+              <StationGrid stations={top.data ?? []} />
+            </LiveState>
+          </Section>
+        </>
+      )}
+    </>
   );
 }
 
@@ -181,7 +227,39 @@ export function PodcastsView() {
           />
         ))}
       </Grid>
+
+      <LivePodcasts />
     </div>
+  );
+}
+
+const PODCAST_TOPICS = ['Kurdish', 'Kurdî', 'کوردی', 'Kurdistan', 'Music history', 'World music'];
+
+/** The full Apple Podcasts directory: search, subscribe (bookmark) and play real episodes. */
+function LivePodcasts() {
+  const [q, setQ] = useState('');
+  const [topic, setTopic] = useState(PODCAST_TOPICS[0]);
+  const query = useDeferredValue(q.trim()) || topic;
+  const res = useLive(`it:${query}`, (sig) => Podcasts.search(query, 24, sig));
+  return (
+    <Section title="Podcast directory">
+      <label className="glass mb-4 flex h-12 items-center gap-3 rounded-full px-5">
+        <SearchIcon size={18} strokeWidth={1.75} className="text-fg-3" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search every podcast…" aria-label="Search podcasts" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-fg-3" />
+      </label>
+      {!q && (
+        <div className="scrollbar-none -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+          {PODCAST_TOPICS.map((t) => (
+            <Chip key={t} active={topic === t} onClick={() => setTopic(t)}>
+              {t}
+            </Chip>
+          ))}
+        </div>
+      )}
+      <LiveState loading={res.loading} error={res.error} empty={!res.data?.length}>
+        <Grid min={170}>{res.data?.map((sh) => <ShowCard key={sh.id} show={sh} />)}</Grid>
+      </LiveState>
+    </Section>
   );
 }
 
@@ -218,7 +296,81 @@ function EpisodeRow({ show, ep }: { show: Show; ep: Show['episodes'][number] }) 
   );
 }
 
+function RemoteEpisodeRow({ ep, queue }: { ep: Track; queue: Track[] }) {
+  const isCurrent = useStore(playerStore, (s) => s.track?.id === ep.id);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying && s.track?.id === ep.id);
+  const pos = useStore(libraryStore, (s) => s.progress[ep.id] ?? 0);
+  const saved = useIsBookmarked('track', ep.id);
+  const pct = ep.durationSeconds ? Math.min(1, pos / ep.durationSeconds) : 0;
+  return (
+    <div className="flex gap-4 border-b border-line py-5 last:border-0">
+      <div className="min-w-0 flex-1">
+        <div className="text-[12px] text-fg-3">{new Date(ep.addedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+        <div className={cn('mt-0.5 text-[16px] font-semibold tracking-[-0.015em]', isCurrent && 'text-accent-ink')}>{ep.title}</div>
+        {ep.description && <p className="mt-1 line-clamp-2 text-[14px] text-fg-2">{ep.description}</p>}
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => (isCurrent ? togglePlay() : playTrack(ep, queue))}
+            className="press flex h-8 items-center gap-1.5 rounded-full bg-surface-2 pl-2.5 pr-3.5 text-[12.5px] font-semibold hover:bg-surface-3"
+          >
+            {isPlaying ? <Pause size={13} className="fill-current" /> : <Play size={13} className="fill-current" />}
+            {pct > 0 && pct < 0.95 ? `${formatDuration(ep.durationSeconds - pos)} left` : ep.durationSeconds ? formatDuration(ep.durationSeconds) : 'Play'}
+          </button>
+          {pct > 0 && pct < 0.95 && (
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-surface-3">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${pct * 100}%` }} />
+            </div>
+          )}
+          <IconButton
+            icon={Bookmark}
+            label={saved ? 'Saved' : 'Save episode'}
+            size="sm"
+            variant="bare"
+            active={saved}
+            filled={saved}
+            onClick={() => toast(toggleBookmark('track', ep.id, ep) ? 'Episode saved' : 'Removed', 'bookmark')}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RemoteShowView({ id }: { id: string }) {
+  const res = useLive(id, () => Podcasts.episodes(id));
+  useEffect(() => {
+    if (res.data) rememberShow(res.data.show);
+  }, [res.data]);
+  if (res.loading && !res.data) return <div className="skeleton h-64 rounded-[var(--radius-2xl)]" />;
+  if (!res.data) return <EmptyState icon={RadioTower} title="Podcast unavailable" hint={res.error} />;
+  const { show, episodes } = res.data;
+  return (
+    <div>
+      <CollectionHeader
+        kind="show"
+        id={show.id}
+        eyebrow={`Podcast · ${show.category}`}
+        title={show.title}
+        color={show.color}
+        src={show.artwork}
+        meta={<span className="text-fg-3">By {show.host} · {episodes.length} episodes</span>}
+        tracks={episodes}
+        actions={episodes[0] && <OpenSource track={episodes[0]} />}
+      />
+      <Section title="Episodes">
+        <div className="max-w-3xl">
+          {episodes.map((ep) => (
+            <RemoteEpisodeRow key={ep.id} ep={ep} queue={episodes} />
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
 export function ShowView({ id }: { id?: string }) {
+  if (id?.startsWith('it:')) return <RemoteShowView id={id} />;
   const show = SHOWS.find((s) => s.id === id);
   if (!show) return <EmptyState icon={RadioTower} title="Podcast not found" />;
   const tracks = show.episodes.map((e) => episodeToTrack(show, e));
@@ -315,7 +467,30 @@ export function AudiobooksView() {
           ))}
         </Grid>
       </Section>
+      <LibriVox />
     </div>
+  );
+}
+
+const BOOK_TOPICS = ['Poetry', 'Khayyam', 'Rumi', 'Philosophy', 'Myths', 'History'];
+
+/** LibriVox public-domain audiobooks, streamed from the Internet Archive. */
+function LibriVox() {
+  const [topic, setTopic] = useState(BOOK_TOPICS[0]);
+  const res = useLive(`lv:${topic}`, (sig) => Archive.search(topic, 'audiobooks', 18, sig));
+  return (
+    <Section title="LibriVox library">
+      <div className="scrollbar-none -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+        {BOOK_TOPICS.map((t) => (
+          <Chip key={t} active={topic === t} onClick={() => setTopic(t)}>
+            {t}
+          </Chip>
+        ))}
+      </div>
+      <LiveState loading={res.loading} error={res.error} empty={!res.data?.length}>
+        <Grid min={150}>{res.data?.map((it) => <ArchiveCard key={it.id} item={it} />)}</Grid>
+      </LiveState>
+    </Section>
   );
 }
 
@@ -582,21 +757,11 @@ export function ProfileView() {
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-md py-12 text-center">
-        <div className="size-20 mx-auto rounded-full bg-surface-2 flex items-center justify-center mb-4">
-          <Sparkles size={32} className="text-fg-3" />
-        </div>
-        <h2 className="text-3xl font-bold mb-2">Welcome to VYV</h2>
-        <p className="text-sm text-fg-3 mb-6">
-          Sign in or create an account to sync playlists, stream uncompressed soundscapes, and bookmark wiki essays.
-        </p>
-        <button
-          type="button"
-          onClick={() => openSheet('auth')}
-          className="press w-full h-12 rounded-full bg-fg text-bg font-semibold text-sm shadow-lg hover:opacity-90"
-        >
-          Sign in or Register
-        </button>
+      <div className="mx-auto max-w-sm py-14 text-center">
+        <LogoMark bare className="mx-auto mb-5 size-12" />
+        <h2 className="mb-2 text-[28px] font-semibold tracking-[-0.03em]">Welcome to vyv</h2>
+        <p className="mb-7 text-sm text-fg-3">Sign in with Gmail or Facebook to keep your library, playlists and bookmarks on every device.</p>
+        <SocialSignIn />
       </div>
     );
   }
@@ -641,21 +806,24 @@ export function ProfileView() {
     <div className="mx-auto max-w-3xl">
       {/* Cover Banner */}
       <div className="relative h-44 md:h-56 rounded-[var(--radius-2xl)] overflow-hidden border border-line-2 shadow-lg">
-        <img src={user.coverUrl} alt="" className="size-full object-cover" />
+        {user.coverUrl ? <img src={user.coverUrl} alt="" className="size-full object-cover" /> : <div className="size-full" style={{ backgroundImage: meshGradient(user.id, '#ff3c00') }} />}
         <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
       </div>
 
       {/* Profile Details Container */}
       <div className="relative px-6 -mt-16 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="flex items-end gap-4">
-          <img
-            src={user.avatarUrl}
-            alt=""
-            className="size-28 rounded-full object-cover border-4 border-bg shadow-2xl ring-2 ring-line"
-          />
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" className="size-28 rounded-full border-4 border-bg object-cover shadow-2xl ring-2 ring-line" />
+          ) : (
+            <span className="flex size-28 items-center justify-center rounded-full border-4 border-bg bg-surface-3 text-[34px] font-semibold shadow-2xl">{initials(user.username)}</span>
+          )}
           <div className="mb-2">
             <h1 className="text-2xl md:text-3xl font-bold text-fg">{user.username}</h1>
-            <p className="text-sm text-fg-3">{user.handle} · {user.email}</p>
+            <p className="text-sm text-fg-3">
+              {user.handle}
+              {user.email && ` · ${user.email}`}
+            </p>
           </div>
         </div>
 
@@ -673,7 +841,34 @@ export function ProfileView() {
       </div>
 
       {/* Bio */}
-      <p className="mt-4 px-6 text-sm text-fg-2 max-w-xl leading-relaxed">{user.bio}</p>
+      {user.bio && <p className="mt-4 max-w-xl px-6 text-sm leading-relaxed text-fg-2">{user.bio}</p>}
+
+      {/* Linked sign-in accounts: the account IS the Google / Facebook identity. */}
+      <div className="mt-6 px-6">
+        <div className="card divide-y divide-line overflow-hidden rounded-[var(--radius-xl)]">
+          {PROVIDERS.map(({ id, label, glyph: Glyph }) => {
+            const acc = user.accounts.find((a) => a.provider === id);
+            return (
+              <div key={id} className="flex items-center gap-3 px-4 py-3">
+                <Glyph className="size-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-medium">{label}</div>
+                  <div className="truncate text-[12.5px] text-fg-3">{acc ? acc.email || acc.name : 'Not connected'}</div>
+                </div>
+                {acc ? (
+                  <button type="button" onClick={() => AuthService.disconnect(id)} className="press rounded-full px-3 py-1.5 text-[12.5px] font-semibold text-fg-3 hover:text-fg">
+                    Disconnect
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => AuthService.continueWith(id)} className="press rounded-full bg-surface-2 px-3.5 py-1.5 text-[12.5px] font-semibold hover:bg-surface-3">
+                    Connect
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Stats Cards */}
       <div className="mt-6 px-6 grid grid-cols-2 sm:grid-cols-4 gap-3">

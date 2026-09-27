@@ -3,7 +3,9 @@
 // history, playlists, notifications) — fully local, no backend.
 // ─────────────────────────────────────────────────────────────
 
-import { Disc3, Landmark, ListMusic, Mic2, Podcast, RadioTower, Shapes } from 'lucide-react';
+import { Clapperboard, Disc3, Landmark, ListMusic, Mic2, Podcast, RadioTower, Shapes } from 'lucide-react';
+import type { RemoteShow } from '../services/sources';
+import { useMemo } from 'react';
 import { createStore, useStore } from '../core/core-store';
 import type { Entity } from '../core/core-utils';
 import type {
@@ -515,7 +517,7 @@ export const genreById = (id?: string) => GENRES.find((g) => g.id === id);
 export const showById = (id?: string) => SHOWS.find((s) => s.id === id);
 export const bookById = (id?: string) => BOOKS.find((b) => b.id === id);
 export const wikiById = (id?: string) => WIKI.find((w) => w.id === id);
-export const stationById = (id?: string) => STATIONS.find((s) => s.id === id);
+export const stationById = (id?: string) => STATIONS.find((s) => s.id === id) ?? (id ? remoteStore.get().tracks[id] : undefined);
 
 export const episodeToTrack = (show: Show, e: Episode): Track => ({
   id: e.id,
@@ -580,19 +582,51 @@ export const libraryStore = createStore<LibraryState>(
 /** Local imports live for the session only — blob URLs don't survive a reload. */
 export const localTracksStore = createStore<{ tracks: Track[] }>({ tracks: [] });
 
-export const allTracks = (): Track[] => [...localTracksStore.get().tracks, ...SEED_TRACKS];
+// ── Live-source items (Radio Browser, Audius, podcasts, Archive, YouTube) ──
+/**
+ * Items from real services are remembered here the moment you play, like,
+ * bookmark or add them to a playlist, so they resolve in Library, Bookmarks,
+ * history and playlists after a reload.
+ */
+interface RemoteState {
+  tracks: Record<string, Track>;
+  shows: Record<string, RemoteShow>;
+}
+export const remoteStore = createStore<RemoteState>({ tracks: {}, shows: {} }, 'vyv.remote.v1');
+
+export const isExternal = (t?: Track | null): t is Track => !!t?.source && t.source !== 'vyv' && t.source !== 'local';
+
+export function remember(track?: Track | null) {
+  if (!isExternal(track)) return;
+  remoteStore.set((s) => {
+    const entries = Object.entries({ ...s.tracks, [track.id]: track });
+    // Keep the store bounded; newest entries win.
+    return { tracks: Object.fromEntries(entries.slice(-600)) };
+  });
+}
+
+export function rememberShow(show: RemoteShow) {
+  remoteStore.set((s) => ({ shows: { ...s.shows, [show.id]: show } }));
+}
+
+const remoteAudio = (tracks: Record<string, Track>) => Object.values(tracks).filter((t) => !t.isRadio && t.kind !== 'video');
+
+/** Built-in catalogue + local imports + remembered live-source tracks. */
+export const allTracks = (): Track[] => [...localTracksStore.get().tracks, ...SEED_TRACKS, ...remoteAudio(remoteStore.get().tracks)];
 export const trackById = (id?: string): Track | undefined =>
-  allTracks().find((t) => t.id === id) ?? STATIONS.find((s) => s.id === id);
+  allTracks().find((t) => t.id === id) ?? STATIONS.find((s) => s.id === id) ?? (id ? remoteStore.get().tracks[id] : undefined);
 
 export const useAllTracks = () => {
   const local = useStore(localTracksStore, (s) => s.tracks);
-  return local.length ? [...local, ...SEED_TRACKS] : SEED_TRACKS;
+  const remote = useStore(remoteStore, (s) => s.tracks);
+  return useMemo(() => [...local, ...SEED_TRACKS, ...remoteAudio(remote)], [local, remote]);
 };
 
 // ── Favorites ─────────────────────────────────────────────────
 export const useIsFavorite = (id?: string) => useStore(libraryStore, (s) => !!id && s.favorites.includes(id));
 
-export function toggleFavorite(id: string): boolean {
+export function toggleFavorite(id: string, track?: Track | null): boolean {
+  remember(track);
   const has = libraryStore.get().favorites.includes(id);
   libraryStore.set((s) => ({ favorites: has ? s.favorites.filter((f) => f !== id) : [id, ...s.favorites] }));
   return !has;
@@ -602,7 +636,8 @@ export function toggleFavorite(id: string): boolean {
 export const useIsBookmarked = (kind: BookmarkKind, id?: string) =>
   useStore(libraryStore, (s) => !!id && s.bookmarks.some((b) => b.kind === kind && b.id === id));
 
-export function toggleBookmark(kind: BookmarkKind, id: string): boolean {
+export function toggleBookmark(kind: BookmarkKind, id: string, item?: Track | null): boolean {
+  remember(item);
   const has = libraryStore.get().bookmarks.some((b) => b.kind === kind && b.id === id);
   libraryStore.set((s) => ({
     bookmarks: has
@@ -642,7 +677,8 @@ export function deletePlaylist(id: string) {
   libraryStore.set((s) => ({ playlists: s.playlists.filter((p) => p.id !== id) }));
 }
 
-export function toggleInPlaylist(playlistId: string, trackId: string) {
+export function toggleInPlaylist(playlistId: string, trackId: string, track?: Track | null) {
+  remember(track);
   libraryStore.set((s) => ({
     playlists: s.playlists.map((p) =>
       p.id !== playlistId
@@ -744,7 +780,13 @@ export function resolveEntity(kind: BookmarkKind, id: string): Entity | null | u
     }
     case 'show': {
       const s = showById(id);
-      return s && { kind, id, title: s.title, subtitle: s.host, color: s.color, glyph: Podcast, route: { name: 'show', id } };
+      if (s) return { kind, id, title: s.title, subtitle: s.host, color: s.color, glyph: Podcast, route: { name: 'show', id } };
+      const r = remoteStore.get().shows[id];
+      return r && { kind, id, title: r.title, subtitle: r.host, color: r.color, src: r.artwork, glyph: Podcast, route: { name: 'show', id } };
+    }
+    case 'video': {
+      const v = trackById(id);
+      return v && { kind, id, title: v.title, subtitle: v.artist, color: v.dominantColorHex, src: v.coverUrl, glyph: Clapperboard, route: { name: 'video', id } };
     }
     case 'book': {
       const b = bookById(id);

@@ -3,7 +3,8 @@
 // ─────────────────────────────────────────────────────────────
 
 import { createStore } from '../core/core-store';
-import type { AgentMessage, PlayerMode, Route, RouteName, ThemePref, User } from '../core/core-types';
+import { signInWith, signOutProviders } from '../services/auth';
+import type { AgentMessage, AuthProvider, LinkedAccount, PlayerMode, Route, RouteName, ThemePref, User } from '../core/core-types';
 
 const ROUTES: RouteName[] = [
   'home',
@@ -28,6 +29,7 @@ const ROUTES: RouteName[] = [
   'article',
   'profile',
   'settings',
+  'video',
 ];
 
 const toHash = (r: Route) => `#/${r.name}${r.id ? `/${encodeURIComponent(r.id)}` : ''}`;
@@ -223,120 +225,112 @@ export function applyTheme(pref: ThemePref, origin?: { x: number; y: number }) {
   });
 }
 
-// ── Auth Service & Store ─────────────────────────────────────
-const STORAGE_KEY_AUTH = 'vyv_player_auth_v3';
+// ── Account (Google / Facebook only — vyv has no passwords) ──
+// Only the public profile is kept on this device; provider tokens are used
+// once to read it and never stored.
+const STORAGE_KEY_AUTH = 'vyv.account.v1';
 
-let currentUser: User | null = null;
-const authListeners: ((u: User | null) => void)[] = [];
-
-function initAuth() {
+function loadUser(): User | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_AUTH);
-    if (raw) currentUser = JSON.parse(raw);
+    const u = raw ? (JSON.parse(raw) as User) : null;
+    return u && Array.isArray(u.accounts) && u.accounts.length ? u : null;
   } catch {
-    currentUser = null;
+    return null;
   }
 }
-initAuth();
 
-function notifyAuth() {
+export const authStore = createStore<{ user: User | null; busy: AuthProvider | null }>({ user: loadUser(), busy: null });
+
+function saveUser(user: User | null) {
   try {
-    if (currentUser) localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(currentUser));
+    if (user) localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(user));
     else localStorage.removeItem(STORAGE_KEY_AUTH);
-  } catch {}
-  authListeners.forEach((l) => l(currentUser));
+  } catch {
+    /* storage unavailable */
+  }
+  authStore.set({ user });
 }
 
-export const authStore = createStore<{ user: User | null }>({ user: currentUser });
+const PROVIDER_NAME: Record<AuthProvider, string> = { google: 'Google', facebook: 'Facebook' };
+
+function userFrom(account: LinkedAccount): User {
+  const base = (account.email?.split('@')[0] || account.name).toLowerCase().replace(/[^a-z0-9_.]/g, '');
+  return {
+    id: `${account.provider}:${account.sub}`,
+    username: account.name,
+    handle: `@${base || 'listener'}`,
+    email: account.email ?? '',
+    avatarUrl: account.picture ?? '',
+    coverUrl: '',
+    bio: '',
+    followersCount: 0,
+    followingCount: 0,
+    provider: account.provider,
+    accounts: [account],
+  };
+}
 
 export const AuthService = {
-  getCurrentUser: () => currentUser,
-  subscribe: (l: (u: User | null) => void) => {
-    authListeners.push(l);
-    return () => {
-      const idx = authListeners.indexOf(l);
-      if (idx >= 0) authListeners.splice(idx, 1);
-    };
+  getCurrentUser: () => authStore.get().user,
+
+  /** Sign in — or, when already signed in, link another provider to the same profile. */
+  async continueWith(provider: AuthProvider): Promise<boolean> {
+    if (authStore.get().busy) return false;
+    authStore.set({ busy: provider });
+    try {
+      const account = await signInWith(provider);
+      const current = authStore.get().user;
+      if (current) {
+        const accounts = [...current.accounts.filter((a) => a.provider !== provider), account];
+        saveUser({ ...current, accounts, avatarUrl: current.avatarUrl || account.picture || '', email: current.email || account.email || '' });
+        toast(`${PROVIDER_NAME[provider]} connected`, 'check');
+      } else {
+        saveUser(userFrom(account));
+        toast(`Signed in with ${PROVIDER_NAME[provider]}`, 'check');
+      }
+      return true;
+    } catch (e) {
+      const err = e as { message?: string; code?: string };
+      if (err.code !== 'cancelled') toast(err.message || 'Sign-in failed');
+      return false;
+    } finally {
+      authStore.set({ busy: null });
+    }
   },
-  loginWithEmail: async (email: string, pass: string): Promise<boolean> => {
-    await new Promise((r) => setTimeout(r, 400));
-    if (!email || !pass) return false;
-    const username = email.split('@')[0];
-    currentUser = {
-      id: `user-${Date.now()}`,
-      username: username.charAt(0).toUpperCase() + username.slice(1),
-      handle: `@${username.toLowerCase()}`,
-      email,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=6366f1&color=fff`,
-      coverUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&q=80',
-      bio: 'Audiophile, night playlist curator, and soundscape explorer.',
-      followersCount: 142,
-      followingCount: 89,
-    };
-    notifyAuth();
-    authStore.set({ user: currentUser });
-    return true;
+
+  /** Unlink a provider. Unlinking the last one signs out. */
+  disconnect(provider: AuthProvider) {
+    const current = authStore.get().user;
+    if (!current) return;
+    const accounts = current.accounts.filter((a) => a.provider !== provider);
+    if (!accounts.length) return AuthService.logout();
+    saveUser({ ...current, accounts, provider: accounts[0].provider });
+    toast(`${PROVIDER_NAME[provider]} disconnected`, 'check');
   },
-  registerWithEmail: async (username: string, email: string, pass: string): Promise<boolean> => {
-    await new Promise((r) => setTimeout(r, 400));
-    if (!username || !email || !pass) return false;
-    currentUser = {
-      id: `user-${Date.now()}`,
-      username,
-      handle: `@${username.toLowerCase().replace(/\s+/g, '')}`,
-      email,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=ec4899&color=fff`,
-      coverUrl: 'https://images.unsplash.com/photo-1614113489855-66422ad300a4?w=1200&q=80',
-      bio: 'New listener enjoying crystal soundscapes on VYV.',
-      followersCount: 1,
-      followingCount: 10,
-    };
-    notifyAuth();
-    authStore.set({ user: currentUser });
-    return true;
-  },
-  loginWithOAuth: async (provider: 'Google' | 'Facebook'): Promise<boolean> => {
-    await new Promise((r) => setTimeout(r, 500));
-    const isGoogle = provider === 'Google';
-    currentUser = {
-      id: `oauth-${Date.now()}`,
-      username: isGoogle ? 'Google User' : 'Facebook User',
-      handle: isGoogle ? '@google_listener' : '@fb_listener',
-      email: isGoogle ? 'user@gmail.com' : 'user@facebook.com',
-      avatarUrl: isGoogle
-        ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80'
-        : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
-      coverUrl: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1200&q=80',
-      bio: `Connected with ${provider} account.`,
-      followersCount: 380,
-      followingCount: 215,
-    };
-    notifyAuth();
-    authStore.set({ user: currentUser });
-    return true;
-  },
+
   updateUserProfile: (username: string, handle: string, bio: string, avatarUrl: string, coverUrl: string) => {
-    if (!currentUser) return;
-    currentUser = {
-      ...currentUser,
+    const current = authStore.get().user;
+    if (!current) return;
+    saveUser({
+      ...current,
       username,
       handle: handle.startsWith('@') ? handle : `@${handle}`,
       bio,
-      avatarUrl: avatarUrl || currentUser.avatarUrl,
-      coverUrl: coverUrl || currentUser.coverUrl,
-    };
-    notifyAuth();
-    authStore.set({ user: currentUser });
+      avatarUrl: avatarUrl || current.avatarUrl,
+      coverUrl,
+    });
   },
-  toggleFollow: () => {
-    if (!currentUser) return;
-    currentUser = { ...currentUser, followersCount: currentUser.followersCount + 1 };
-    notifyAuth();
-    authStore.set({ user: currentUser });
-  },
+
   logout: () => {
-    currentUser = null;
-    notifyAuth();
-    authStore.set({ user: null });
+    signOutProviders();
+    saveUser(null);
   },
 };
+
+// Drop the old simulated accounts from earlier prototypes.
+try {
+  localStorage.removeItem('vyv_player_auth_v3');
+} catch {
+  /* ignore */
+}

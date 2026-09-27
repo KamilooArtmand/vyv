@@ -3,12 +3,14 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useDeferredValue, useMemo, useState } from 'react';
-import { Search as SearchIcon, Sparkles, X } from 'lucide-react';
+import { Globe, Search as SearchIcon, Sparkles, X } from 'lucide-react';
+import { Archive, Audius, Podcasts, RadioBrowser, YouTube, YOUTUBE_API_KEY } from '../services/sources';
+import { ArchiveCard, LiveState, ShowCard, StationGrid, VideoCard, useLive } from '../ui/ui-live';
 import { ALBUMS, ARTISTS, BOOKS, GENRES, SHOWS, STATIONS, WIKI, resolveEntity, useAllTracks } from '../state/state-catalog';
 import { ask } from '../state/state-agent';
 import { playTrack } from '../state/state-player';
 import { navigate } from '../state/state-ui';
-import { EmptyState, Grid, MediaCard, Section, Shelf, TrackList, meshGradient } from '../ui/ui-components';
+import { Grid, MediaCard, Section, Shelf, TrackList, meshGradient } from '../ui/ui-components';
 import { NAV_GROUPS } from '../ui/ui-shell';
 import type { BookmarkKind } from '../core/core-types';
 
@@ -103,7 +105,7 @@ export default function SearchView() {
             </span>
           </button>
 
-          {empty && <EmptyState icon={SearchIcon} title="Nothing matched" hint="Try the agent — it understands moods and years." />}
+          {empty && <p className="mb-6 px-1 text-[13px] text-fg-3">Nothing in your vyv library — here is what the live sources found.</p>}
 
           {results.tracks.length > 0 && (
             <Section title="Songs">
@@ -131,8 +133,56 @@ export default function SearchView() {
               </Section>
             ) : null,
           )}
+
+          <OnlineResults q={query} />
         </div>
       )}
     </div>
+  );
+}
+
+/** Live results from every connected source, fetched in parallel. */
+function OnlineResults({ q }: { q: string }) {
+  const active = q.length > 1 ? q : null;
+  const music = useLive(active && `au:${q}`, (sig) => Audius.search(q, 8, sig));
+  const radio = useLive(active && `rb:${q}`, (sig) => RadioBrowser.search(q, 6, sig));
+  const pods = useLive(active && `it:${q}`, (sig) => Podcasts.search(q, 10, sig));
+  const archive = useLive(active && `ia:${q}`, (sig) => Archive.search(q, 'audio', 10, sig));
+  const video = useLive(active && YOUTUBE_API_KEY ? `yt:${q}` : null, (sig) => YouTube.search(q, 8, sig));
+  if (!active) return null;
+
+  return (
+    <>
+      <div className="mb-6 mt-2 flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.14em] text-fg-3">
+        <Globe size={13} /> Live sources <span className="h-px flex-1 bg-line" />
+      </div>
+      <Section title="Music · Audius">
+        <LiveState loading={music.loading} error={music.error} empty={!music.data?.length}>
+          <TrackList tracks={music.data ?? []} numbered={false} />
+        </LiveState>
+      </Section>
+      <Section title="Radio · live">
+        <LiveState loading={radio.loading} error={radio.error} empty={!radio.data?.length}>
+          <StationGrid stations={radio.data ?? []} />
+        </LiveState>
+      </Section>
+      <Section title="Podcasts">
+        <LiveState loading={pods.loading} error={pods.error} empty={!pods.data?.length}>
+          <Shelf>{pods.data?.map((sh) => <ShowCard key={sh.id} show={sh} className={SHELF_ITEM} />)}</Shelf>
+        </LiveState>
+      </Section>
+      <Section title="Internet Archive">
+        <LiveState loading={archive.loading} error={archive.error} empty={!archive.data?.length}>
+          <Shelf>{archive.data?.map((it) => <ArchiveCard key={it.id} item={it} className={SHELF_ITEM} />)}</Shelf>
+        </LiveState>
+      </Section>
+      {YOUTUBE_API_KEY && (
+        <Section title="Video · YouTube">
+          <LiveState loading={video.loading} error={video.error} empty={!video.data?.length}>
+            <Shelf>{video.data?.map((v) => <VideoCard key={v.id} video={v} className="w-[260px] shrink-0 snap-start" />)}</Shelf>
+          </LiveState>
+        </Section>
+      )}
+    </>
   );
 }

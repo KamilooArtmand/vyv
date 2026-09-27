@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react';
 import {
   BookOpen,
+  Clapperboard,
   Disc3,
   Landmark,
   ListMusic,
@@ -109,4 +110,5 @@ export const KIND_META: Record<BookmarkKind, { label: string; icon: LucideIcon }
   station: { label: 'Stations', icon: RadioTower },
   wiki: { label: 'Wiki', icon: Landmark },
   genre: { label: 'Genres', icon: Shapes },
+  video: { label: 'Videos', icon: Clapperboard },
 };
