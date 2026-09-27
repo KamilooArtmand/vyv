@@ -1,0 +1,1299 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>vyv · KRD PLY Bible</title>
+<meta name="description" content="vyv — the Kurdish National Multimedia SuperApp. Master document: vision, philosophy, product, AI operating layer, architecture, brand identity, business model, governance, roadmap and master checklist.">
+<meta name="theme-color" content="#07080a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%2307080a'/%3E%3Cpath d='M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5' fill='none' stroke='%23f5f5f7' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='11' r='2.3' fill='%23ff3c00'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@1.48.0/dist/umd/lucide.min.js"></script>
+<style>
+/* ───────────────── Tokens (mirrors vyv design system) ───────────────── */
+:root{
+  --brand:#ff3c00; --brand-2:#ff6a3d; --brand-soft:rgb(255 60 0 / .14); --brand-ink:#ff5a24;
+  --gray:#a2a8b2; --gray-1:#eceef1; --gray-2:#d4d8de; --gray-3:#a2a8b2; --gray-4:#7c838e; --gray-5:#555b64; --gray-6:#33373d; --gray-7:#1b1d21;
+  --bg:#07080a; --bg-2:#0e1013; --fg:#f5f5f7; --fg-2:#a2a8b2; --fg-3:#6f7680;
+  --line:rgb(255 255 255 / .08); --line-2:rgb(255 255 255 / .16);
+  --glass-a:rgb(255 255 255 / .085); --glass-b:rgb(255 255 255 / .025); --glass-hi:rgb(255 255 255 / .22);
+  --shadow:0 30px 80px -40px rgb(0 0 0 / .85);
+  --r-xs:8px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:28px; --r-2xl:36px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --arab:"Vazirmatn","Noto Sans Arabic",Tahoma,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f4f5f7; --bg-2:#e9ecf0; --fg:#0d0f12; --fg-2:#555b64; --fg-3:#7c838e;
+  --line:rgb(0 0 0 / .08); --line-2:rgb(0 0 0 / .14);
+  --glass-a:rgb(255 255 255 / .78); --glass-b:rgb(255 255 255 / .46); --glass-hi:rgb(255 255 255 / .95);
+  --shadow:0 30px 70px -40px rgb(20 24 30 / .35); --brand-ink:#e03400;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 var(--sans);letter-spacing:-.005em;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--brand-ink);text-decoration:none} a:hover{text-decoration:underline}
+::selection{background:var(--brand);color:#fff}
+.ku{font-family:var(--arab);direction:rtl;unicode-bidi:isolate}
+code,.mono{font-family:var(--mono);font-size:.86em}
+i[data-lucide],svg.lucide{width:18px;height:18px;stroke-width:1.75;flex-shrink:0}
+
+/* ───────────────── Liquid background ───────────────── */
+.aura{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.aura b{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;animation:drift 28s var(--ease) infinite alternate}
+.aura b:nth-child(1){width:52vmax;height:52vmax;left:-14vmax;top:-18vmax;background:radial-gradient(circle,rgb(255 60 0 / .55),transparent 62%)}
+.aura b:nth-child(2){width:46vmax;height:46vmax;right:-16vmax;top:20vh;background:radial-gradient(circle,rgb(162 168 178 / .35),transparent 64%);animation-duration:34s}
+.aura b:nth-child(3){width:40vmax;height:40vmax;left:30vw;bottom:-22vmax;background:radial-gradient(circle,rgb(255 106 61 / .28),transparent 60%);animation-duration:40s}
+:root[data-theme="light"] .aura b{opacity:.35}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.05;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+@keyframes drift{to{transform:translate3d(6vmax,4vmax,0) scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.aura b{animation:none}*{transition:none!important;animation:none!important}}
+
+/* ───────────────── Liquid glass material ───────────────── */
+.glass{position:relative;background:linear-gradient(145deg,var(--glass-a),var(--glass-b));-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);border:1px solid var(--line);box-shadow:inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgb(0 0 0 / .12),var(--shadow);border-radius:var(--r-xl)}
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(115deg,rgb(255 255 255 / .12) 0%,transparent 28%,transparent 72%,rgb(255 255 255 / .05) 100%);mix-blend-mode:overlay}
+
+/* ───────────────── Shell ───────────────── */
+.shell{display:grid;grid-template-columns:316px minmax(0,1fr);min-height:100dvh}
+aside.side{position:sticky;top:0;height:100dvh;padding:14px;display:flex;flex-direction:column;gap:10px;z-index:20}
+.side .panel{display:flex;flex-direction:column;height:100%;padding:16px 12px 12px;overflow:hidden}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 8px 12px}
+.brand .wm{font-weight:800;font-size:22px;letter-spacing:-.05em;line-height:1}
+.brand small{display:block;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-3);font-weight:600;margin-top:3px}
+.search{display:flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-radius:999px;background:var(--glass-a);border:1px solid var(--line);margin:0 4px 10px}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font:inherit;font-size:13.5px}
+.search input::placeholder{color:var(--fg-3)}
+nav.toc{flex:1;overflow-y:auto;padding:0 2px 8px;scrollbar-width:thin}
+.toc .part{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-3);padding:14px 10px 6px}
+.toc a{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;color:var(--fg-2);font-size:13.5px;font-weight:500;text-decoration:none;transition:background .2s,color .2s}
+.toc a .n{font:500 10.5px var(--mono);color:var(--fg-3);width:20px}
+.toc a:hover{background:var(--glass-a);color:var(--fg)}
+.toc a.on{background:var(--brand-soft);color:var(--fg)}
+.toc a.on .n,.toc a.on svg{color:var(--brand-ink)}
+.side .foot{display:flex;gap:6px;padding:10px 4px 0;border-top:1px solid var(--line)}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:999px;border:1px solid var(--line);background:var(--glass-a);color:var(--fg);cursor:pointer;transition:transform .2s var(--ease),background .2s}
+.ib:hover{transform:translateY(-1px);background:var(--glass-hi)} .ib:active{transform:scale(.94)}
+.ib.grow{flex:1;width:auto;gap:8px;font:600 12.5px var(--sans);padding:0 12px}
+main{min-width:0;padding:22px clamp(16px,4vw,56px) 80px}
+.topbar{display:none}
+.progress{position:fixed;left:0;top:0;height:2px;background:linear-gradient(90deg,var(--brand),var(--brand-2));z-index:60;width:0;transition:width .3s}
+
+/* ───────────────── Pages (SPA) ───────────────── */
+.page{display:none;max-width:1080px;margin:0 auto;animation:rise .55s var(--ease)}
+.page.on,body.all .page{display:block}
+body.all .page{margin-bottom:72px;padding-bottom:40px;border-bottom:1px dashed var(--line-2)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brand-ink);margin-bottom:12px}
+.eyebrow .num{font-family:var(--mono);color:var(--fg-3)}
+h1,h2,h3,h4{margin:0;letter-spacing:-.035em;line-height:1.1}
+h2.t{font-size:clamp(30px,4.4vw,50px);font-weight:700;margin-bottom:14px}
+h3{font-size:21px;font-weight:650;margin:34px 0 12px}
+h4{font-size:15.5px;font-weight:650;letter-spacing:-.015em;margin-bottom:6px}
+p{margin:0 0 14px;color:var(--fg-2)} p b,li b,td b{color:var(--fg);font-weight:600}
+.lead{font-size:clamp(16px,1.6vw,19px);line-height:1.6;color:var(--fg-2);max-width:780px;margin-bottom:26px}
+ul.clean{list-style:none;padding:0;margin:0 0 14px}
+ul.clean li{position:relative;padding-left:20px;margin:7px 0;color:var(--fg-2)}
+ul.clean li::before{content:"";position:absolute;left:3px;top:.68em;width:6px;height:6px;border-radius:50%;background:var(--brand)}
+.grid{display:grid;gap:14px} .g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))} .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{padding:20px 20px 16px;border-radius:var(--r-lg)}
+.card p{font-size:14px;margin-bottom:8px}
+.card .ic{display:inline-flex;width:40px;height:40px;border-radius:14px;align-items:center;justify-content:center;background:var(--brand-soft);color:var(--brand-ink);margin-bottom:12px}
+.card .ic.g{background:var(--glass-a);color:var(--fg)}
+.tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line-2);color:var(--fg-2);margin:2px 4px 2px 0;white-space:nowrap}
+.tag.b{border-color:transparent;background:var(--brand-soft);color:var(--brand-ink)}
+.kpi{padding:18px 20px;border-radius:var(--r-lg)}
+.kpi .v{font-size:32px;font-weight:750;letter-spacing:-.05em;line-height:1}
+.kpi .l{font-size:12.5px;color:var(--fg-3);margin-top:6px}
+.callout{display:flex;gap:14px;padding:16px 18px;border-radius:var(--r-lg);margin:18px 0;border:1px solid var(--line)}
+.callout.brand{background:linear-gradient(135deg,rgb(255 60 0 / .16),rgb(255 60 0 / .04));border-color:rgb(255 60 0 / .3)}
+.callout .ci{color:var(--brand-ink);margin-top:2px}
+.callout p{margin:0;font-size:14px}
+.tw{overflow-x:auto;border-radius:var(--r-lg);margin:12px 0 18px}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px;min-width:620px}
+.tbl th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-3);font-weight:700;padding:12px 14px;border-bottom:1px solid var(--line-2)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--line);color:var(--fg-2);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+pre.code{margin:12px 0 18px;padding:18px;border-radius:var(--r-lg);overflow:auto;font:12.5px/1.6 var(--mono);color:var(--fg-2);background:rgb(0 0 0 / .35);border:1px solid var(--line)}
+:root[data-theme="light"] pre.code{background:rgb(255 255 255 / .6)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:48px}
+.pager a{flex:1;display:flex;flex-direction:column;gap:2px;padding:14px 18px;border-radius:var(--r-lg);text-decoration:none;color:var(--fg);max-width:48%}
+.pager a small{color:var(--fg-3);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.pager a.nx{text-align:right;margin-left:auto}
+body.all .pager{display:none}
+
+/* Cover */
+.cover{min-height:calc(100dvh - 60px);display:flex;flex-direction:column;justify-content:center;padding:40px 0}
+.cover .mark{width:88px;height:88px;margin-bottom:30px;filter:drop-shadow(0 20px 40px rgb(255 60 0 / .35))}
+.cover h1{font-size:clamp(64px,12vw,148px);font-weight:800;letter-spacing:-.075em;line-height:1;padding-bottom:.06em}
+.cover h1 span{background:linear-gradient(90deg,var(--fg),var(--gray));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cover .sub{font-size:clamp(18px,2.2vw,26px);font-weight:500;letter-spacing:-.03em;color:var(--fg-2);margin:18px 0 26px;max-width:760px}
+.cover .ku-line{font-size:22px;color:var(--fg);margin-bottom:6px;text-align:left}
+.wave{height:56px;display:flex;align-items:center;gap:4px;margin:30px 0}
+.wave i{display:block;width:4px;border-radius:4px;background:linear-gradient(var(--brand),var(--brand-2));animation:eq 1.4s ease-in-out infinite alternate}
+@keyframes eq{0%{height:14%}100%{height:100%}}
+.meta-row{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Swatches */
+.sw{border-radius:var(--r-lg);overflow:hidden}
+.sw .chip{height:110px;display:flex;align-items:flex-end;padding:12px;font:600 12px var(--mono)}
+.sw .inf{padding:12px 14px}
+.sw .inf b{display:block;font-size:14px}
+.sw .inf span{font:12px var(--mono);color:var(--fg-3)}
+.ramp{display:flex;height:54px;border-radius:14px;overflow:hidden;margin:10px 0 4px}
+.ramp div{flex:1;display:flex;align-items:flex-end;padding:5px;font:10px var(--mono)}
+
+/* Architecture diagram */
+.arch{display:grid;gap:10px}
+.arch .layer{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:stretch}
+.arch .lbl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3);padding:0 6px}
+.arch .boxes{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border-radius:var(--r-lg)}
+.arch .bx{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:12px;background:var(--glass-a);border:1px solid var(--line);font-size:12.5px;font-weight:550}
+.arch .bx.b{background:var(--brand-soft);border-color:rgb(255 60 0 / .28);color:var(--fg)}
+
+/* Roadmap */
+.road{position:relative;padding-left:26px}
+.road::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--brand),transparent)}
+.phase{position:relative;margin-bottom:16px;padding:18px 20px;border-radius:var(--r-lg)}
+.phase::before{content:"";position:absolute;left:-24px;top:24px;width:12px;height:12px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 5px var(--brand-soft)}
+.phase .when{font:600 11.5px var(--mono);color:var(--brand-ink);letter-spacing:.06em}
+
+/* Checklist */
+.cl-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:18px 20px;border-radius:var(--r-lg);margin-bottom:16px}
+.bar{flex:1;min-width:180px;height:8px;border-radius:99px;background:var(--glass-a);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),var(--brand-2));transition:width .4s var(--ease)}
+.cl-group{padding:16px 18px;border-radius:var(--r-lg);margin-bottom:12px}
+.cl-group h4{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cl-group h4 .cnt{margin-left:auto;font:500 12px var(--mono);color:var(--fg-3)}
+label.ck{display:flex;gap:12px;align-items:flex-start;padding:8px 6px;border-radius:10px;cursor:pointer;font-size:14px;color:var(--fg-2)}
+label.ck:hover{background:var(--glass-b)}
+label.ck input{appearance:none;flex-shrink:0;width:20px;height:20px;margin:1px 0 0;border-radius:7px;border:1.5px solid var(--line-2);display:grid;place-content:center;cursor:pointer;transition:.2s}
+label.ck input:checked{background:var(--brand);border-color:var(--brand)}
+label.ck input:checked::after{content:"";width:10px;height:6px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+label.ck input:checked+span{text-decoration:line-through;color:var(--fg-3)}
+label.ck .pr{font:600 10.5px var(--mono);padding:1px 6px;border-radius:6px;margin-right:6px;background:var(--glass-a);color:var(--fg-3)}
+label.ck .pr.p0{background:var(--brand-soft);color:var(--brand-ink)}
+
+/* Glossary */
+dl.gl{display:grid;grid-template-columns:minmax(150px,220px) 1fr;gap:0;margin:0}
+dl.gl dt,dl.gl dd{padding:11px 14px;border-bottom:1px solid var(--line);margin:0}
+dl.gl dt{font-weight:650;font-size:13.5px}
+dl.gl dd{color:var(--fg-2);font-size:13.5px}
+
+/* Responsive */
+@media (max-width:1080px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  aside.side{position:fixed;inset:0 auto 0 0;width:min(86vw,330px);transform:translateX(-105%);transition:transform .35s var(--ease)}
+  body.menu aside.side{transform:none}
+  body.menu .scrim{display:block}
+  .scrim{display:none;position:fixed;inset:0;background:rgb(0 0 0 / .45);z-index:15}
+  .topbar{display:flex;align-items:center;gap:10px;position:sticky;top:10px;z-index:10;padding:8px 8px 8px 14px;border-radius:999px;margin-bottom:22px}
+  .topbar .wm{font-weight:800;letter-spacing:-.05em;font-size:18px;flex:1}
+  main{padding:12px 16px 60px}
+}
+@media (max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}.arch .layer{grid-template-columns:1fr}dl.gl{grid-template-columns:1fr}dl.gl dt{border-bottom:0;padding-bottom:0}.pager a{max-width:100%}}
+@media print{
+  aside.side,.topbar,.pager,.aura,.grain,.progress,.scrim{display:none!important}
+  .shell{display:block} .page{display:block!important;page-break-after:always;animation:none}
+  .glass{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+  body{background:#fff;color:#000}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="aura" aria-hidden="true"><b></b><b></b><b></b></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="scrim" onclick="document.body.classList.remove('menu')"></div>
+
+<div class="shell">
+<aside class="side">
+  <div class="panel glass">
+    <div class="brand">
+      <svg width="38" height="38" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--fg)"/><path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="var(--bg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="11" r="2.3" fill="#ff3c00"/></svg>
+      <div><div class="wm">vyv</div><small>KRD PLY · Master Bible</small></div>
+    </div>
+    <label class="search"><i data-lucide="search"></i><input id="q" type="search" placeholder="Search the Bible…" aria-label="Search chapters"></label>
+    <nav class="toc" id="toc" aria-label="Index"></nav>
+    <div class="foot">
+      <button class="ib" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"><i data-lucide="sun-moon"></i></button>
+      <button class="ib grow" id="allBtn" title="Read all chapters on one page"><i data-lucide="scroll-text"></i><span>Read all</span></button>
+      <button class="ib" onclick="window.print()" title="Print / Save as PDF" aria-label="Print"><i data-lucide="printer"></i></button>
+    </div>
+  </div>
+</aside>
+
+<main id="main">
+<div class="topbar glass">
+  <span class="wm">vyv</span>
+  <button class="ib" onclick="document.body.classList.toggle('menu')" aria-label="Open index"><i data-lucide="panel-left"></i></button>
+</div>
+
+<!-- ═══════════════════ PART I · FOUNDATION ═══════════════════ -->
+
+<section class="page" id="cover" data-part="Foundation" data-title="Cover" data-icon="sparkles">
+  <div class="cover">
+    <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="10" fill="var(--fg)"/><path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="var(--bg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="11" r="2.3" fill="#ff3c00"/></svg>
+    <div class="eyebrow"><i data-lucide="radio-tower"></i> KRD PLY · National Multimedia Platform</div>
+    <h1><span>vyv</span></h1>
+    <p class="sub">The Kurdish nation's home for sound and screen. Music, radio, podcasts, audiobooks, heritage voices, film and a living encyclopedia, run by an AI operating layer and built to world-class standards.</p>
+    <div class="ku-line ku">دەنگی نەتەوەیەک، شەپۆلێک بۆ جیهان</div>
+    <div style="color:var(--fg-3);font-size:14px;margin-bottom:6px">Dengê neteweyekê, pêlek ji bo cîhanê · <em>The voice of a nation, a wave for the world.</em></div>
+    <div class="wave" aria-hidden="true" id="wave"></div>
+    <div class="meta-row">
+      <span class="tag b"><i data-lucide="file-badge"></i> Master Bible v1.0</span>
+      <span class="tag"><i data-lucide="calendar"></i> 2026</span>
+      <span class="tag"><i data-lucide="lock"></i> Confidential · For partners & investors</span>
+      <span class="tag"><i data-lucide="layers"></i> Vision · Product · AI · Tech · Brand · Business · Roadmap</span>
+    </div>
+  </div>
+</section>
+
+<section class="page" id="summary" data-part="Foundation" data-title="Executive Summary" data-icon="gem">
+  <div class="eyebrow"><span class="num">01</span> Executive Summary</div>
+  <h2 class="t">One platform for a nation's sound and screen.</h2>
+  <p class="lead">Around 35–45 million Kurds live across four states and a global diaspora, yet they have <b>never had one high-quality, well-structured home</b> where they can listen, watch, read and preserve their culture. Today it is scattered across YouTube uploads, unlicensed websites, fading radio archives and private collections. <b>vyv</b> fixes this with a national-grade SuperApp. It is licensed, multi-dialect and available on every platform, and AI runs it end to end.</p>
+  <div class="grid g4">
+    <div class="kpi glass"><div class="v">35–45M</div><div class="l">Kurdish speakers worldwide (est., sources vary)</div></div>
+    <div class="kpi glass"><div class="v">5+</div><div class="l">Major dialects &amp; 2 scripts: Latin &amp; Arabic</div></div>
+    <div class="kpi glass"><div class="v">9</div><div class="l">Media verticals in one app</div></div>
+    <div class="kpi glass"><div class="v">6</div><div class="l">Target platforms: Web, Windows, Android, iOS, macOS, Linux</div></div>
+  </div>
+  <h3>The proposition</h3>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="target"></i></div><h4>Problem</h4><p>Kurdish culture is fragmented, unlicensed, poorly tagged and at risk of loss. Artists earn close to nothing. Audiences, especially in KRI, often have no way to pay internationally.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="waves"></i></div><h4>Solution</h4><p>One licensed SuperApp: music, radio, podcasts, audiobooks with a living book reader, a heritage archive, a wiki, AI-assisted music and a phased video service with Kurdish subtitles.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="cpu"></i></div><h4>Moat</h4><p>The canonical Kurdish media graph: rights, metadata, lyrics, biographies and archives, curated by AI agents and human editors. It is a national asset that cannot be copied.</p></div>
+  </div>
+  <h3>Why now</h3>
+  <ul class="clean">
+    <li><b>Digital payments in Iraq are growing fast.</b> E-wallets, digital banks and carrier billing make local micro-payments possible for the first time.</li>
+    <li><b>Generative and agentic AI</b> turn the cost of metadata, lyrics, subtitles, restoration and support from "armies of staff" into software.</li>
+    <li><b>Heritage is time-critical.</b> The first generation of recorded Kurdish voices and their custodians is ageing. Tapes and reels degrade every year.</li>
+    <li><b>Global platforms under-serve Kurdish.</b> They have no dialect-aware search, no Sorani RTL-first UX, no archival depth and no local payments.</li>
+  </ul>
+  <div class="callout brand"><i class="ci" data-lucide="hand-coins"></i><p><b>The ask.</b> A strategic partnership with the Kurdistan Regional Government and/or top-tier private investors. It funds a <b>fully operational launch on Web and Windows (Microsoft Store)</b> with real sign-in, real licensed catalogue, playlists and in-app purchases, followed by mobile and video. See <a href="#/invest">§ Investment Case</a>.</p></div>
+</section>
+
+<section class="page" id="name" data-part="Foundation" data-title="Name & Meaning" data-icon="feather">
+  <div class="eyebrow"><span class="num">02</span> Name &amp; Meaning</div>
+  <h2 class="t">vyv: a wave, a wing, a waveform.</h2>
+  <p class="lead"><b>vyv</b> is pronounced <b>/weɪv/</b>, like the English "wave". Its three letters are a symbol as much as a word. The two <b>v</b>s are wings in flight around a central <b>y</b>, a rising body. Read together, the letterforms trace the peaks and troughs of an audio waveform.</p>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="audio-waveform"></i></div><h4>Wave · <span class="ku">شەپۆل</span> · pêl</h4><p>Sound travels as waves. vyv is the carrier: every voice, song and story moves across it.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="bird"></i></div><h4>Wing · <span class="ku">باڵ</span> · bask</h4><p>A bird in flight is freedom without borders. The mark and wordmark echo open wings, a nation's culture that crosses every frontier.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="flame"></i></div><h4>Flame · <span class="ku">ئاگر</span> · agir</h4><p>The brand accent <b>#ff3c00</b> is the Newroz fire, the oldest living symbol of Kurdish renewal. It burns as a single dot, the crest of the wave.</p></div>
+  </div>
+  <h3>Naming system</h3>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Layer</th><th>Name</th><th>Use</th></tr>
+    <tr><td>Masterbrand family</td><td><b>KRD</b></td><td>National digital ecosystem (KRD HUB, KRD MAG, KRD PLY …)</td></tr>
+    <tr><td>Platform / institution</td><td><b>KRD PLY</b></td><td>Legal, B2G and B2B name: "KRD PLY National Multimedia Platform"</td></tr>
+    <tr><td>Consumer product</td><td><b>vyv</b></td><td>App name, icon, store listing: "vyv — Kurdish Music, Radio, Books &amp; Film"</td></tr>
+    <tr><td>Sub-products</td><td>vyv Radio · vyv Books · vyv Heritage · vyv Wiki · vyv Screen · vyv Studio · vyv Mind</td><td>Always "vyv + plain noun", never invented words</td></tr>
+  </table></div>
+  <div class="callout"><i class="ci" data-lucide="info"></i><p><b>Alignment note:</b> this naming ladder assumes KRD HUB defines KRD as the national umbrella. Reconcile it against the KRD HUB brand guideline and KRD MAG bible before public release. Any deviation from the umbrella rules takes precedence over this page.</p></div>
+  <h3>Writing the name</h3>
+  <ul class="clean">
+    <li>Always lowercase: <b>vyv</b>, never "VYV" or "Vyv", including at the start of a sentence.</li>
+    <li>In Sorani (Arabic script) text keep the Latin wordmark <b>vyv</b> embedded LTR. Do not transliterate the logo.</li>
+    <li>Tagline in three languages: Sorani, Kurmanji (Latin) and English. Other dialects (Hawrami, Badini, Southern Kurdish, Zazaki) are added per market.</li>
+  </ul>
+</section>
+
+<section class="page" id="manifesto" data-part="Foundation" data-title="Manifesto & Philosophy" data-icon="scroll">
+  <div class="eyebrow"><span class="num">03</span> Manifesto &amp; Philosophy</div>
+  <h2 class="t">We are not building an app. We are building a memory.</h2>
+  <p class="lead">A people that cannot hear its own grandparents cannot know itself. vyv exists so that every Kurdish voice ever recorded, and every one yet to be born, has a dignified, permanent, fairly-paid home.</p>
+  <h3>Seven principles</h3>
+  <div class="grid g2" id="principles"></div>
+  <h3>Mission · Vision · Values</h3>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic g"><i data-lucide="compass"></i></div><h4>Mission</h4><p>Collect, preserve, license and deliver the entirety of Kurdish audio-visual culture to everyone, everywhere, fairly.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="telescope"></i></div><h4>Vision</h4><p>By 2030, vyv is the first place every Kurd and every student of Kurdish culture opens to listen, watch, read or learn.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="heart-handshake"></i></div><h4>Values</h4><p>Dignity · Unity in diversity · Fairness to creators · Craft · Openness · Trust · Permanence.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PART II · MARKET ═══════════════════ -->
+
+<section class="page" id="problem" data-part="Market" data-title="The Problem" data-icon="triangle-alert">
+  <div class="eyebrow"><span class="num">04</span> The Problem</div>
+  <h2 class="t">A great culture, stored in a broken shelf.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="puzzle"></i></div><h4>Fragmentation</h4><p>Content is scattered across YouTube, Telegram, Instagram, personal websites and private hard drives. There is no canonical catalogue and no single source of truth.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="tags"></i></div><h4>Poor metadata</h4><p>Songs are mislabelled, credits are missing, dialects are untagged and lyrics are unavailable or wrong. Search in Sorani and Kurmanji rarely works.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="scale"></i></div><h4>No rights economy</h4><p>Piracy is the default. Artists, poets, composers and labels see almost no revenue. There is no functioning collective management organisation for Kurdish music.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="hourglass"></i></div><h4>Heritage at risk</h4><p>Reel-to-reel tapes, cassettes, radio archives and dengbêj recordings decay every year. Much of this history exists in a single fragile copy.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="credit-card"></i></div><h4>Payment exclusion</h4><p>Many users lack international cards, and subscriptions priced in USD/EUR are unaffordable. The result is exclusion, and exclusion leads to piracy.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="sparkle"></i></div><h4>Low craft</h4><p>Existing Kurdish media apps look and feel dated, with weak UX, no personalisation, no offline mode and no premium experience worthy of the culture.</p></div>
+  </div>
+</section>
+
+<section class="page" id="market" data-part="Market" data-title="Market & Audience" data-icon="users-round">
+  <div class="eyebrow"><span class="num">05</span> Market &amp; Audience</div>
+  <h2 class="t">A nation of listeners, across four states and fifty countries.</h2>
+  <p class="lead">Every figure below is a planning estimate. Validate it with primary research before any financial commitment.</p>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Segment</th><th>Size (est.)</th><th>Needs</th><th>Pay capacity</th></tr>
+    <tr><td><b>Kurdistan Region (KRI)</b></td><td>~6M+</td><td>Sorani &amp; Badini content, local payments, low-data mode</td><td>Low–medium; wallets, carrier billing</td></tr>
+    <tr><td><b>Kurds in Türkiye</b></td><td>~15–20M</td><td>Kurmanji &amp; Zazaki, music, film, news radio</td><td>Medium; local cards</td></tr>
+    <tr><td><b>Kurds in Iran</b></td><td>~8–12M</td><td>Sorani, Hawrami, Southern Kurdish, classical &amp; maqam</td><td>Constrained by sanctions; needs free/ad tier</td></tr>
+    <tr><td><b>Kurds in Syria</b></td><td>~2–3M</td><td>Kurmanji, community radio, education</td><td>Very low; free tier, sponsorship</td></tr>
+    <tr><td><b>Diaspora (EU, UK, US, Caucasus)</b></td><td>~1.5–2M+</td><td>Heritage, language for children, film, events</td><td>High; card, SEPA, Apple/Google Pay</td></tr>
+    <tr><td><b>Institutions</b></td><td>Universities, broadcasters, ministries, NGOs</td><td>Archive, licensing, education, analytics</td><td>B2G / B2B contracts</td></tr>
+  </table></div>
+  <h3>Personas</h3>
+  <div class="grid g4">
+    <div class="card glass"><div class="ic g"><i data-lucide="headphones"></i></div><h4>Rêbîn, 22 · Hewlêr</h4><p>Streams daily, wants new Kurdish pop and rap and shares clips. Pays with his mobile wallet.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="baby"></i></div><h4>Nesrîn, 38 · Berlin</h4><p>Wants her children to hear Kurdish stories and lullabies. Pays for a Family plan.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="book-open-text"></i></div><h4>Mamosta Kawa, 61 · Silêmanî</h4><p>Listens to classical maqam, radio and audiobooks of Nalî and Mahwi. Needs a large-type, simple UI.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="mic-vocal"></i></div><h4>Dilan, 29 · Artist</h4><p>Wants fair payouts, analytics, lyric sync and a way to sell her album and license songs for film.</p></div>
+  </div>
+</section>
+
+<section class="page" id="competition" data-part="Market" data-title="Competitive Landscape" data-icon="swords">
+  <div class="eyebrow"><span class="num">06</span> Competitive Landscape</div>
+  <h2 class="t">Global giants are broad. vyv is deep.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Capability</th><th>Global DSPs<br><small>Spotify, Apple, Deezer</small></th><th>Regional<br><small>Anghami etc.</small></th><th>YouTube</th><th>Local Kurdish sites</th><th><b style="color:var(--brand-ink)">vyv</b></th></tr>
+    <tr><td>Deep licensed Kurdish catalogue</td><td>Partial</td><td>Partial</td><td>Unlicensed / mixed</td><td>Mostly unlicensed</td><td><b>Core</b></td></tr>
+    <tr><td>Dialect-aware search (ckb/kmr/sdh/hac/zza)</td><td>—</td><td>—</td><td>—</td><td>Weak</td><td><b>Native</b></td></tr>
+    <tr><td>Sorani RTL-first UX</td><td>—</td><td>Arabic only</td><td>Partial</td><td>Varies</td><td><b>Native</b></td></tr>
+    <tr><td>Heritage archive &amp; wiki</td><td>—</td><td>—</td><td>—</td><td>Fragmented</td><td><b>Core</b></td></tr>
+    <tr><td>Audiobooks + read-along book reader</td><td>Limited</td><td>—</td><td>—</td><td>—</td><td><b>Core</b></td></tr>
+    <tr><td>Local payments (IQD wallets, carrier)</td><td>Limited</td><td>Partial</td><td>—</td><td>—</td><td><b>Core</b></td></tr>
+    <tr><td>Film &amp; video with Kurdish subtitles</td><td>—</td><td>—</td><td>Unstructured</td><td>—</td><td><b>Phased</b></td></tr>
+    <tr><td>Fair royalty model &amp; rights registry</td><td>Pro-rata</td><td>Pro-rata</td><td>Content ID</td><td>—</td><td><b>Artist-centric</b></td></tr>
+  </table></div>
+  <div class="callout"><i class="ci" data-lucide="handshake"></i><p><b>Posture:</b> vyv complements global platforms. We become the <b>Kurdish rights and metadata hub</b> and can distribute licensed Kurdish catalogue <i>to</i> them via DDEX, earning as an aggregator even when listening happens elsewhere.</p></div>
+</section>
+
+<!-- ═══════════════════ PART III · PRODUCT ═══════════════════ -->
+
+<section class="page" id="superapp" data-part="Product" data-title="SuperApp Map" data-icon="layout-grid">
+  <div class="eyebrow"><span class="num">07</span> SuperApp Map</div>
+  <h2 class="t">Nine verticals. One account. One wave.</h2>
+  <p class="lead">Every vertical shares one identity, one library, one wallet, one AI agent and one design system. The app feels like a single calm instrument, not nine bolted-on products.</p>
+  <div class="grid g3" id="verticals"></div>
+  <h3>Shared platform services</h3>
+  <div class="meta-row">
+    <span class="tag b"><i data-lucide="user-round"></i> One identity</span><span class="tag"><i data-lucide="library"></i> Unified library &amp; bookmarks</span><span class="tag"><i data-lucide="wallet"></i> vyv Wallet</span><span class="tag"><i data-lucide="sparkles"></i> vyv Agent</span><span class="tag"><i data-lucide="bell"></i> Notifications</span><span class="tag"><i data-lucide="search"></i> Universal dialect search</span><span class="tag"><i data-lucide="download"></i> Offline</span><span class="tag"><i data-lucide="cast"></i> Cast / AirPlay / DLNA</span><span class="tag"><i data-lucide="share-2"></i> Social share cards</span><span class="tag"><i data-lucide="accessibility"></i> Accessibility</span>
+  </div>
+</section>
+
+<section class="page" id="music" data-part="Product" data-title="Music & Playlists" data-icon="music">
+  <div class="eyebrow"><span class="num">08</span> Music &amp; Playlists</div>
+  <h2 class="t">A premium player worthy of the culture.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="disc-3"></i></div><h4>Catalogue</h4><p>Albums, singles, artists, genres (maqam, dengbêj, stran, lawik, heyran, siyaçemane, pop, rap, folk, fusion), eras and regions. Every track carries full credits: performer, composer, lyricist, arranger, label, year, dialect and ISRC.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="list-music"></i></div><h4>Playlists</h4><p>User playlists, collaborative playlists, editorial playlists, AI "for right now" mixes, Daily Mix, mood mixes and <b>Timeline</b> (year-by-year) playlists. Import from files and share as a link or image card.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="mic-vocal"></i></div><h4>Synced lyrics</h4><p>Karaoke-style lyrics in the original script plus transliteration (Sorani ⇄ Latin) and translation. Tap a line to seek. Lyrics are verified by rights-holders.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="sliders-horizontal"></i></div><h4>Audio engine</h4><p>Gapless playback, crossfade, loudness normalisation (−14 LUFS), 3-band EQ with presets, speed, sleep timer, output device selection, Media Session and lock-screen controls. Hi-Fi FLAC tier.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="picture-in-picture-2"></i></div><h4>Player modes</h4><p>Full, Cover (immersive art + lyrics), Micro (floating capsule) and Nano (progress orb). One tap cycles between them. This is already built in the current app.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="palette"></i></div><h4>Adaptive colour</h4><p>The UI accent follows the dominant colour of the artwork, so every album brings its own mood while the brand stays constant.</p></div>
+  </div>
+</section>
+
+<section class="page" id="radio" data-part="Product" data-title="Radio" data-icon="radio-tower">
+  <div class="eyebrow"><span class="num">09</span> vyv Radio</div>
+  <h2 class="t">Every Kurdish frequency, in one dial.</h2>
+  <p class="lead">Live streams of official and licensed Kurdish broadcasters, diaspora stations, community radio and selected global services. vyv also runs its own 24/7 AI-programmed virtual stations.</p>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="building-2"></i></div><h4>Official &amp; public</h4><p>Public and regional broadcasters from all four parts of Kurdistan, integrated under formal re-transmission agreements with stream metadata (now playing, programme guide).</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="globe"></i></div><h4>Diaspora &amp; global</h4><p>Kurdish-language services of international broadcasters plus curated global stations (jazz, classical, ambient) for a complete listening life.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="bot"></i></div><h4>Virtual stations</h4><p>"Dengbêj 24/7", "Maqam Classics", "Newroz Hits", "Kurdish Lo-fi": continuously programmed by the Curator Agent from the licensed catalogue.</p></div>
+  </div>
+  <h3>Features</h3>
+  <ul class="clean">
+    <li>Live visualiser, record-to-library where licensed (time-shift, catch-up), programme alerts and "song you just heard" recognition.</li>
+    <li>Low-bandwidth mode (HE-AAC v2 at 24–32 kbps) for rural and mobile users.</li>
+    <li>Emergency broadcast channel for public-service announcements, operated only by authorised public bodies.</li>
+  </ul>
+</section>
+
+<section class="page" id="podcasts" data-part="Product" data-title="Podcasts" data-icon="podcast">
+  <div class="eyebrow"><span class="num">10</span> Podcasts</div>
+  <h2 class="t">The spoken Kurdish internet.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="rss"></i></div><h4>Open + exclusive</h4><p>RSS ingestion of every Kurdish podcast (Podcasting 2.0 namespace: chapters, transcripts, value tags) plus vyv Originals: history, language, literature, music theory, youth, diaspora.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="captions"></i></div><h4>AI transcripts</h4><p>Automatic Kurdish speech-to-text transcripts, chapters and summaries, which make every episode searchable. Creators review before publishing.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="audio-lines"></i></div><h4>Creator studio</h4><p>Upload, loudness mastering, noise removal, scheduling, analytics, sponsorship marketplace and listener support (tips, memberships).</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="timer"></i></div><h4>Listening UX</h4><p>Resume position, speed 0.75–2×, smart skip-silence, sleep timer, episode queue and "Continue listening" on Home. This is already built.</p></div>
+  </div>
+</section>
+
+<section class="page" id="books" data-part="Product" data-title="Audiobooks & Living Reader" data-icon="book-open">
+  <div class="eyebrow"><span class="num">11</span> vyv Books</div>
+  <h2 class="t">Hear it. Read it. At the same time.</h2>
+  <p class="lead">Audiobooks ship with a <b>Living Book</b>, a beautifully typeset digital edition rendered natively by the vyv design system instead of a PDF or scanned file. Text and narration are synchronised word-by-word, like sheet music for the spoken word.</p>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="book-marked"></i></div><h4>Read-along</h4><p>Built on <b>EPUB 3 Media Overlays</b> (SMIL) and the W3C Audiobooks profile. The current sentence glows, you tap any word to jump the audio there, and you can switch between reading and listening seamlessly.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="type"></i></div><h4>Typography engine</h4><p>A real book layout: drop caps, verse layout for poetry (classical <i>dîwan</i> couplets), footnotes, glossary pop-overs, RTL Sorani and LTR Kurmanji, and adjustable size, theme and line height.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="languages"></i></div><h4>Parallel text</h4><p>Side-by-side original and transliteration or translation. This matters for classical poetry (Nalî, Mahwi, Mawlawi) and for diaspora learners.</p></div>
+  </div>
+  <h3>Launch shelf (proposed)</h3>
+  <div class="meta-row">
+    <span class="tag b">Mem û Zîn · Ehmedê Xanî</span><span class="tag">Dîwana Nalî</span><span class="tag">Mahwi</span><span class="tag">Mawlawî Tawgozî (Hawrami)</span><span class="tag">Hajî Qadirî Koyî</span><span class="tag">Cegerxwîn</span><span class="tag">Goran</span><span class="tag">Sherko Bekas</span><span class="tag">Kurdish folk tales for children</span><span class="tag">Kurdish history series</span>
+  </div>
+  <p style="margin-top:12px;font-size:13.5px">Public-domain classics first; contemporary works under publisher licence. Narration by professional voice actors. AI voices only with explicit consent and a visible label.</p>
+</section>
+
+<section class="page" id="heritage" data-part="Product" data-title="Heritage Voices Archive" data-icon="landmark">
+  <div class="eyebrow"><span class="num">12</span> vyv Heritage</div>
+  <h2 class="t">The national sound archive, alive.</h2>
+  <p class="lead"><span class="ku">دەنگە نەمرەکان</span> · <i>Dengên Nemir</i>, the immortal voices. vyv Heritage collects, restores, catalogues and presents historical recordings: dengbêj epics, early radio broadcasts, speeches, poetry readings, interviews, field recordings and the voices of the figures who shaped Kurdish art and history.</p>
+  <h3>Pipeline: from shoebox to stream</h3>
+  <div class="grid g4">
+    <div class="card glass"><div class="ic"><i data-lucide="package-search"></i></div><h4>1 · Collect</h4><p>Donations, family archives, broadcaster archives (e.g. historic Kurdish radio services in Baghdad and Yerevan), universities, collectors. Signed deed of gift or licence.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="hard-drive"></i></div><h4>2 · Digitise</h4><p>Preservation masters to <b>IASA TC-04</b>: 24-bit/96 kHz Broadcast WAV, checksums (SHA-256), two geographic copies plus cold storage.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="wand-sparkles"></i></div><h4>3 · Restore</h4><p>AI-assisted de-noise, de-click, de-hum and speed and pitch correction on <i>access copies only</i>. Masters are never altered.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="file-text"></i></div><h4>4 · Describe</h4><p>Dublin Core + PREMIS metadata, transcription, translation, biography, story of the work, photos and documents. Every claim is sourced.</p></div>
+  </div>
+  <div class="callout brand"><i class="ci" data-lucide="shield-check"></i><p>The archive follows the <b>OAIS reference model (ISO 14721)</b>. vyv acts as the access layer; the preservation layer can be operated jointly with a national library or university under public stewardship, so the heritage belongs to the nation, not to a company.</p></div>
+</section>
+
+<section class="page" id="wiki" data-part="Product" data-title="Wiki & Timeline" data-icon="scroll-text">
+  <div class="eyebrow"><span class="num">13</span> vyv Wiki &amp; Timeline</div>
+  <h2 class="t">The encyclopedia of Kurdish sound.</h2>
+  <p class="lead">A structured, cited, multilingual knowledge base of Kurdish music and spoken-word culture, connected directly to playback. Read about a maqam and hear it. Read a poet's biography and play the songs set to their verses.</p>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="network"></i></div><h4>Knowledge graph</h4><p>Entities: Artist, Poet, Composer, Voice Actor, Work, Recording, Album, Instrument, Genre, Maqam, Region, Studio, Label, Broadcaster, Event. Aligned with Wikidata and MusicBrainz identifiers.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="calendar-range"></i></div><h4>Timeline</h4><p>Year-by-year history of Kurdish music and media, with a draggable ruler, decade jumps, "Sound of the year" and "On this day". This is already built.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="pen-line"></i></div><h4>Editorial model</h4><p>AI drafts, human editors verify, and everything is cited. Expert boards per field (musicology, literature, history). Community suggestions go through a moderated queue.</p></div>
+  </div>
+</section>
+
+<section class="page" id="studio" data-part="Product" data-title="AI Music Studio" data-icon="wand-sparkles">
+  <div class="eyebrow"><span class="num">14</span> vyv Studio</div>
+  <h2 class="t">AI-made music, labelled and fair.</h2>
+  <p class="lead">A dedicated, clearly-labelled space for AI-assisted and AI-generated Kurdish music and sound, plus creator tools that help human artists produce faster.</p>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="badge-check"></i></div><h4>Transparency by design</h4><p>Every AI work carries a visible "AI" badge and <b>C2PA Content Credentials</b>. This aligns with the EU AI Act transparency duties for synthetic content. AI tracks are never disguised as human.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="fingerprint"></i></div><h4>Consent &amp; voice rights</h4><p>No voice cloning of any person, living or dead, without documented consent from the person or their estate. Revenue shares go to estates when a consented voice model is used.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="drum"></i></div><h4>Creator tools</h4><p>Stem separation, mastering, lyric assistance in all dialects, maqam-aware melody suggestions, cover-art generation and instrument samples (tembûr, daf, bilûr, duduk, zurna, kemançe).</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="scale"></i></div><h4>Separate royalty pool</h4><p>AI tracks are paid from a separate, capped pool so they never dilute human artists' income.</p></div>
+  </div>
+</section>
+
+<section class="page" id="video" data-part="Product" data-title="vyv Screen · Video" data-icon="clapperboard">
+  <div class="eyebrow"><span class="num">15</span> vyv Screen · Video decision</div>
+  <h2 class="t">Should vyv do video? Yes, in phases.</h2>
+  <p class="lead">Video leads attention today, and investors will ask. We recommend <b>including video in the vision and the demo from day one</b>, but rolling it out in cost-controlled phases. Video costs roughly 10–50× more per user-hour to deliver than audio (bandwidth, storage, DRM, licensing), so audio stays the economic core while video becomes the growth engine.</p>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Phase</th><th>Content</th><th>Why</th><th>Cost profile</th></tr>
+    <tr><td><b>V1 · Months 6–12</b></td><td>Music videos, live sessions, artist clips, <b>Reels/Clips</b> (vertical short-form, ≤ 90 s)</td><td>Directly boosts music engagement and discovery; highest ROI</td><td>Low–medium; short files, AV1/HEVC/H.264 ladders</td></tr>
+    <tr><td><b>V2 · Months 12–24</b></td><td>Kurdish films, short films, animation, documentaries, TV programmes (catch-up)</td><td>National cultural mandate, strong B2G story, diaspora demand</td><td>Medium; DRM, CDN, licensing</td></tr>
+    <tr><td><b>V3 · Months 24+</b></td><td>Licensed world cinema with Kurdish subtitles &amp; dubbing; vyv Originals</td><td>Mass market, subscription growth, cultural bridge</td><td>High; MG licences, originals budget</td></tr>
+  </table></div>
+  <h3>Ethical access to world cinema</h3>
+  <p>Many Kurdish viewers cannot pay international prices, have no credit cards and live in a culture of free, pirated viewing. vyv offers a legal alternative:</p>
+  <ul class="clean">
+    <li><b>Regional licensing</b> at emerging-market rates, negotiated by territory (KRI/Iraq, and per-market for Türkiye, Syria and the diaspora), with <b>AVOD</b> (ad-supported free), <b>SVOD</b> (subscription) and <b>TVOD</b> (single rental at micro-prices) windows.</li>
+    <li><b>Local payments</b>: IQD wallets, carrier billing and prepaid vouchers sold in shops, so no card is needed.</li>
+    <li><b>Kurdish subtitles</b> as the core added value. See <a href="#/language">§ Language &amp; Subtitle Stack</a>. This is also a public good for language revitalisation.</li>
+    <li>Anti-piracy: multi-DRM (Widevine, PlayReady, FairPlay), forensic watermarking for premium titles, device limits.</li>
+  </ul>
+  <div class="callout brand"><i class="ci" data-lucide="lightbulb"></i><p><b>Recommendation:</b> show V1 (Clips + Music Videos) working in the investor demo, and present V2/V3 with a licensing roadmap and letters of intent from Kurdish producers. This signals full ambition without taking on video's cost before revenue exists.</p></div>
+</section>
+
+<section class="page" id="language" data-part="Product" data-title="Language & Subtitle Stack" data-icon="languages">
+  <div class="eyebrow"><span class="num">16</span> Language &amp; Subtitle Stack</div>
+  <h2 class="t">Every dialect is first-class.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Variety</th><th>Tag (BCP 47)</th><th>Script / direction</th><th>Notes</th></tr>
+    <tr><td><b>Kurmanji (Northern)</b></td><td><code>kmr-Latn</code></td><td>Latin (Hawar) · LTR</td><td>Türkiye, Syria, Caucasus, diaspora; ê î û ç ş</td></tr>
+    <tr><td><b>Badini</b></td><td><code>kmr-Arab</code></td><td>Arabic · RTL</td><td>Kurmanji of Duhok region, Arabic script</td></tr>
+    <tr><td><b>Sorani (Central)</b></td><td><code>ckb-Arab</code></td><td>Arabic · RTL</td><td>KRI &amp; Iran; ڕ ڵ ێ ۆ ە letters</td></tr>
+    <tr><td><b>Hawrami / Gorani</b></td><td><code>hac</code></td><td>Arabic · RTL</td><td>Classical poetic heritage (Mawlawî)</td></tr>
+    <tr><td><b>Southern Kurdish</b></td><td><code>sdh</code> (+ <code>lki</code> Laki)</td><td>Arabic · RTL</td><td>Kermanshah, Ilam, Khanaqin; Feyli, Kalhuri</td></tr>
+    <tr><td><b>Zazaki</b></td><td><code>zza</code> (<code>diq</code>, <code>kiu</code>)</td><td>Latin · LTR</td><td>Türkiye, diaspora</td></tr>
+  </table></div>
+  <h3>Subtitle pipeline</h3>
+  <div class="grid g4">
+    <div class="card glass"><div class="ic"><i data-lucide="file-audio"></i></div><h4>1 · Transcribe</h4><p>Kurdish ASR produces a timed transcript. Source-language subtitles (SRT) are ingested for foreign films.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="languages"></i></div><h4>2 · Translate</h4><p>MT into each dialect, using a glossary for names, idioms and cultural terms.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="user-check"></i></div><h4>3 · Human QA</h4><p>Paid native reviewers and a community guild, with reviewer credits shown on the title.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="captions"></i></div><h4>4 · Deliver</h4><p>SRT is converted to <b>WebVTT/IMSC</b> with proper bidi for RTL, SDH captions for the deaf and hard of hearing, and user styling.</p></div>
+  </div>
+  <h3>Search &amp; transliteration</h3>
+  <p>Search normalises across scripts: a query typed in Latin <code>hesen zîrek</code> finds Sorani <span class="ku">حەسەن زیرەک</span> and vice-versa. This requires a Kurdish-aware analyser (character folding, Arabic–Latin transliteration, dialect synonym lists) on the search engine. It is one of vyv's hardest and most defensible technical assets.</p>
+</section>
+
+<section class="page" id="commerce" data-part="Product" data-title="Store, Licensing & Payments" data-icon="wallet">
+  <div class="eyebrow"><span class="num">17</span> Store, Licensing &amp; Payments</div>
+  <h2 class="t">Pay the way Kurds actually pay.</h2>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="shopping-bag"></i></div><h4>Store</h4><p>Buy albums, tracks, hi-res files, audiobooks, film rentals, merchandise and event tickets. Purchases are owned forever in the user's library and downloadable where the licence allows.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="file-signature"></i></div><h4>Licensing marketplace</h4><p>B2B sync licences for Kurdish music in ads, film, games and broadcast. Instant quotes, standard contracts, e-signature and automatic royalty splits.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="gift"></i></div><h4>Support creators</h4><p>Tips, memberships, crowdfunding for albums and heritage digitisation, and "Adopt a Recording" patronage.</p></div>
+  </div>
+  <h3>Payment rails</h3>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Region</th><th>Rails</th><th>Status</th></tr>
+    <tr><td><b>Iraq / KRI</b></td><td>Local e-wallets and cards (e.g. FastPay, ZainCash, Qi Card, FIB), carrier billing (Korek, Asiacell, Zain), prepaid vouchers</td><td>P0 · integrate via licensed PSPs under Central Bank of Iraq rules</td></tr>
+    <tr><td><b>EU / UK</b></td><td>Cards, SEPA, Apple Pay, Google Pay, PayPal via Stripe/Adyen</td><td>P0 · PSD2/SCA compliant</td></tr>
+    <tr><td><b>App stores</b></td><td>Microsoft Store, Google Play Billing, Apple IAP (as store rules require)</td><td>Per platform</td></tr>
+    <tr><td><b>Türkiye / other</b></td><td>Local PSP (e.g. iyzico) and carrier billing</td><td>P1</td></tr>
+    <tr><td><b>Crypto</b></td><td>Stablecoins (USDC/USDT) via a regulated processor</td><td>P2 · <b>only where legal</b>; the Central Bank of Iraq restricts crypto, so disabled for Iraq until regulation allows</td></tr>
+  </table></div>
+  <div class="callout"><i class="ci" data-lucide="shield-alert"></i><p><b>Compliance first:</b> vyv never holds customer funds directly. All money flows through licensed payment institutions. KYC/AML applies to creator payouts. Legal counsel in Iraq/KRI and the EU must approve each rail before launch.</p></div>
+</section>
+
+<section class="page" id="identity" data-part="Product" data-title="Accounts & Profile" data-icon="user-round">
+  <div class="eyebrow"><span class="num">18</span> Accounts &amp; Profile</div>
+  <h2 class="t">Sign in once. Belong everywhere.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="log-in"></i></div><h4>Sign-in methods</h4><p><b>Google</b> (Google Identity Services, OIDC), <b>Facebook Login</b>, <b>Apple</b> (required on iOS whenever other social logins exist), email + passkeys (WebAuthn) and phone OTP for users without email.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="id-card"></i></div><h4>Profile</h4><p>Avatar, cover, handle, bio, listening persona ("Nocturnal Explorer"…), <b>Listening DNA</b> (genre breakdown), top artists, history, public playlists, followers, badges and "Wrapped"-style yearly story. This is already built.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="users"></i></div><h4>Family &amp; kids</h4><p>Family plan with up to six profiles, kids profiles with a curated catalogue, parental controls and a "Kurdish for Kids" learning corner.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="badge-check"></i></div><h4>Verified creators</h4><p>Artist, label, podcaster, publisher, broadcaster and institution accounts, with a dashboard, payouts and claim-your-profile flow.</p></div>
+  </div>
+  <div class="callout"><i class="ci" data-lucide="triangle-alert"></i><p><b>Current build:</b> Google/Facebook sign-in is a UI simulation (<code>AuthService</code> mock). Replacing it with real OAuth on a backend identity service is a <b>P0</b> item in the checklist.</p></div>
+</section>
+
+<!-- ═══════════════════ PART IV · INTELLIGENCE ═══════════════════ -->
+
+<section class="page" id="mind" data-part="Intelligence" data-title="vyv Mind · AI Operating Layer" data-icon="brain-circuit">
+  <div class="eyebrow"><span class="num">19</span> vyv Mind</div>
+  <h2 class="t">An AI that runs the platform, with humans holding the keys.</h2>
+  <p class="lead">vyv Mind is a system of specialised AI agents that operate the platform: it curates, catalogues, repairs, monitors, supports and grows the service. Each agent has a narrow mandate, a defined toolset, audit logs and a human owner.</p>
+  <div class="grid g3" id="agents"></div>
+  <h3>How agents work</h3>
+  <div class="arch">
+    <div class="layer"><div class="lbl"><i data-lucide="inbox"></i>Signals</div><div class="boxes glass"><span class="bx">Uploads &amp; ingest</span><span class="bx">Playback events</span><span class="bx">Support tickets</span><span class="bx">Telemetry &amp; logs</span><span class="bx">Rights claims</span><span class="bx">Editorial queue</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="route"></i>Orchestrator</div><div class="boxes glass"><span class="bx b">Task router</span><span class="bx b">Policy engine</span><span class="bx b">Tool registry (MCP)</span><span class="bx b">Memory &amp; knowledge graph</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="bot"></i>Agents</div><div class="boxes glass"><span class="bx">Curator</span><span class="bx">Metadata</span><span class="bx">Lyrics</span><span class="bx">Rights</span><span class="bx">Moderation</span><span class="bx">Support</span><span class="bx">SRE</span><span class="bx">Heritage</span><span class="bx">Growth</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="user-check"></i>Human gate</div><div class="boxes glass"><span class="bx">Confidence thresholds</span><span class="bx">Approval queues</span><span class="bx">Four-eyes for deletions &amp; payouts</span><span class="bx">Full audit trail</span></div></div>
+  </div>
+</section>
+
+<section class="page" id="governance-ai" data-part="Intelligence" data-title="AI Governance & Ethics" data-icon="scale">
+  <div class="eyebrow"><span class="num">20</span> AI Governance &amp; Ethics</div>
+  <h2 class="t">Trustworthy by construction.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic g"><i data-lucide="gavel"></i></div><h4>Frameworks</h4><p>Aligned with the <b>EU AI Act</b> (transparency, risk management), <b>ISO/IEC 42001</b> (AI management system) and <b>NIST AI RMF</b>.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="eye"></i></div><h4>Transparency</h4><p>Users can see why something was recommended. AI-generated content is labelled. AI agent chats say plainly that the user is talking to AI.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="hand"></i></div><h4>Human authority</h4><p>No irreversible action (deletion, takedown, payout change, rights decision) happens without a human approver. Agents propose; people decide.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="users-round"></i></div><h4>Cultural fairness</h4><p>Recommendation diversity quotas across dialects, regions and gender, so that no part of Kurdish culture is algorithmically silenced. Bias audits are published every year.</p></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PART V · TECHNOLOGY ═══════════════════ -->
+
+<section class="page" id="architecture" data-part="Technology" data-title="System Architecture" data-icon="boxes">
+  <div class="eyebrow"><span class="num">21</span> System Architecture</div>
+  <h2 class="t">Cloud-native, sovereign-ready, built to scale.</h2>
+  <div class="arch">
+    <div class="layer"><div class="lbl"><i data-lucide="monitor-smartphone"></i>Clients</div><div class="boxes glass"><span class="bx b">Web PWA · React 19 + TS</span><span class="bx b">Windows · MSIX (Store)</span><span class="bx">Android</span><span class="bx">iOS / iPadOS</span><span class="bx">macOS</span><span class="bx">Linux</span><span class="bx">Smart TV · Android TV / Tizen / webOS</span><span class="bx">CarPlay · Android Auto</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="shield"></i>Edge</div><div class="boxes glass"><span class="bx">Multi-CDN (with in-region PoP)</span><span class="bx">WAF &amp; bot defence</span><span class="bx">API Gateway</span><span class="bx">Rate limiting</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="server"></i>Services</div><div class="boxes glass"><span class="bx">Identity (OIDC)</span><span class="bx">Catalog</span><span class="bx">Playback &amp; entitlement</span><span class="bx">Search (Kurdish analyser)</span><span class="bx">Recommendations</span><span class="bx">Library &amp; social</span><span class="bx">Commerce &amp; wallet</span><span class="bx">Rights &amp; royalties ledger</span><span class="bx">Wiki / knowledge graph</span><span class="bx">Notifications</span><span class="bx b">vyv Mind orchestrator</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="film"></i>Media</div><div class="boxes glass"><span class="bx">Ingest (DDEX ERN)</span><span class="bx">Transcode · FFmpeg</span><span class="bx">Audio: Opus / AAC / FLAC</span><span class="bx">Video: AV1 / HEVC / H.264 ladders</span><span class="bx">HLS / DASH · CMAF</span><span class="bx">Multi-DRM · CENC</span><span class="bx">Fingerprinting</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="database"></i>Data</div><div class="boxes glass"><span class="bx">PostgreSQL</span><span class="bx">Redis</span><span class="bx">Object storage (S3-compatible)</span><span class="bx">Event bus · Kafka / NATS</span><span class="bx">Search · OpenSearch / Meilisearch</span><span class="bx">Vector DB</span><span class="bx">Warehouse · ClickHouse</span><span class="bx">Cold archive (OAIS)</span></div></div>
+    <div class="layer"><div class="lbl"><i data-lucide="activity"></i>Ops</div><div class="boxes glass"><span class="bx">Kubernetes</span><span class="bx">IaC · Terraform</span><span class="bx">CI/CD</span><span class="bx">OpenTelemetry</span><span class="bx">SLOs &amp; error budgets</span><span class="bx b">SRE Agent</span></div></div>
+  </div>
+  <h3>Key decisions</h3>
+  <ul class="clean">
+    <li><b>Data sovereignty:</b> a primary region inside KRI/Iraq (or the nearest compliant region) for user data of Iraqi citizens, with an EU region for diaspora users under GDPR.</li>
+    <li><b>Low-bandwidth first:</b> adaptive bitrate from 24 kbps audio, offline downloads, delta sync and image CDN with AVIF/WebP.</li>
+    <li><b>SLOs:</b> 99.9% playback availability, start-up under 1 s for audio and under 2.5 s for video at p75.</li>
+  </ul>
+</section>
+
+<section class="page" id="platforms" data-part="Technology" data-title="Platforms & Distribution" data-icon="monitor-smartphone">
+  <div class="eyebrow"><span class="num">22</span> Platforms &amp; Distribution</div>
+  <h2 class="t">Web and Windows first, fully operational.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Platform</th><th>Technology</th><th>Distribution</th><th>Phase</th></tr>
+    <tr><td><b>Web</b></td><td>React 19 · Vite · Tailwind v4 PWA (existing codebase), Service Worker, Media Session</td><td>vyv domain + installable PWA</td><td><span class="tag b">Launch</span></td></tr>
+    <tr><td><b>Windows 10/11</b></td><td>Option A: PWA packaged as <b>MSIX</b> via PWABuilder (fastest). Option B: <b>Tauri 2</b> desktop shell (native media keys, tray, mini-player, offline store)</td><td><b>Microsoft Store</b> (MSIX), plus winget</td><td><span class="tag b">Launch</span></td></tr>
+    <tr><td><b>Android</b></td><td>Capacitor or Tauri mobile over the same UI; ExoPlayer (Media3) native audio for background playback</td><td>Google Play, direct APK for restricted regions</td><td>P1</td></tr>
+    <tr><td><b>iOS / iPadOS</b></td><td>Capacitor/Tauri + AVPlayer native bridge; Sign in with Apple</td><td>App Store</td><td>P1</td></tr>
+    <tr><td><b>macOS / Linux</b></td><td>Tauri 2 (DMG, AppImage, Flatpak, Snap)</td><td>Mac App Store, Flathub, Snap Store</td><td>P2</td></tr>
+    <tr><td><b>TV &amp; Car</b></td><td>Android TV / Google TV, CarPlay, Android Auto</td><td>Stores</td><td>P2–P3</td></tr>
+  </table></div>
+  <div class="callout brand"><i class="ci" data-lucide="rocket"></i><p><b>Recommended path:</b> ship the Windows app as a <b>PWA-in-MSIX</b> in the first release. It reuses 100% of the web code and passes Microsoft Store certification quickly. Move to Tauri 2 in the next release for deeper native features. One codebase serves every platform.</p></div>
+</section>
+
+<section class="page" id="standards" data-part="Technology" data-title="Data Model & Standards" data-icon="file-code-2">
+  <div class="eyebrow"><span class="num">23</span> Data Model &amp; Standards</div>
+  <h2 class="t">Speak the industry's language fluently.</h2>
+  <div class="grid g3">
+    <div class="card glass"><h4>Music industry</h4><p><span class="tag">DDEX ERN / DSR / MEAD</span><span class="tag">ISRC</span><span class="tag">ISWC</span><span class="tag">IPI / ISNI</span><span class="tag">UPC / EAN</span><span class="tag">MusicBrainz IDs</span></p></div>
+    <div class="card glass"><h4>Books &amp; spoken word</h4><p><span class="tag">EPUB 3 + Media Overlays</span><span class="tag">W3C Audiobooks</span><span class="tag">ONIX</span><span class="tag">ISBN</span><span class="tag">Podcasting 2.0</span></p></div>
+    <div class="card glass"><h4>Archive</h4><p><span class="tag">OAIS ISO 14721</span><span class="tag">IASA TC-04</span><span class="tag">BWF</span><span class="tag">PREMIS</span><span class="tag">Dublin Core</span><span class="tag">METS</span></p></div>
+    <div class="card glass"><h4>Video &amp; text</h4><p><span class="tag">CMAF</span><span class="tag">HLS / DASH</span><span class="tag">CENC</span><span class="tag">WebVTT</span><span class="tag">IMSC / TTML</span><span class="tag">LRC (lyrics)</span></p></div>
+    <div class="card glass"><h4>Web &amp; semantics</h4><p><span class="tag">schema.org MusicRecording</span><span class="tag">Wikidata</span><span class="tag">Open Graph</span><span class="tag">BCP 47</span><span class="tag">Unicode CLDR</span></p></div>
+    <div class="card glass"><h4>Trust</h4><p><span class="tag">C2PA</span><span class="tag">OAuth 2.1 / OIDC</span><span class="tag">WebAuthn</span><span class="tag">AcoustID / Chromaprint</span></p></div>
+  </div>
+  <h3>Core entity (simplified)</h3>
+<pre class="code">Recording {
+  id, isrc, title{ckb,kmr,en,…}, dialect: "ckb-Arab", duration_ms,
+  work: Work{ iswc, lyricists[], composers[], lyrics{lang: LRC} },
+  performers[], producers[], label, release_date, genres[], maqam?, region,
+  rights: { territory[], owner, splits[{party, role, share}], licence_type, expires },
+  provenance: { source, ingest_by, verified_by, ai_generated: bool, c2pa_manifest? },
+  archive?: { master_uri, checksum_sha256, carrier: "reel|cassette|disc", digitised_at }
+}</pre>
+</section>
+
+<section class="page" id="security" data-part="Technology" data-title="Security, Privacy & Compliance" data-icon="shield-check">
+  <div class="eyebrow"><span class="num">24</span> Security, Privacy &amp; Compliance</div>
+  <h2 class="t">A national asset needs national-grade trust.</h2>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic g"><i data-lucide="lock-keyhole"></i></div><h4>Security</h4><p>Zero-trust networking, OWASP ASVS L2, secrets in vault, encryption in transit (TLS 1.3) and at rest, least-privilege IAM, yearly pen-tests and a bug bounty.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="user-lock"></i></div><h4>Privacy</h4><p>GDPR (EU users), data minimisation, consent management, export and delete-my-data, no sale of personal data, and a privacy-preserving analytics option.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="badge-check"></i></div><h4>Certifications path</h4><p>ISO/IEC 27001 in year 2, SOC 2 Type II for enterprise and government, ISO/IEC 42001 for AI, and WCAG 2.2 AA accessibility conformance.</p></div>
+  </div>
+  <div class="callout"><i class="ci" data-lucide="history"></i><p><b>Lesson already learned:</b> an earlier prototype committed open Firestore rules and credentials to a public repository. They were removed. From now on, secrets never live in the repo, and CI secret-scanning is mandatory (see checklist).</p></div>
+</section>
+
+<section class="page" id="current" data-part="Technology" data-title="Current Build & Gap Analysis" data-icon="git-branch">
+  <div class="eyebrow"><span class="num">25</span> Current Build &amp; Gap Analysis</div>
+  <h2 class="t">What already exists and what must exist.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="check-check"></i></div><h4>Built (front-end prototype)</h4>
+      <ul class="clean" style="font-size:14px">
+        <li>React 19 + TypeScript + Vite 6 + Tailwind v4 SPA with lazy-loaded views</li>
+        <li>Home, Search, Library, Playlists, Bookmarks, Notifications, Profile, Settings</li>
+        <li>Radio (live streams), Podcasts, Audiobooks, Albums, Artists, Genres</li>
+        <li>Wiki articles, interactive year-by-year Timeline</li>
+        <li>Web Audio engine: 3-band EQ, analyser visualiser, device output, speed, sleep</li>
+        <li>Four player modes (Full / Cover / Micro / Nano), synced lyrics, Media Session</li>
+        <li>Local AI agent: bilingual (EN/FA) intent engine, voice input, predictive mixes</li>
+        <li>Dark &amp; light themes, adaptive colour, liquid-glass design system</li>
+      </ul></div>
+    <div class="card glass"><div class="ic"><i data-lucide="construction"></i></div><h4>Gaps to production</h4>
+      <ul class="clean" style="font-size:14px">
+        <li><b>Backend</b>: no server yet; all data is seeded or local</li>
+        <li><b>Real auth</b>: Google/Facebook/Apple OAuth, sessions, accounts</li>
+        <li><b>Licensed catalogue</b> + ingest pipeline + rights ledger</li>
+        <li><b>Payments</b>: PSP integrations, entitlements, receipts, payouts</li>
+        <li><b>Kurdish i18n</b>: UI in ckb/kmr with full RTL; dialect search</li>
+        <li><b>LLM-based agent</b> replacing rule-based intents; admin console</li>
+        <li><b>Book reader</b>, video player, clips feed, creator studio</li>
+        <li>Brand alignment: app accent tokens currently default to white; apply <b>#ff3c00</b> per this Bible</li>
+      </ul></div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PART VI · BRAND ═══════════════════ -->
+
+<section class="page" id="brand" data-part="Brand" data-title="Brand Platform" data-icon="flag">
+  <div class="eyebrow"><span class="num">26</span> Brand Platform</div>
+  <h2 class="t">Minimal. Warm. Proud. Timeless.</h2>
+  <div class="grid g4">
+    <div class="kpi glass"><div class="v" style="font-size:22px">Essence</div><div class="l">The voice of a nation, carried on a wave.</div></div>
+    <div class="kpi glass"><div class="v" style="font-size:22px">Promise</div><div class="l">Everything Kurdish you want to hear, see and read, beautifully and fairly.</div></div>
+    <div class="kpi glass"><div class="v" style="font-size:22px">Personality</div><div class="l">Calm confidence · quiet luxury · cultural depth · modern craft</div></div>
+    <div class="kpi glass"><div class="v" style="font-size:22px">Feeling</div><div class="l">"This was made for us, and it's as good as anything in the world."</div></div>
+  </div>
+  <h3>Design pillars</h3>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic g"><i data-lucide="minimize-2"></i></div><h4>Radical minimalism</h4><p>Icon-first controls, no labelled buttons where an icon is clear, few words and plenty of breathing room. The content is the colour.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="circle-dashed"></i></div><h4>Curved everything</h4><p>Continuous rounded corners (8–36 px), pill controls and capsule docks. No sharp corner anywhere in the product.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="droplets"></i></div><h4>Liquid glass</h4><p>Translucent layered surfaces with blur, specular edge highlights and depth. Light passes through the interface as it passes through water.</p></div>
+  </div>
+</section>
+
+<section class="page" id="logo" data-part="Brand" data-title="Logo & Mark" data-icon="pen-tool">
+  <div class="eyebrow"><span class="num">27</span> Logo &amp; Mark</div>
+  <h2 class="t">A wing, a wave, a flame.</h2>
+  <div class="grid g3">
+    <div class="card glass" style="display:flex;flex-direction:column;align-items:center;padding:34px 20px">
+      <svg width="120" height="120" viewBox="0 0 32 32"><rect width="32" height="32" rx="10" fill="#07080a"/><path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="#f5f5f7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="11" r="2.3" fill="#ff3c00"/></svg>
+      <p style="margin:14px 0 0;font-size:13px">Primary mark · dark</p></div>
+    <div class="card glass" style="display:flex;flex-direction:column;align-items:center;padding:34px 20px">
+      <svg width="120" height="120" viewBox="0 0 32 32"><rect width="32" height="32" rx="10" fill="#f5f5f7"/><path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="#07080a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="11" r="2.3" fill="#ff3c00"/></svg>
+      <p style="margin:14px 0 0;font-size:13px">Primary mark · light</p></div>
+    <div class="card glass" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 20px">
+      <div style="display:flex;align-items:center;gap:12px"><svg width="54" height="54" viewBox="0 0 32 32"><rect width="32" height="32" rx="10" fill="var(--fg)"/><path d="M9 10.5 15.2 22a.9.9 0 0 0 1.6 0L23 10.5" fill="none" stroke="var(--bg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="11" r="2.3" fill="#ff3c00"/></svg><span style="font-size:48px;font-weight:800;letter-spacing:-.06em">vyv</span></div>
+      <p style="margin:14px 0 0;font-size:13px">Lockup · mark + wordmark</p></div>
+  </div>
+  <h3>Anatomy</h3>
+  <ul class="clean">
+    <li><b>The V-stroke</b> is a pair of wings and a sound wave's trough in one continuous rounded line (stroke = 2.6/32 of the tile).</li>
+    <li><b>The dot</b> is the crest of the wave, the head of the bird and the Newroz flame. It is the only place brand orange appears in the mark. In the app it pulses while music plays.</li>
+    <li><b>The tile</b> is a superellipse-like rounded square, radius 10/32, matching the product's curved language.</li>
+  </ul>
+  <h3>Rules</h3>
+  <div class="grid g2">
+    <div class="card glass"><h4 style="color:#35c46a">Do</h4><ul class="clean" style="font-size:14px"><li>Keep clear space ≥ the dot's diameter × 2 on all sides</li><li>Minimum size 16 px (digital), 6 mm (print)</li><li>Use on black, white, gray or rich photography with a glass backing</li></ul></div>
+    <div class="card glass"><h4 style="color:var(--brand-ink)">Don't</h4><ul class="clean" style="font-size:14px"><li>Recolour the V-stroke orange or the dot any colour but #ff3c00</li><li>Stretch, rotate, outline, add shadows or gradients to the mark</li><li>Use uppercase "VYV" or combine with other national symbols inside the tile</li></ul></div>
+  </div>
+</section>
+
+<section class="page" id="color" data-part="Brand" data-title="Color System" data-icon="palette">
+  <div class="eyebrow"><span class="num">28</span> Color System</div>
+  <h2 class="t">White, black, gray. And one flame.</h2>
+  <p class="lead">The palette is almost monochrome, so the culture (artwork, photography, film) supplies the colour. Brand orange is used sparingly: the dot, the active state, the primary call to action, live indicators. It should cover no more than 5% of any screen.</p>
+  <div class="grid g4">
+    <div class="sw glass"><div class="chip" style="background:#ff3c00;color:#fff">#FF3C00</div><div class="inf"><b>Newroz Flame</b><span>Brand · rgb 255 60 0</span></div></div>
+    <div class="sw glass"><div class="chip" style="background:#a2a8b2;color:#07080a">#A2A8B2</div><div class="inf"><b>Zagros Mist</b><span>Brand gray · rgb 162 168 178</span></div></div>
+    <div class="sw glass"><div class="chip" style="background:#07080a;color:#f5f5f7;box-shadow:inset 0 0 0 1px rgb(255 255 255 / .1)">#07080A</div><div class="inf"><b>Night</b><span>Dark background</span></div></div>
+    <div class="sw glass"><div class="chip" style="background:#f5f5f7;color:#07080a">#F5F5F7</div><div class="inf"><b>Snow</b><span>Light fg / surface</span></div></div>
+  </div>
+  <h3>Tonal ramps</h3>
+  <h4>Flame</h4>
+  <div class="ramp" id="rampFlame"></div>
+  <h4 style="margin-top:14px">Mist (gray)</h4>
+  <div class="ramp" id="rampGray"></div>
+  <h3>Semantic tokens</h3>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Token</th><th>Dark</th><th>Light</th><th>Use</th></tr>
+    <tr><td><code>--bg</code></td><td>#07080A</td><td>#F4F5F7</td><td>App background</td></tr>
+    <tr><td><code>--fg</code></td><td>#F5F5F7</td><td>#0D0F12</td><td>Primary text &amp; icons</td></tr>
+    <tr><td><code>--fg-2</code></td><td>#A2A8B2</td><td>#555B64</td><td>Secondary text</td></tr>
+    <tr><td><code>--fg-3</code></td><td>#6F7680</td><td>#7C838E</td><td>Tertiary, captions</td></tr>
+    <tr><td><code>--surface</code></td><td>white / 5–15%</td><td>black / 5–10%</td><td>Glass layers</td></tr>
+    <tr><td><code>--accent</code></td><td>#FF3C00 (or adaptive artwork colour)</td><td>#E03400</td><td>Active, CTA, progress, live</td></tr>
+  </table></div>
+  <p style="font-size:13.5px">Contrast: body text ≥ 4.5:1 and large text ≥ 3:1 (WCAG 2.2 AA). Orange text on dark uses <code>#FF5A24</code> for legibility; on light use <code>#E03400</code>.</p>
+</section>
+
+<section class="page" id="type" data-part="Brand" data-title="Typography & Script" data-icon="type">
+  <div class="eyebrow"><span class="num">29</span> Typography &amp; Script</div>
+  <h2 class="t">Two scripts, one voice.</h2>
+  <div class="grid g2">
+    <div class="card glass"><h4>Latin · Inter</h4><div style="font-size:54px;font-weight:700;letter-spacing:-.05em;line-height:1;margin:10px 0">Aa Êê Şş Çç</div><p>Kurmanji, Zazaki, English. Tight tracking (−2% to −5%) on display sizes, tabular numerals for time.</p></div>
+    <div class="card glass"><h4>Arabic script · Vazirmatn</h4><div class="ku" style="font-size:50px;font-weight:700;line-height:1.2;margin:10px 0">ڕ ڵ ێ ۆ ە ڤ</div><p>Sorani, Badini, Hawrami, Southern Kurdish. Full support for Kurdish-specific letters; 110% optical size relative to Latin.</p></div>
+  </div>
+  <h3>Type scale</h3>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Role</th><th>Size / weight</th><th>Tracking</th><th>Sample</th></tr>
+    <tr><td>Display</td><td>48–72 / 700</td><td>−4.5%</td><td style="font-size:26px;font-weight:700;letter-spacing:-.045em;color:var(--fg)">Good evening</td></tr>
+    <tr><td>Title</td><td>28–34 / 650</td><td>−3.5%</td><td style="font-size:20px;font-weight:650;letter-spacing:-.035em;color:var(--fg)">Jump back in</td></tr>
+    <tr><td>Body</td><td>14–16 / 400</td><td>−0.5%</td><td>Every voice deserves a home.</td></tr>
+    <tr><td>Caption</td><td>11–12 / 600 caps</td><td>+14%</td><td style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase">Now playing</td></tr>
+    <tr><td>Mono</td><td>JetBrains Mono 12</td><td>0</td><td class="mono">03:42 · ISRC IQ-VYV-26-00001</td></tr>
+  </table></div>
+  <h3>Bidirectional rules</h3>
+  <ul class="clean">
+    <li>Layout mirrors fully in RTL (ckb, kmr-Arab, hac, sdh). Media controls (play, seek, progress) <b>do not</b> mirror, following platform conventions.</li>
+    <li>Names and titles are isolated with <code>&lt;bdi&gt;</code> / <code>unicode-bidi:isolate</code> to prevent mixed-script scrambling.</li>
+    <li>The user picks their script; content always shows in its original script, with transliteration on demand.</li>
+  </ul>
+</section>
+
+<section class="page" id="material" data-part="Brand" data-title="Material, Motion & Icons" data-icon="droplets">
+  <div class="eyebrow"><span class="num">30</span> Material, Motion &amp; Icons</div>
+  <h2 class="t">Glass you can feel. Motion you can trust.</h2>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic g"><i data-lucide="layers"></i></div><h4>Liquid glass</h4><p>Surface = translucent fill (5–15%) + <code>backdrop-filter: blur(24–32px) saturate(170%)</code> + 1 px hairline + inset top highlight + soft deep shadow. Three elevations: base, raised (cards, dock), overlay (sheets, menus).</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="move"></i></div><h4>Motion</h4><p>Ease-out <code>cubic-bezier(.22,1,.36,1)</code> for UI and a spring curve for playful moments. Durations: 150 ms (press), 250 ms (state), 450–600 ms (page). Respect <code>prefers-reduced-motion</code>.</p></div>
+    <div class="card glass"><div class="ic g"><i data-lucide="shapes"></i></div><h4>Icons · Lucide</h4><p>Lucide exclusively; stroke 1.6–1.75, rounded caps and joins, 16/18/20/22 px grid. Filled variants only for active play, heart and bookmark states.</p></div>
+  </div>
+  <h3>Radii</h3>
+  <div class="meta-row" id="radii"></div>
+  <h3>Icon vocabulary</h3>
+  <div class="meta-row" id="icons"></div>
+</section>
+
+<section class="page" id="voice" data-part="Brand" data-title="Voice & Tone" data-icon="message-square-quote">
+  <div class="eyebrow"><span class="num">31</span> Voice &amp; Tone</div>
+  <h2 class="t">Speak like a wise friend, not a corporation.</h2>
+  <div class="grid g2">
+    <div class="card glass"><h4>We are</h4><ul class="clean" style="font-size:14px"><li>Warm, brief, respectful of elders and heritage</li><li>Confident without boasting</li><li>Inclusive of every dialect, region and faith</li><li>Politically neutral: culture unites, and vyv never takes partisan sides</li></ul></div>
+    <div class="card glass"><h4>We avoid</h4><ul class="clean" style="font-size:14px"><li>Jargon, exclamation marks, hype</li><li>Favouring one dialect as "correct Kurdish"</li><li>Guilt or pressure in paywalls</li><li>Unverified historical claims</li></ul></div>
+  </div>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Context</th><th>Instead of</th><th>vyv says</th></tr>
+    <tr><td>Empty library</td><td>"No items found."</td><td>"Your library is quiet. Let's fill it."</td></tr>
+    <tr><td>Paywall</td><td>"Upgrade now to unlock!"</td><td>"Support the artists and hear it in full."</td></tr>
+    <tr><td>Heritage</td><td>"Old songs"</td><td>"Voices that shaped us"</td></tr>
+    <tr><td>Error</td><td>"Error 503"</td><td>"We lost the signal for a moment. Trying again…"</td></tr>
+  </table></div>
+</section>
+
+<section class="page" id="tokens" data-part="Brand" data-title="Design Tokens" data-icon="braces">
+  <div class="eyebrow"><span class="num">32</span> Design Tokens</div>
+  <h2 class="t">One source of truth, in code.</h2>
+  <p class="lead">These tokens mirror <code>src/index.css</code> in the vyv codebase (Tailwind v4 <code>@theme inline</code>). Designers and engineers use the same names.</p>
+<pre class="code">:root {
+  /* brand */
+  --brand: #ff3c00;  --brand-ink: #ff5a24;  --brand-soft: rgb(255 60 0 / .14);
+  --gray:  #a2a8b2;
+
+  /* radius */
+  --radius-xs: 8px;  --radius-sm: 10px; --radius-md: 14px;
+  --radius-lg: 20px; --radius-xl: 28px; --radius-2xl: 36px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* type */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-arab: "Vazirmatn", "Noto Sans Arabic", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* layout */
+  --dock-h: 76px;  --nav-h: 64px;
+}
+.dark {
+  --bg: #07080a;  --bg-2: #0e1013;
+  --fg: #f5f5f7;  --fg-2: #a2a8b2;  --fg-3: #6f7680;
+  --surface: rgb(255 255 255 / .05);  --surface-2: rgb(255 255 255 / .09);
+  --line: rgb(255 255 255 / .08);     --accent: var(--brand);
+}
+.light {
+  --bg: #f4f5f7;  --fg: #0d0f12;  --fg-2: #555b64;  --fg-3: #7c838e;
+  --surface: rgb(255 255 255 / .85);  --line: rgb(0 0 0 / .08);
+  --accent: #e03400;
+}</pre>
+</section>
+
+<!-- ═══════════════════ PART VII · BUSINESS ═══════════════════ -->
+
+<section class="page" id="model" data-part="Business" data-title="Business Model" data-icon="chart-pie">
+  <div class="eyebrow"><span class="num">33</span> Business Model</div>
+  <h2 class="t">Seven revenue streams, one mission.</h2>
+  <div class="grid g3" id="streams"></div>
+  <h3>Plans (illustrative pricing, to be validated)</h3>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Plan</th><th>KRI / Iraq</th><th>Diaspora (EU)</th><th>Includes</th></tr>
+    <tr><td><b>Free</b></td><td>0</td><td>0</td><td>Music &amp; radio with light ads, podcasts, wiki, heritage highlights, clips</td></tr>
+    <tr><td><b>vyv Plus</b></td><td>≈ 3,000–5,000 IQD / mo</td><td>≈ €5.99 / mo</td><td>Ad-free, offline, lyrics, hi-quality audio, audiobook credits</td></tr>
+    <tr><td><b>Family</b></td><td>≈ 7,500 IQD</td><td>≈ €9.99</td><td>6 profiles, kids mode</td></tr>
+    <tr><td><b>Student</b></td><td>≈ 1,500 IQD</td><td>≈ €2.99</td><td>Verified students, all Plus features</td></tr>
+    <tr><td><b>Screen add-on</b></td><td>≈ 3,000 IQD</td><td>≈ €4.99</td><td>Films, series and documentaries with Kurdish subtitles</td></tr>
+    <tr><td><b>Heritage Patron</b></td><td>Pay-what-you-want</td><td>€ any</td><td>Funds digitisation; name on the archive wall</td></tr>
+  </table></div>
+</section>
+
+<section class="page" id="royalty" data-part="Business" data-title="Fair Royalty Model" data-icon="hand-coins">
+  <div class="eyebrow"><span class="num">34</span> Fair Royalty Model</div>
+  <h2 class="t">Artists first, visibly.</h2>
+  <div class="grid g2">
+    <div class="card glass"><div class="ic"><i data-lucide="user-round-check"></i></div><h4>User-centric / artist-centric payouts</h4><p>Each subscriber's fee is distributed to the artists <i>that subscriber</i> actually listened to (UCPS), with a boost for professional and heritage artists. This avoids the pro-rata model where a few global hits absorb everyone's money.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="receipt-text"></i></div><h4>Transparent statements</h4><p>Real-time dashboards, monthly statements, split sheets, and payouts to local wallets and IBAN.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="building"></i></div><h4>Kurdish Rights Registry</h4><p>vyv helps establish a neutral registry of works, recordings and rights-holders. It can seed a future Kurdish collective management organisation (CMO) for performance and mechanical rights.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="piggy-bank"></i></div><h4>Heritage Fund</h4><p>A fixed share of revenue (target 2–5%) funds archive digitisation and payments to estates of historical artists.</p></div>
+  </div>
+</section>
+
+<section class="page" id="gtm" data-part="Business" data-title="Go-to-Market" data-icon="rocket">
+  <div class="eyebrow"><span class="num">35</span> Go-to-Market</div>
+  <h2 class="t">Launch at home, resonate everywhere.</h2>
+  <div class="grid g3">
+    <div class="card glass"><div class="ic"><i data-lucide="map-pin"></i></div><h4>Beachhead: KRI</h4><p>Hewlêr, Silêmanî, Duhok, Halabja. Launch with telco bundles (free months with data plans), university campaigns and a Newroz launch event.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="plane"></i></div><h4>Wave 2: Diaspora</h4><p>Germany, Sweden, UK, France, Netherlands. Community organisations, Kurdish schools, cultural festivals, family plans.</p></div>
+    <div class="card glass"><div class="ic"><i data-lucide="earth"></i></div><h4>Wave 3: Greater Kurdistan</h4><p>Kurmanji and Zazaki in Türkiye, Kurdish in Syria and Iran, with free tiers, partnerships and resilient access where needed.</p></div>
+  </div>
+  <h3>Growth loops</h3>
+  <ul class="clean">
+    <li><b>Artist loop:</b> artists bring fans. Claim-your-profile, share cards and pre-save campaigns.</li>
+    <li><b>Heritage loop:</b> families donate recordings, hear them restored and share them. That brings new families.</li>
+    <li><b>Clips loop:</b> vertical clips spread on social media with deep links back to full songs in vyv.</li>
+    <li><b>Education loop:</b> schools use vyv Books and Wiki, and students bring their parents.</li>
+  </ul>
+</section>
+
+<section class="page" id="partners" data-part="Business" data-title="Partnerships & Government" data-icon="handshake">
+  <div class="eyebrow"><span class="num">36</span> Partnerships &amp; Government</div>
+  <h2 class="t">A public-private cultural infrastructure.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Partner</th><th>Role</th><th>Value to partner</th></tr>
+    <tr><td><b>Kurdistan Regional Government</b> (Culture &amp; Youth, Education, Digital/IT bodies)</td><td>Strategic sponsor, heritage mandate, public broadcaster archives, education licences</td><td>National cultural sovereignty, soft power, youth engagement, digital-economy jobs</td></tr>
+    <tr><td><b>Broadcasters</b> (public &amp; private)</td><td>Live streams, archive access, co-productions</td><td>New digital audience, archive monetisation</td></tr>
+    <tr><td><b>Telcos</b></td><td>Carrier billing, zero-rated data bundles</td><td>Differentiated bundles, ARPU uplift</td></tr>
+    <tr><td><b>Universities &amp; libraries</b></td><td>Digitisation labs, research, editorial boards</td><td>Research data, preservation funding</td></tr>
+    <tr><td><b>Labels, publishers, producers</b></td><td>Licensed catalogue, films, audiobooks</td><td>Revenue, anti-piracy, analytics</td></tr>
+    <tr><td><b>International bodies</b> (e.g. UNESCO programmes, EU cultural funds, foundations)</td><td>Grants for intangible heritage and archives</td><td>Measurable heritage impact</td></tr>
+  </table></div>
+  <div class="callout brand"><i class="ci" data-lucide="landmark"></i><p><b>Governance model for government participation:</b> a company operated to commercial standards, plus an independent <b>Heritage Trust</b> board (academics, artists, civil society) that owns the preservation masters and safeguards editorial independence and dialect and regional neutrality.</p></div>
+</section>
+
+<section class="page" id="invest" data-part="Business" data-title="Investment Case" data-icon="trending-up">
+  <div class="eyebrow"><span class="num">37</span> Investment Case &amp; Use of Funds</div>
+  <h2 class="t">Fund a national asset, not an experiment.</h2>
+  <div class="grid g3">
+    <div class="kpi glass"><div class="l">Stage A · 12 months</div><div class="v" style="font-size:26px;margin-top:6px">Launch</div><div class="l">Web + Windows Store + Android, real auth, licensed core catalogue, local payments, Heritage pilot · <b>planning range USD 1.5–2.5M</b></div></div>
+    <div class="kpi glass"><div class="l">Stage B · +12 months</div><div class="v" style="font-size:26px;margin-top:6px">National</div><div class="l">iOS/macOS, Books reader, Clips &amp; music video, Creator studio, diaspora expansion · <b>planning range USD 4–7M</b></div></div>
+    <div class="kpi glass"><div class="l">Stage C · +24 months</div><div class="v" style="font-size:26px;margin-top:6px">Screen</div><div class="l">Film/TV licensing, originals, full AI operating layer, Greater Kurdistan · <b>to be sized with partners</b></div></div>
+  </div>
+  <p style="font-size:13px;margin-top:10px">Ranges are indicative planning figures, not a quote. Build a bottom-up financial model (team, cloud, licensing minimum guarantees, marketing) before presenting numbers formally.</p>
+  <h3>Use of funds (Stage A)</h3>
+  <div id="funds"></div>
+  <h3>Core team (Stage A)</h3>
+  <div class="meta-row">
+    <span class="tag b">CEO / Founder</span><span class="tag">CTO</span><span class="tag">Head of Content &amp; Rights</span><span class="tag">Head of Heritage (archivist)</span><span class="tag">Lead Designer</span><span class="tag">4–6 Full-stack engineers</span><span class="tag">2 Mobile/desktop engineers</span><span class="tag">ML engineer (Kurdish NLP/ASR)</span><span class="tag">DevOps/SRE</span><span class="tag">Editors per dialect</span><span class="tag">Legal counsel (IP, payments)</span><span class="tag">Partnerships &amp; marketing</span>
+  </div>
+</section>
+
+<section class="page" id="kpis" data-part="Business" data-title="KPIs & OKRs" data-icon="gauge">
+  <div class="eyebrow"><span class="num">38</span> KPIs &amp; OKRs</div>
+  <h2 class="t">What we measure is what we become.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Area</th><th>North-star / KPI</th><th>12-month target (draft)</th></tr>
+    <tr><td><b>North star</b></td><td>Weekly Kurdish listening &amp; viewing hours</td><td>Growing week over week</td></tr>
+    <tr><td>Audience</td><td>MAU · DAU/MAU</td><td>250k MAU · ≥ 25%</td></tr>
+    <tr><td>Monetisation</td><td>Paying subscribers · conversion · ARPPU</td><td>≥ 4% free→paid</td></tr>
+    <tr><td>Catalogue</td><td>Licensed tracks · metadata completeness · lyric coverage</td><td>100k+ tracks · ≥ 95% · ≥ 40%</td></tr>
+    <tr><td>Heritage</td><td>Hours digitised &amp; published</td><td>2,000 hours</td></tr>
+    <tr><td>Creators</td><td>Verified artists · total payouts</td><td>3,000 · published quarterly</td></tr>
+    <tr><td>Quality</td><td>Crash-free sessions · playback start p75 · CSAT</td><td>≥ 99.5% · &lt; 1 s · ≥ 4.6/5</td></tr>
+    <tr><td>AI ops</td><td>% tickets auto-resolved · incidents auto-mitigated</td><td>≥ 60% · ≥ 50%</td></tr>
+  </table></div>
+</section>
+
+<section class="page" id="risks" data-part="Business" data-title="Risks & Mitigations" data-icon="shield-alert">
+  <div class="eyebrow"><span class="num">39</span> Risks &amp; Mitigations</div>
+  <h2 class="t">Name every risk. Own every answer.</h2>
+  <div class="tw glass"><table class="tbl" id="riskTbl"><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></table></div>
+</section>
+
+<!-- ═══════════════════ PART VIII · EXECUTION ═══════════════════ -->
+
+<section class="page" id="roadmap" data-part="Execution" data-title="Roadmap" data-icon="map">
+  <div class="eyebrow"><span class="num">40</span> Roadmap</div>
+  <h2 class="t">From prototype to national platform.</h2>
+  <div class="road" id="road"></div>
+</section>
+
+<section class="page" id="checklist" data-part="Execution" data-title="Master Checklist" data-icon="list-checks">
+  <div class="eyebrow"><span class="num">41</span> Master Checklist</div>
+  <h2 class="t">The operating checklist.</h2>
+  <p class="lead">Tick items as you go. Progress is saved in this browser. <b>P0</b> = required for the fully operational Web + Windows launch.</p>
+  <div class="cl-head glass"><i data-lucide="list-checks"></i><b id="clPct">0%</b><div class="bar"><i id="clBar"></i></div><span id="clCount" class="mono" style="color:var(--fg-3)"></span><button class="ib" id="clReset" title="Reset checklist" aria-label="Reset checklist"><i data-lucide="rotate-ccw"></i></button></div>
+  <div id="cl"></div>
+</section>
+
+<section class="page" id="demo" data-part="Execution" data-title="Investor Demo Script" data-icon="presentation">
+  <div class="eyebrow"><span class="num">42</span> Investor Demo Script</div>
+  <h2 class="t">Seven minutes that sell the vision.</h2>
+  <div class="road" id="demoSteps"></div>
+  <div class="callout"><i class="ci" data-lucide="info"></i><p>Demo on a large display with the Windows app and a phone side-by-side. Pre-load the account, disable notifications, cache content locally for offline safety, and keep a recorded backup video.</p></div>
+</section>
+
+<section class="page" id="faq" data-part="Execution" data-title="Investor FAQ" data-icon="messages-square">
+  <div class="eyebrow"><span class="num">43</span> Investor FAQ</div>
+  <h2 class="t">Hard questions, straight answers.</h2>
+  <div id="faqList"></div>
+</section>
+
+<section class="page" id="glossary" data-part="Execution" data-title="Glossary" data-icon="book-a">
+  <div class="eyebrow"><span class="num">44</span> Glossary</div>
+  <h2 class="t">Shared words, shared understanding.</h2>
+  <div class="glass" style="border-radius:var(--r-lg);overflow:hidden"><dl class="gl" id="gl"></dl></div>
+</section>
+
+<section class="page" id="control" data-part="Execution" data-title="Document Control" data-icon="file-cog">
+  <div class="eyebrow"><span class="num">45</span> Document Control</div>
+  <h2 class="t">A living document.</h2>
+  <div class="tw glass"><table class="tbl">
+    <tr><th>Field</th><th>Value</th></tr>
+    <tr><td>Document</td><td>vyv · KRD PLY Master Bible (Vision, Brand, Product, Technology, Business)</td></tr>
+    <tr><td>Version</td><td>1.0 · 2026</td></tr>
+    <tr><td>Owner</td><td>Founder, vyv / KRD PLY</td></tr>
+    <tr><td>Classification</td><td>Confidential: partners, government and investors under NDA</td></tr>
+    <tr><td>Source of truth</td><td>This file + <code>src/index.css</code> tokens + KRD HUB umbrella guideline</td></tr>
+    <tr><td>Review cadence</td><td>Quarterly, or at every funding milestone</td></tr>
+  </table></div>
+  <p style="font-size:13.5px">Market sizes, prices and budgets in this document are planning estimates for discussion. Legal and regulatory statements are orientation, not legal advice. Confirm them with qualified counsel in Iraq/KRI, the EU and each launch market.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const card = (icon, title, body, g) => `<div class="card glass"><div class="ic${g ? ' g' : ''}"><i data-lucide="${icon}"></i></div><h4>${title}</h4><p>${body}</p></div>`;
+
+  /* ── Data ── */
+  $('#principles').innerHTML = [
+    ['crown', 'Dignity', 'Kurdish culture deserves the same craft as the world\'s best products. Nothing cheap, nothing cluttered.'],
+    ['git-merge', 'Unity in diversity', 'Every dialect, script, region and faith is equal. No dialect is "the" Kurdish.'],
+    ['hand-coins', 'Fairness', 'Creators are paid transparently. Heritage estates are respected. Piracy is replaced with access.'],
+    ['archive', 'Permanence', 'Preservation masters are never altered and are held in public trust for generations.'],
+    ['minimize-2', 'Calm minimalism', 'Icons over labels, space over noise. The interface disappears and the culture remains.'],
+    ['bot', 'AI with humility', 'AI does the heavy lifting; humans hold authority. Every AI output is labelled and auditable.'],
+    ['globe', 'Open to the world', 'Kurdish culture in, world culture in, with Kurdish subtitles. A bridge, not a wall.'],
+  ].map(([i, t, b]) => card(i, t, b, true)).join('');
+
+  $('#verticals').innerHTML = [
+    ['music', 'Music', 'Licensed catalogue, playlists, synced lyrics, Hi-Fi, Timeline mixes.'],
+    ['radio-tower', 'Radio', 'Official, diaspora and global live stations plus AI virtual stations.'],
+    ['podcast', 'Podcasts', 'Open RSS plus Originals, AI transcripts and chapters, creator studio.'],
+    ['book-open', 'Books', 'Audiobooks with a word-synced typeset "Living Book" reader.'],
+    ['landmark', 'Heritage', 'National voice archive: dengbêj, radio history, speeches, poets.'],
+    ['scroll-text', 'Wiki', 'Cited encyclopedia of artists, works, maqam, instruments, eras.'],
+    ['wand-sparkles', 'Studio', 'Labelled AI music plus creator tools, with consent-based voices.'],
+    ['clapperboard', 'Screen', 'Clips, music videos, films, animation, TV with Kurdish subtitles.'],
+    ['store', 'Store', 'Buy albums, books and rentals; sync licensing; tips and patronage.'],
+  ].map(([i, t, b]) => card(i, 'vyv ' + t, b)).join('');
+
+  $('#agents').innerHTML = [
+    ['list-music', 'Curator Agent', 'Programmes playlists, virtual radio, moods and Home, with dialect and regional diversity guarantees.'],
+    ['tags', 'Metadata Agent', 'Completes credits, ISRC/ISWC, genres, dialect tags, covers; dedupes and links to Wikidata/MusicBrainz.'],
+    ['mic-vocal', 'Lyrics Agent', 'Transcribes, time-syncs (LRC/TTML), transliterates and translates lyrics; sends them to rights-holders for approval.'],
+    ['scale', 'Rights Agent', 'Fingerprints uploads, detects conflicts, checks territory and expiry, prepares takedowns and royalty splits.'],
+    ['shield-check', 'Moderation Agent', 'Screens uploads and comments for hate, spam and illegal content under the published policy.'],
+    ['life-buoy', 'Support Agent', 'Answers subscribers in every dialect 24/7, fixes account and billing issues, and escalates to humans.'],
+    ['activity', 'SRE Agent', 'Watches telemetry, predicts incidents, auto-scales, rolls back bad deploys, opens postmortems.'],
+    ['landmark', 'Heritage Agent', 'Restores access copies, transcribes oral history, drafts biographies with citations for editors.'],
+    ['trending-up', 'Growth Agent', 'Runs experiments, personalises onboarding, detects churn risk, drafts campaigns for review.'],
+  ].map(([i, t, b]) => card(i, t, b)).join('');
+
+  $('#streams').innerHTML = [
+    ['repeat', 'Subscriptions', 'Plus, Family, Student, Screen add-on. Regional pricing, local rails.'],
+    ['megaphone', 'Advertising', 'Audio, display and video ads in the free tier; brand-sponsored playlists and stations.'],
+    ['shopping-bag', 'Store (TVOD / EST)', 'Album and track sales, audiobooks, film rentals, merchandise and tickets.'],
+    ['file-signature', 'Licensing (B2B)', 'Sync licences, catalogue distribution to global DSPs via DDEX.'],
+    ['landmark', 'Government & institutions (B2G)', 'Heritage digitisation contracts, education licences, public-service channels.'],
+    ['gift', 'Creator economy', 'Tips, memberships and crowdfunding with a small platform fee.'],
+    ['database', 'Data & insights', 'Aggregated, anonymised market insights for labels and cultural bodies. Never personal data.'],
+  ].map(([i, t, b]) => card(i, t, b)).join('');
+
+  const funds = [['Product & engineering', 35], ['Content licensing & rights', 25], ['AI & data (Kurdish NLP/ASR)', 12], ['Heritage digitisation', 10], ['Go-to-market & partnerships', 10], ['Legal, security & operations', 8]];
+  $('#funds').innerHTML = funds.map(([l, v]) => `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${l}</span><b class="mono">${v}%</b></div><div class="bar" style="margin-top:6px"><i style="width:${v * 2.5}%"></i></div></div>`).join('');
+
+  const risks = [
+    ['Licensing: labels or estates refuse or overprice', 'Medium', 'High', 'Start with public-domain, heritage and direct-to-artist deals; MG caps; government-backed heritage mandate'],
+    ['Piracy & free alternatives', 'High', 'Medium', 'Free tier, local micro-payments, exclusive heritage and books, superior UX, DRM on premium'],
+    ['Payment and regulatory constraints in Iraq', 'Medium', 'High', 'Licensed PSPs only, carrier billing, vouchers, counsel sign-off; crypto off in Iraq'],
+    ['Political sensitivity across four states', 'Medium', 'High', 'Strict neutrality policy, Heritage Trust independence, regional content governance, geo-compliance'],
+    ['Access blocking in some countries', 'Medium', 'Medium', 'Multi-CDN, domain fronting where lawful, downloadable offline content, APK distribution'],
+    ['AI errors in metadata, lyrics or history', 'Medium', 'Medium', 'Confidence thresholds, human verification, citations, visible correction flow'],
+    ['Video cost overrun', 'Medium', 'High', 'Phased V1→V3, AVOD first, per-title unit economics gate before licensing'],
+    ['Key-person and talent risk', 'Medium', 'Medium', 'Documentation (this Bible), senior hires, ESOP, diaspora engineering talent'],
+    ['Security breach / leaked secrets', 'Low', 'High', 'Secret scanning in CI, vault, pen-tests, ISO 27001 roadmap, incident response plan'],
+  ];
+  $('#riskTbl').insertAdjacentHTML('beforeend', risks.map((r) => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
+
+  const phases = [
+    ['Phase 0 · Months 0–3', 'Foundation', 'Company setup, Heritage Trust charter, brand lock with KRD HUB, backend architecture, identity service, first licensing LOIs, KRG partnership MoU, Kurdish UI localisation (ckb/kmr).'],
+    ['Phase 1 · Months 3–6', 'Web + Windows launch', 'Real Google/Facebook/Apple sign-in, licensed core catalogue, playlists, radio, podcasts, local payments + Stripe, Microsoft Store (MSIX) release, PWA, admin console, AI agents v1 (metadata, support, SRE).'],
+    ['Phase 2 · Months 6–12', 'Mobile & depth', 'Android + iOS, Living Book reader with 20 launch titles, Heritage archive public launch, Clips & music video (V1), creator studio, dialect search v2, diaspora marketing.'],
+    ['Phase 3 · Months 12–24', 'Screen & scale', 'Films, documentaries, animation with Kurdish subtitles (V2), licensing marketplace, Kurdish Rights Registry, macOS/Linux/TV, ISO 27001.'],
+    ['Phase 4 · Months 24+', 'National platform', 'World cinema with Kurdish subtitles & dubbing (V3), vyv Originals, full AI operating layer, Greater Kurdistan expansion, distribution of Kurdish catalogue to global DSPs.'],
+  ];
+  $('#road').innerHTML = phases.map(([w, t, b]) => `<div class="phase glass"><div class="when">${w}</div><h4 style="font-size:19px;margin:4px 0 6px">${t}</h4><p style="margin:0;font-size:14px">${b}</p></div>`).join('');
+
+  const demo = [
+    ['0:00 · Sign in', 'One tap "Continue with Google" on the Windows app. The profile appears with Listening DNA and persona.'],
+    ['0:40 · Home', 'The greeting and the Agent "for right now" banner. Tap <i>Play mix</i>; the UI takes on the artwork\'s colour.'],
+    ['1:30 · Player', 'Cover mode, synced lyrics in Sorani with transliteration, EQ, then Micro and Nano modes.'],
+    ['2:30 · Agent', 'Ask by voice: "Play dengbêj from the 1970s" or <span class="ku">گۆرانی ئارام لێبدە</span>. It plays, then jumps to the Timeline.'],
+    ['3:30 · Heritage & Wiki', 'A restored historical recording with biography, photos and sources, then the Wiki article, playable.'],
+    ['4:30 · Books', 'Mem û Zîn: narration plays while the typeset verse highlights word by word.'],
+    ['5:30 · Screen & Store', 'A music-video clip feed, a film trailer with Kurdish subtitles, and a purchase with a local wallet.'],
+    ['6:30 · Mind', 'The admin console: agents fixing metadata, resolving tickets and a self-healed incident, all with an audit log.'],
+  ];
+  $('#demoSteps').innerHTML = demo.map(([w, b]) => `<div class="phase glass"><div class="when">${w}</div><p style="margin:4px 0 0;font-size:14px">${b}</p></div>`).join('');
+
+  const faq = [
+    ['Why would people pay when YouTube is free?', 'Because vyv offers what YouTube can\'t: a clean, ad-light, offline, dialect-aware, licensed experience with lyrics, books, heritage and fair artist pay, priced in IQD and payable with local wallets or carrier billing.'],
+    ['Can a regional platform compete with Spotify?', 'We don\'t compete on breadth; we win on depth. vyv can even distribute its licensed Kurdish catalogue to global platforms, earning as the Kurdish rights hub either way.'],
+    ['What is the government\'s role?', 'Strategic sponsor and heritage partner, not the operator. A commercial company runs the service; an independent Heritage Trust safeguards the archive and neutrality.'],
+    ['Is video realistic?', 'Yes, phased. Clips and music videos first (high ROI, low cost), then films with Kurdish subtitles once audio revenue and licensing pipelines are proven.'],
+    ['What is defensible?', 'The Kurdish media graph: rights data, metadata, lyrics, transcripts, archives and dialect search models. It compounds over time and cannot be replicated quickly.'],
+    ['How does AI reduce cost?', 'Agents automate metadata, lyric sync, subtitles, support and operations, the work that traditionally needs large teams. Humans focus on editorial judgement, relationships and approvals.'],
+    ['What exists today?', 'A working, premium front-end prototype covering all major sections, player modes, an AI agent and a design system. The investment funds the backend, licensing, payments and store releases.'],
+  ];
+  $('#faqList').innerHTML = faq.map(([q, a]) => `<div class="card glass" style="margin-bottom:12px"><h4 style="display:flex;gap:10px;align-items:flex-start"><i data-lucide="circle-help" style="color:var(--brand-ink)"></i>${q}</h4><p style="margin:6px 0 0 28px">${a}</p></div>`).join('');
+
+  const gl = [
+    ['AVOD / SVOD / TVOD / EST', 'Ad-supported, subscription, transactional (rental) and electronic sell-through (purchase) video models.'],
+    ['Aggregator', 'An entity that delivers catalogue from rights-holders to streaming services and collects royalties.'],
+    ['ASR', 'Automatic speech recognition: converting speech to text.'],
+    ['BCP 47', 'Standard language tags, e.g. ckb-Arab, kmr-Latn.'],
+    ['C2PA', 'Coalition for Content Provenance and Authenticity; cryptographic content credentials that label AI or edited media.'],
+    ['CDN', 'Content delivery network: edge servers that stream media close to users.'],
+    ['CMAF', 'Common Media Application Format; a single fragmented-MP4 packaging for HLS and DASH.'],
+    ['CMO', 'Collective management organisation that licenses and collects performance and mechanical royalties.'],
+    ['DDEX', 'Digital Data Exchange: music industry XML standards for releases (ERN) and sales reports (DSR).'],
+    ['Dengbêj', 'Kurdish bardic tradition of sung oral epics and narratives.'],
+    ['DRM', 'Digital rights management (Widevine, PlayReady, FairPlay).'],
+    ['DSP', 'Digital service provider: a streaming platform.'],
+    ['EPUB 3 Media Overlays', 'Standard for synchronising text and recorded narration (read-along).'],
+    ['IASA TC-04', 'International guidelines for producing and preserving digital audio objects.'],
+    ['ISRC / ISWC', 'International codes for recordings and for musical works (compositions).'],
+    ['LUFS', 'Loudness units relative to full scale; used for loudness normalisation.'],
+    ['Maqam', 'Modal system of melody used in Kurdish and Middle Eastern classical music.'],
+    ['MCP', 'Model Context Protocol: a standard for giving AI agents access to tools and data.'],
+    ['MSIX', 'Modern Windows app package format used for Microsoft Store distribution.'],
+    ['OAIS', 'Open Archival Information System (ISO 14721): reference model for long-term digital preservation.'],
+    ['OIDC / OAuth', 'Open standards for secure sign-in and delegated authorisation (Google, Facebook, Apple).'],
+    ['PWA', 'Progressive Web App: an installable, offline-capable web application.'],
+    ['SLO', 'Service level objective: a target reliability metric.'],
+    ['UCPS', 'User-centric payment system: royalties follow each user\'s own listening.'],
+    ['WebVTT / SRT', 'Subtitle formats; vyv ingests SRT and delivers WebVTT/IMSC.'],
+  ];
+  $('#gl').innerHTML = gl.map(([t, d]) => `<dt>${t}</dt><dd>${d}</dd>`).join('');
+
+  const checklist = [
+    ['Strategy & Governance', 'landmark', [
+      ['P0', 'Reconcile naming and brand with KRD HUB umbrella guideline'],
+      ['P0', 'Register company, trademarks "vyv" and "KRD PLY" (Iraq/KRI, EU, WIPO Madrid)'],
+      ['P0', 'Secure domains and social handles'],
+      ['P1', 'Draft Heritage Trust charter and board'],
+      ['P0', 'Prepare MoU with KRG (Culture &amp; Youth / relevant digital authority)'],
+      ['P0', 'Build bottom-up financial model and 12-month budget'],
+      ['P1', 'Publish content neutrality &amp; moderation policy'],
+    ]],
+    ['Legal & Rights', 'scale', [
+      ['P0', 'Counsel review: Iraqi Copyright Law (No. 3/1971, as amended) &amp; KRI regulations'],
+      ['P0', 'Standard artist, label and publisher licence agreements'],
+      ['P0', 'Terms of Service, Privacy Policy (GDPR), Cookie policy'],
+      ['P0', 'First 10 licensing LOIs (labels, artists, estates)'],
+      ['P1', 'Broadcaster re-transmission agreements for radio'],
+      ['P1', 'Deed-of-gift template for heritage donations'],
+      ['P2', 'Film licensing strategy per territory'],
+    ]],
+    ['Engineering: Backend', 'server', [
+      ['P0', 'Identity service with real Google, Facebook, Apple OAuth (replace AuthService mock)'],
+      ['P0', 'Catalog, library and playlist APIs with PostgreSQL'],
+      ['P0', 'Media ingest + transcoding + HLS delivery via CDN'],
+      ['P0', 'Entitlements &amp; subscription service'],
+      ['P0', 'Kurdish-aware search (script folding, transliteration)'],
+      ['P0', 'Secrets in vault; CI secret scanning; no credentials in repo'],
+      ['P1', 'Rights &amp; royalties ledger, payout statements'],
+      ['P1', 'Observability: OpenTelemetry, SLO dashboards, alerting'],
+    ]],
+    ['Engineering: Clients', 'monitor-smartphone', [
+      ['P0', 'Connect existing React app to real APIs'],
+      ['P0', 'Apply brand accent #ff3c00 tokens in app CSS'],
+      ['P0', 'Full UI localisation: ckb (RTL), kmr, en'],
+      ['P0', 'PWA: service worker, offline, install prompt'],
+      ['P0', 'Package Windows MSIX and pass Microsoft Store certification'],
+      ['P1', 'Android &amp; iOS apps with native background audio'],
+      ['P1', 'Living Book reader (EPUB 3 Media Overlays)'],
+      ['P1', 'Clips feed &amp; video player with WebVTT subtitles'],
+      ['P2', 'Tauri 2 desktop, macOS, Linux, TV'],
+    ]],
+    ['Payments', 'wallet', [
+      ['P0', 'Stripe/Adyen for cards, Apple/Google Pay, SEPA'],
+      ['P0', 'At least one licensed Iraqi e-wallet PSP'],
+      ['P1', 'Carrier billing with a KRI operator'],
+      ['P1', 'Prepaid voucher codes'],
+      ['P1', 'Creator payouts with KYC'],
+      ['P2', 'Stablecoin rail in permitted jurisdictions only'],
+    ]],
+    ['AI · vyv Mind', 'brain-circuit', [
+      ['P0', 'LLM-based agent replacing rule-based intents, with tool calls'],
+      ['P1', 'Metadata &amp; Lyrics agents with human approval queue'],
+      ['P1', 'Support agent in ckb/kmr/en with escalation'],
+      ['P1', 'SRE agent: anomaly detection &amp; auto-rollback'],
+      ['P1', 'Kurdish ASR evaluation &amp; fine-tuning dataset plan'],
+      ['P2', 'AI governance: model cards, bias audits, ISO 42001 gap assessment'],
+    ]],
+    ['Content & Heritage', 'library', [
+      ['P0', 'Launch catalogue: 20k+ licensed tracks with complete metadata'],
+      ['P0', '20+ radio stations with agreements'],
+      ['P1', '50 podcasts, 5 vyv Originals'],
+      ['P1', '20 audiobooks with Living Book editions'],
+      ['P1', 'Heritage pilot: 200 hours digitised to IASA TC-04'],
+      ['P1', 'Wiki: 500 cited entries across artists, poets, maqam, instruments'],
+    ]],
+    ['Investor Readiness', 'presentation', [
+      ['P0', 'Pitch deck derived from this Bible (12–15 slides)'],
+      ['P0', 'Live demo on Windows + web; backup video'],
+      ['P0', 'One-pager in English, Sorani and Kurmanji'],
+      ['P1', 'Letters of intent from artists, labels, broadcasters'],
+      ['P1', 'Data room: financial model, legal, tech architecture, team'],
+    ]],
+  ];
+  const KEY = 'vyv-bible-checklist';
+  let done = store.get(KEY, {});
+  const total = checklist.reduce((n, g) => n + g[2].length, 0);
+  $('#cl').innerHTML = checklist.map(([g, icon, items], gi) => `<div class="cl-group glass"><h4><i data-lucide="${icon}"></i>${g}<span class="cnt" data-g="${gi}"></span></h4>${items.map(([p, t], ii) => `<label class="ck"><input type="checkbox" data-k="${gi}-${ii}"><span><span class="pr ${p.toLowerCase()}">${p}</span>${t}</span></label>`).join('')}</div>`).join('');
+  const refresh = () => {
+    const n = Object.values(done).filter(Boolean).length;
+    const pct = Math.round((n / total) * 100);
+    $('#clPct').textContent = pct + '%';
+    $('#clBar').style.width = pct + '%';
+    $('#clCount').textContent = `${n} / ${total}`;
+    checklist.forEach((g, gi) => { $(`.cnt[data-g="${gi}"]`).textContent = `${g[2].filter((_, ii) => done[`${gi}-${ii}`]).length}/${g[2].length}`; });
+  };
+  $$('#cl input').forEach((el) => {
+    el.checked = !!done[el.dataset.k];
+    el.addEventListener('change', () => { done[el.dataset.k] = el.checked; store.set(KEY, done); refresh(); });
+  });
+  $('#clReset').addEventListener('click', () => { done = {}; store.set(KEY, done); $$('#cl input').forEach((el) => (el.checked = false)); refresh(); });
+  refresh();
+
+  /* ── Brand visuals ── */
+  const ramp = (el, stops, darkText) => { el.innerHTML = stops.map(([c, l], i) => `<div style="background:${c};color:${i < darkText ? '#07080a' : '#fff'}">${l}</div>`).join(''); };
+  ramp($('#rampFlame'), [['#fff1ec', '50'], ['#ffd6c7', '100'], ['#ffad91', '200'], ['#ff7a4d', '300'], ['#ff5a24', '400'], ['#ff3c00', '500'], ['#e03400', '600'], ['#b82b00', '700'], ['#8a2000', '800'], ['#551400', '900']], 4);
+  ramp($('#rampGray'), [['#f5f5f7', '50'], ['#eceef1', '100'], ['#d4d8de', '200'], ['#bcc1c9', '300'], ['#a2a8b2', '400'], ['#7c838e', '500'], ['#555b64', '600'], ['#33373d', '700'], ['#1b1d21', '800'], ['#07080a', '900']], 5);
+  $('#radii').innerHTML = [['xs', 8], ['sm', 10], ['md', 14], ['lg', 20], ['xl', 28], ['2xl', 36], ['pill', 999]].map(([n, r]) => `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-right:10px"><div class="glass" style="width:64px;height:64px;border-radius:${Math.min(r, 32)}px"></div><span class="mono" style="font-size:11px;color:var(--fg-3)">${n} · ${r === 999 ? '∞' : r}</span></div>`).join('');
+  $('#icons').innerHTML = ['play', 'pause', 'skip-forward', 'shuffle', 'repeat', 'heart', 'bookmark', 'list-music', 'mic-vocal', 'radio-tower', 'podcast', 'book-open', 'landmark', 'scroll-text', 'clapperboard', 'sparkles', 'search', 'bell', 'user-round', 'settings-2', 'download', 'share-2', 'sliders-horizontal', 'moon', 'sun', 'wallet'].map((n) => `<span class="ib" title="${n}" style="margin:0 6px 6px 0"><i data-lucide="${n}"></i></span>`).join('');
+  $('#wave').innerHTML = Array.from({ length: 48 }, (_, i) => `<i style="animation-delay:${(i * 0.07) % 1.4}s;height:${20 + ((i * 37) % 80)}%"></i>`).join('');
+
+  /* ── SPA router & index ── */
+  const pages = $$('.page');
+  const toc = $('#toc');
+  let lastPart = '';
+  toc.innerHTML = pages.map((p, i) => {
+    const part = p.dataset.part;
+    const head = part !== lastPart ? `<div class="part">${esc(part)}</div>` : '';
+    lastPart = part;
+    return `${head}<a href="#/${p.id}" data-id="${p.id}"><span class="n">${String(i).padStart(2, '0')}</span><i data-lucide="${p.dataset.icon}"></i><span>${esc(p.dataset.title)}</span></a>`;
+  }).join('');
+
+  pages.forEach((p, i) => {
+    const prev = pages[i - 1], next = pages[i + 1];
+    p.insertAdjacentHTML('beforeend', `<div class="pager">${prev ? `<a class="glass" href="#/${prev.id}"><small>← Previous</small>${esc(prev.dataset.title)}</a>` : ''}${next ? `<a class="glass nx" href="#/${next.id}"><small>Next →</small>${esc(next.dataset.title)}</a>` : ''}</div>`);
+  });
+
+  const show = () => {
+    const id = (location.hash.match(/^#\/([\w-]+)/) || [])[1] || 'cover';
+    const target = document.getElementById(id) || pages[0];
+    if (document.body.classList.contains('all')) { target.scrollIntoView({ behavior: 'smooth' }); }
+    else { pages.forEach((p) => p.classList.toggle('on', p === target)); window.scrollTo({ top: 0 }); }
+    $$('a', toc).forEach((a) => a.classList.toggle('on', a.dataset.id === target.id));
+    $(`a[data-id="${target.id}"]`, toc)?.scrollIntoView({ block: 'nearest' });
+    $('#progress').style.width = `${((pages.indexOf(target) + 1) / pages.length) * 100}%`;
+    document.body.classList.remove('menu');
+  };
+  window.addEventListener('hashchange', show);
+  document.addEventListener('keydown', (e) => {
+    if (e.target.matches('input') || document.body.classList.contains('all')) return;
+    const cur = pages.findIndex((p) => p.classList.contains('on'));
+    if (e.key === 'ArrowRight' && pages[cur + 1]) location.hash = '#/' + pages[cur + 1].id;
+    if (e.key === 'ArrowLeft' && pages[cur - 1]) location.hash = '#/' + pages[cur - 1].id;
+    if (e.key === '/') { e.preventDefault(); $('#q').focus(); }
+  });
+
+  $('#q').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    $$('a', toc).forEach((a) => {
+      const p = document.getElementById(a.dataset.id);
+      a.style.display = !q || p.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+    $$('.part', toc).forEach((h) => {
+      let n = h.nextElementSibling, any = false;
+      while (n && !n.classList.contains('part')) { if (n.style.display !== 'none') any = true; n = n.nextElementSibling; }
+      h.style.display = any ? '' : 'none';
+    });
+  });
+
+  $('#allBtn').addEventListener('click', () => {
+    const on = document.body.classList.toggle('all');
+    $('#allBtn span').textContent = on ? 'Page view' : 'Read all';
+    if (!on) show();
+  });
+
+  const root = document.documentElement;
+  const setTheme = (t) => { root.dataset.theme = t; store.set('vyv-bible-theme', t); $('meta[name=theme-color]').content = t === 'light' ? '#f4f5f7' : '#07080a'; };
+  setTheme(store.get('vyv-bible-theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+  $('#themeBtn').addEventListener('click', () => setTheme(root.dataset.theme === 'light' ? 'dark' : 'light'));
+
+  show();
+  if (window.lucide) lucide.createIcons();
+})();
+</script>
+</body>
+</html>
