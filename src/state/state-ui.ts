@@ -82,8 +82,35 @@ export function navigate(route: Route) {
   document.getElementById('main-scroll')?.scrollTo({ top: 0 });
 }
 
+function stepBack() {
+  const { back, route } = uiStore.get();
+  const prev = back[back.length - 1];
+  if (!prev) return;
+  uiStore.set((s) => ({ route: prev, back: s.back.slice(0, -1), forward: [route, ...s.forward] }));
+}
+
+function stepForward() {
+  const { forward, route } = uiStore.get();
+  const next = forward[0];
+  if (!next) return;
+  uiStore.set((s) => ({ route: next, forward: s.forward.slice(1), back: [...s.back, route] }));
+}
+
 export const goBack = () => history.back();
 export const goForward = () => history.forward();
+
+// Browser / OS back & forward gestures map onto the in-app history.
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    const target = parseHash(location.hash) ?? { name: 'home' };
+    const { back, forward, route } = uiStore.get();
+    if (sameRoute(target, route)) return;
+    if (back.length && sameRoute(back[back.length - 1], target)) stepBack();
+    else if (forward.length && sameRoute(forward[0], target)) stepForward();
+    else uiStore.set((s) => ({ route: target, back: [...s.back, route].slice(-40), forward: [] }));
+    uiStore.set({ mode: 'Full', sheet: null });
+  });
+}
 
 export const setMode = (mode: PlayerMode) => uiStore.set({ mode });
 export const cyclePlayerMode = () => {
@@ -130,7 +157,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'auto',
-  adaptiveColor: false,
+  adaptiveColor: true,
   aura: true,
   reduceMotion: false,
   hiRes: true,
@@ -177,7 +204,8 @@ export function applyTheme(pref: ThemePref, origin?: { x: number; y: number }) {
     startViewTransition?: (cb: () => void) => { ready: Promise<void> };
   };
 
-  if (!docWithTransition.startViewTransition || !origin) {
+  const reduced = settingsStore.get().reduceMotion || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (!docWithTransition.startViewTransition || reduced || !origin) {
     root.dataset.theme = target;
     return;
   }

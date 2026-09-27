@@ -2,72 +2,177 @@
 // ui-agent-panel.tsx: Conversational Agent Overlay & Panel
 // ─────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
-import { ArrowUp, Sparkles, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowUp, CloudSun, Headphones, History, Landmark, Mic, MoonStar, Sparkles, Timer, Wand2, X } from 'lucide-react';
 import { useStore } from '../core/core-store';
-import { ask } from '../state/state-agent';
-import { togglePanel, uiStore } from '../state/state-ui';
-import { IconButton } from './ui-components';
+import { cn } from '../core/core-utils';
+import { ask, listen, predict, voiceSupported } from '../state/state-agent';
+import { allTracks, libraryStore, resolveEntity } from '../state/state-catalog';
+import { playerStore } from '../state/state-player';
+import { settingsStore, uiStore } from '../state/state-ui';
+import { navigate } from '../state/state-ui';
+import { Artwork, IconButton } from './ui-components';
+import type { AgentMessage, BookmarkKind } from '../core/core-types';
 
-export function AgentPanel() {
-  const [input, setInput] = useState('');
+const CAPABILITIES = [
+  { icon: Wand2, text: 'Make me a focus mix' },
+  { icon: History, text: 'What happened in 1979?' },
+  { icon: Landmark, text: 'Tell me about the dastgah' },
+  { icon: Timer, text: 'Sleep in 20 minutes' },
+  { icon: MoonStar, text: 'Dark mode' },
+  { icon: Headphones, text: 'What is this song?' },
+];
+
+function EntityChip({ kind, id }: { kind: BookmarkKind; id: string }) {
+  const e = resolveEntity(kind, id);
+  if (!e) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => e.route && navigate(e.route)}
+      className="press flex w-full items-center gap-3 rounded-[var(--radius-md)] bg-surface p-2 text-left hover:bg-surface-2"
+    >
+      <Artwork seed={e.id} color={e.color} src={e.src} glyph={e.glyph} shape={e.circle ? 'circle' : 'square'} className="size-10 [--art-r:10px]" />
+      <div className="min-w-0">
+        <div className="truncate text-[13.5px] font-medium">{e.title}</div>
+        <div className="truncate text-[12px] text-fg-3">{e.subtitle}</div>
+      </div>
+    </button>
+  );
+}
+
+function Bubble({ m, onSuggest }: { m: AgentMessage; onSuggest: (s: string) => void }) {
+  if (m.role === 'user') {
+    return <div className="anim-rise ml-auto max-w-[85%] rounded-[20px] rounded-br-md bg-fg px-4 py-2.5 text-[14px] text-bg">{m.text}</div>;
+  }
+  return (
+    <div className="anim-rise flex max-w-[92%] flex-col gap-2">
+      <div className="flex gap-2.5">
+        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-ink">
+          <Sparkles size={13} />
+        </span>
+        <p className="text-[14px] leading-relaxed text-fg">{m.text}</p>
+      </div>
+      {m.cards && (
+        <div className="ml-8 flex flex-col gap-1.5">
+          {m.cards.map((c) => (
+            <EntityChip key={`${c.kind}-${c.id}`} kind={c.kind} id={c.id} />
+          ))}
+        </div>
+      )}
+      {m.suggestions && (
+        <div className="ml-8 flex flex-wrap gap-1.5">
+          {m.suggestions.map((s) => (
+            <button key={s} type="button" onClick={() => onSuggest(s)} className="press rounded-full border border-line-2 px-3 py-1.5 text-[12.5px] text-fg-2 hover:bg-surface-2 hover:text-fg">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Conversational AI agent: understands intent, acts, and predicts. */
+export function AgentPanel({ autoFocus }: { autoFocus?: boolean } = {}) {
   const messages = useStore(uiStore, (s) => s.agent);
   const busy = useStore(uiStore, (s) => s.agentBusy);
+  const current = useStore(playerStore, (s) => s.track);
+  const voiceOn = useStore(settingsStore, (s) => s.agentVoice);
+  const [text, setText] = useState('');
+  const [listening, setListening] = useState(false);
+  const stopRef = useRef<() => void>(() => {});
+  const inputRef = useRef<HTMLInputElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || busy) return;
-    ask(input);
-    setInput('');
+  useEffect(() => {
+    if (autoFocus) inputRef.current?.focus();
+  }, [autoFocus]);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages.length, busy]);
+
+  const send = (t = text) => {
+    if (!t.trim()) return;
+    ask(t);
+    setText('');
   };
 
+  const mic = () => {
+    if (listening) return stopRef.current();
+    setListening(true);
+    stopRef.current = listen(
+      (t) => send(t),
+      () => setListening(false),
+    );
+  };
+
+  const nudge = predict({ tracks: allTracks(), current, history: libraryStore.get().history });
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {messages.length === 0 && (
-          <div className="py-12 text-center text-fg-3">
-            <Sparkles size={28} className="mx-auto mb-2 text-accent-ink" />
-            <div className="text-sm font-semibold text-fg">Ask VYV anything</div>
-            <p className="text-xs text-fg-3 mt-1 max-w-xs mx-auto">
-              “Play focus music”, “Dark mode”, “Tell me about ambient”, or “Next song”.
-            </p>
-          </div>
-        )}
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}
-          >
-            <div
-              className={`rounded-2xl px-4 py-2.5 text-sm max-w-[85%] ${
-                m.role === 'user' ? 'bg-fg text-bg' : 'bg-surface-2 text-fg'
-              }`}
-            >
-              {m.text}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="scrollbar-none flex-1 overflow-y-auto px-1 pb-4">
+        {messages.length === 0 ? (
+          <div className="flex flex-col gap-4 pt-2">
+            <div>
+              <div className="mb-3 flex size-12 items-center justify-center rounded-[16px] bg-fg text-bg shadow-[0_16px_40px_-12px_var(--accent)]">
+                <Sparkles size={22} />
+              </div>
+              <h3 className="text-[22px] font-semibold tracking-[-0.03em]">How should it sound?</h3>
+              <p className="mt-1 text-[13.5px] text-fg-3">Moods, artists, years, questions, or commands — in any words.</p>
+            </div>
+            <button type="button" onClick={() => send(nudge.prompt)} className="press relative overflow-hidden rounded-[var(--radius-lg)] bg-accent-soft p-4 text-left">
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-accent-ink">
+                <CloudSun size={13} /> Predicted for now
+              </div>
+              <div className="text-[14.5px] font-medium leading-snug">{nudge.title}</div>
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              {CAPABILITIES.map(({ icon: Icon, text: t }) => (
+                <button key={t} type="button" onClick={() => send(t)} className="press flex flex-col gap-2 rounded-[var(--radius-md)] bg-surface p-3 text-left text-[13px] leading-snug text-fg-2 hover:bg-surface-2 hover:text-fg">
+                  <Icon size={16} strokeWidth={1.75} className="text-fg-3" />
+                  {t}
+                </button>
+              ))}
             </div>
           </div>
-        ))}
-        {busy && (
-          <div className="flex items-center gap-2 text-xs text-fg-3">
-            <span className="size-2 animate-ping rounded-full bg-accent" /> Thinking…
+        ) : (
+          <div className="flex flex-col gap-4 pt-2">
+            {messages.map((m) => (
+              <Bubble key={m.id} m={m} onSuggest={send} />
+            ))}
+            {busy && (
+              <div className="flex items-center gap-1.5 pl-8" aria-label="Thinking">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="anim-live size-1.5 rounded-full bg-fg-3" style={{ animationDelay: `${i * 0.18}s` }} />
+                ))}
+              </div>
+            )}
+            <div ref={endRef} />
           </div>
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="mt-3 flex gap-2">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+        className="flex items-center gap-1.5 rounded-full bg-surface-2 p-1.5 pl-4 ring-1 ring-transparent transition focus-within:bg-surface focus-within:ring-line-2"
+      >
         <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask vyv..."
-          className="flex-1 rounded-full bg-surface-2 px-4 py-2 text-sm outline-none placeholder:text-fg-3"
+          ref={inputRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={listening ? 'Listening…' : 'Ask vyv…'}
+          aria-label="Message the agent"
+          enterKeyHint="send"
+          className="min-w-0 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-fg-3"
         />
-        <button
-          type="submit"
-          disabled={!input.trim() || busy}
-          className="press flex size-9 items-center justify-center rounded-full bg-fg text-bg disabled:opacity-40"
-        >
-          <ArrowUp size={16} />
-        </button>
+        {voiceOn && voiceSupported() && (
+          <IconButton icon={Mic} label={listening ? 'Stop' : 'Voice'} size="sm" tip={false} onClick={mic} className={cn(listening && 'anim-live !bg-live !text-white')} />
+        )}
+        <IconButton icon={ArrowUp} label="Send" size="sm" variant="solid" tip={false} onClick={() => send()} disabled={!text.trim()} />
       </form>
     </div>
   );
@@ -76,16 +181,16 @@ export function AgentPanel() {
 export function AgentOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[65] flex flex-col bg-bg/90 backdrop-blur-xl lg:hidden p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-[65] flex flex-col bg-bg/90 backdrop-blur-xl p-4 lg:hidden">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2 font-semibold">
           <Sparkles size={18} className="text-accent-ink" />
           <span>Agent</span>
         </div>
         <IconButton icon={X} label="Close" size="sm" onClick={onClose} />
       </div>
-      <div className="flex-1 min-h-0">
-        <AgentPanel />
+      <div className="min-h-0 flex-1">
+        <AgentPanel autoFocus />
       </div>
     </div>
   );

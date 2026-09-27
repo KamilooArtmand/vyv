@@ -5,7 +5,7 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { Search as SearchIcon, X } from 'lucide-react';
 import { useStore } from '../core/core-store';
-import { BOOKS, SHOWS, STATIONS, WIKI, onlineCatalogStore, useAllTracks } from '../state/state-catalog';
+import { ALBUMS, ARTISTS, BOOKS, GENRES, SHOWS, STATIONS, WIKI, useAllTracks } from '../state/state-catalog';
 import { playTrack } from '../state/state-player';
 import { navigate } from '../state/state-ui';
 import { EmptyState, Grid, MediaCard, Section, Shelf, TrackList, meshGradient } from '../ui/ui-components';
@@ -17,9 +17,9 @@ export default function SearchView() {
   const [q, setQ] = useState('');
   const query = norm(useDeferredValue(q).trim());
   const tracks = useAllTracks();
-  const onlineArtists = useStore(onlineCatalogStore, (s) => s.artists);
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
-  const onlineGenres = useStore(onlineCatalogStore, (s) => s.genres);
+  const onlineArtists = ARTISTS;
+  const onlineAlbums = ALBUMS;
+  const onlineGenres = GENRES;
 
   const results = useMemo(() => {
     if (!query) return null;

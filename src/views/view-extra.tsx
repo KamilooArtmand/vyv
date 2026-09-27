@@ -25,6 +25,7 @@ import {
   clearNotifications,
   libraryStore,
   markRead,
+  resolveEntity,
   toggleBookmark,
   wikiById,
 } from '../state/state-catalog';
@@ -42,27 +43,23 @@ export function BookmarksView() {
         <EmptyState icon={Bookmark} title="No bookmarks yet" hint="Bookmark artists, albums, or tracks to access them here." />
       ) : (
         <Grid min={160}>
-          {bookmarks.map((b) => (
-            <div key={`${b.kind}-${b.id}`} className="relative group">
-              <MediaCard
-                entity={{
-                  kind: b.kind,
-                  id: b.id,
-                  title: b.id,
-                  subtitle: b.kind,
-                  color: '#ff3c00',
-                  route: { name: b.kind as unknown as Parameters<typeof navigate>[0]['name'], id: b.id },
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => toggleBookmark(b.kind, b.id)}
-                className="absolute top-2 right-2 size-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          {bookmarks.map((b) => {
+            const entity = resolveEntity(b.kind, b.id);
+            if (!entity) return null;
+            return (
+              <div key={`${b.kind}-${b.id}`} className="relative group">
+                <MediaCard entity={entity} />
+                <button
+                  type="button"
+                  onClick={() => toast(toggleBookmark(b.kind, b.id) ? 'Bookmarked' : 'Removed', 'bookmark')}
+                  aria-label="Remove bookmark"
+                  className="absolute top-2 right-2 size-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })}
         </Grid>
       )}
     </div>
@@ -248,3 +245,6 @@ export function WikiView({ id }: { id?: string }) {
     </div>
   );
 }
+
+/** The single-article reader (routed as "article") is WikiView's id branch. */
+export const ArticleView = WikiView;

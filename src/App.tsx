@@ -5,9 +5,8 @@
 import { Suspense, lazy, useCallback, useEffect, useState, type ComponentType } from 'react';
 import { useStore } from './core/core-store';
 import { useMediaQuery } from './core/core-utils';
-import { bootPlayer, next, prev, togglePlay } from './state/state-player';
-import { applyTheme, settingsStore, togglePanel, uiStore } from './state/state-ui';
-import { initOnlineCatalog } from './state/state-catalog';
+import { bootPlayer, next, prev, skip, toggleMute, togglePlay } from './state/state-player';
+import { applyTheme, navigate, settingsStore, setMode, togglePanel, uiStore } from './state/state-ui';
 import { Aura, BottomNav, MiniPlayer, PlayerDock, Sidebar, Toast, TopBar } from './ui/ui-shell';
 import { CoverPlayer, MicroPlayer, NanoPlayer } from './ui/ui-modes';
 import { AgentOverlay, SidePanel } from './ui/ui-panels';
@@ -37,7 +36,7 @@ const VIEWS: Record<RouteName, ComponentType<{ id?: string }>> = {
   genre: lazy(() => named(import('./views/view-catalog'), 'GenreView')),
   timeline: lazy(() => named(import('./views/view-extra'), 'TimelineView')),
   wiki: lazy(() => named(import('./views/view-extra'), 'WikiView')),
-  article: lazy(() => named(import('./views/view-extra'), 'WikiView')),
+  article: lazy(() => named(import('./views/view-extra'), 'ArticleView')),
   profile: lazy(() => named(import('./views/view-media'), 'ProfileView')),
   settings: lazy(() => import('./views/view-settings')),
 };
@@ -53,7 +52,6 @@ export function App() {
 
   useEffect(() => {
     bootPlayer();
-    initOnlineCatalog().catch((e) => console.warn('Online sync:', e));
   }, []);
 
   useEffect(() => {
@@ -66,13 +64,34 @@ export function App() {
         e.preventDefault();
         return openAgent();
       }
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
-      if (e.key === ' ') {
-        e.preventDefault();
-        togglePlay();
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case ' ':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          if (e.shiftKey) next();
+          else skip(5);
+          break;
+        case 'ArrowLeft':
+          if (e.shiftKey) prev();
+          else skip(-5);
+          break;
+        case 'm':
+          toggleMute();
+          break;
+        case 'f':
+          setMode(uiStore.get().mode === 'Cover' ? 'Full' : 'Cover');
+          break;
+        case '/':
+          e.preventDefault();
+          navigate({ name: 'search' });
+          break;
+        case 'Escape':
+          if (uiStore.get().mode !== 'Full') setMode('Full');
+          break;
       }
-      if (e.key === 'ArrowRight' && e.shiftKey) next();
-      if (e.key === 'ArrowLeft' && e.shiftKey) prev();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -107,7 +126,7 @@ export function App() {
         <BottomNav onAgent={openAgent} />
       </div>
 
-      <div className="hidden md:block">
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 z-30 hidden md:block">
         <PlayerDock />
       </div>
 

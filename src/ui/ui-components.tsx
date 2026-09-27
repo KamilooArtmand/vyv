@@ -397,7 +397,18 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
 }
 
 // ── Slider & Controls ────────────────────────────────────────
-export function Slider({ value, max = 1, step = 0.01, onChange, label, className }: { value: number; max?: number; step?: number; onChange: (v: number) => void; label: string; className?: string }) {
+export function Slider({
+  value,
+  max = 1,
+  step = 0.01,
+  onChange,
+  label,
+  className,
+  ...rest
+}: { value: number; max?: number; step?: number; onChange: (v: number) => void; label: string; className?: string } & Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'max' | 'step' | 'onChange' | 'type' | 'min'
+>) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
     <div className={cn('relative flex h-5 w-full items-center', className)}>
@@ -410,6 +421,7 @@ export function Slider({ value, max = 1, step = 0.01, onChange, label, className
         onChange={(e) => onChange(parseFloat(e.target.value))}
         aria-label={label}
         className="absolute inset-0 size-full cursor-pointer opacity-0"
+        {...rest}
       />
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
@@ -538,3 +550,51 @@ export function EmptyState({ icon: Icon, title, hint }: { icon: LucideIcon; titl
 }
 
 export const SHELF_ITEM = 'w-[150px] shrink-0 snap-start md:w-[172px]';
+
+/** Bipolar vertical fader for EQ bands — fills from the center line. */
+export function Fader({ value, min, max, onChange, label }: { value: number; min: number; max: number; onChange: (v: number) => void; label: string }) {
+  const toPct = (v: number) => ((v - min) / (max - min)) * 100;
+  const zero = toPct(0);
+  const pct = toPct(value);
+
+  const fromPointer = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const ratio = 1 - Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    onChange(Math.round(min + ratio * (max - min)));
+  };
+
+  return (
+    <div
+      role="slider"
+      tabIndex={0}
+      aria-label={label}
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      aria-orientation="vertical"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        fromPointer(e);
+      }}
+      onPointerMove={(e) => e.buttons && fromPointer(e)}
+      onDoubleClick={() => onChange(0)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowRight') onChange(Math.min(max, value + 1));
+        if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') onChange(Math.max(min, value - 1));
+      }}
+      className="group relative flex h-full w-10 cursor-grab touch-none justify-center outline-none active:cursor-grabbing"
+    >
+      <div className="relative h-full w-1.5 rounded-full bg-surface-3">
+        <div className="absolute inset-x-0 h-px bg-fg-3" style={{ bottom: `${zero}%` }} />
+        <div
+          className="absolute inset-x-0 rounded-full bg-accent transition-[bottom,height] duration-150"
+          style={{ bottom: `${Math.min(zero, pct)}%`, height: `${Math.abs(pct - zero)}%` }}
+        />
+      </div>
+      <span
+        className="absolute left-1/2 size-5 -translate-x-1/2 translate-y-1/2 rounded-full bg-fg shadow-[0_2px_10px_rgb(0_0_0/0.3)] ring-4 ring-transparent transition-[bottom,box-shadow] duration-150 group-focus-visible:ring-accent-soft"
+        style={{ bottom: `${pct}%` }}
+      />
+    </div>
+  );
+}

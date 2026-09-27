@@ -8,12 +8,12 @@ import { greeting } from '../core/core-utils';
 import {
   ALBUMS,
   BOOKS,
+  GENRES,
   SHOWS,
   STATIONS,
   TIMELINE,
   WIKI,
   libraryStore,
-  onlineCatalogStore,
   smartMix,
   trackById,
   useAllTracks,
@@ -35,8 +35,8 @@ const MOODS: { mood: Mood; name: string; prompt: string }[] = [
 
 export default function HomeView() {
   const tracks = useAllTracks();
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
-  const onlineGenres = useStore(onlineCatalogStore, (s) => s.genres);
+  const onlineAlbums = ALBUMS;
+  const onlineGenres = GENRES;
   const history = useStore(libraryStore, (s) => s.history);
   const favorites = useStore(libraryStore, (s) => s.favorites);
   const mix = smartMix();

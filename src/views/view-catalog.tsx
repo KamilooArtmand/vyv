@@ -13,7 +13,6 @@ import {
   albumById,
   artistById,
   genreById,
-  onlineCatalogStore,
   trackById,
   useAllTracks,
 } from '../state/state-catalog';
@@ -25,7 +24,7 @@ import type { Track } from '../core/core-types';
 const tracksOf = (ids: string[]) => ids.map((id) => trackById(id)).filter(Boolean) as Track[];
 
 export function Albums() {
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
+  const onlineAlbums = ALBUMS;
   return (
     <div>
       <PageHeader title="Albums" />
@@ -44,7 +43,7 @@ export function Albums() {
 
 export function AlbumView({ id }: { id?: string }) {
   const album = albumById(id);
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
+  const onlineAlbums = ALBUMS;
   if (!album) return <EmptyState icon={Disc3} title="Album not found" />;
   const artist = artistById(album.artistId);
   const tracks = tracksOf(album.trackIds);
@@ -69,8 +68,8 @@ export function AlbumView({ id }: { id?: string }) {
 }
 
 export function Artists() {
-  const onlineArtists = useStore(onlineCatalogStore, (s) => s.artists);
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
+  const onlineArtists = ARTISTS;
+  const onlineAlbums = ALBUMS;
   return (
     <div>
       <PageHeader title="Artists" />
@@ -92,7 +91,7 @@ export function Artists() {
 export function ArtistView({ id }: { id?: string }) {
   const artist = artistById(id);
   const allTracks = useAllTracks();
-  const onlineAlbums = useStore(onlineCatalogStore, (s) => s.albums);
+  const onlineAlbums = ALBUMS;
   if (!artist) return <EmptyState icon={Mic2} title="Artist not found" />;
 
   const tracks = allTracks.filter((t) => t.artistId === artist.id);
@@ -134,7 +133,7 @@ export function ArtistView({ id }: { id?: string }) {
 }
 
 export function Genres() {
-  const onlineGenres = useStore(onlineCatalogStore, (s) => s.genres);
+  const onlineGenres = GENRES;
   return (
     <div>
       <PageHeader title="Genres" />
@@ -159,7 +158,7 @@ export function Genres() {
 export function GenreView({ id }: { id?: string }) {
   const genre = genreById(id);
   const allTracks = useAllTracks();
-  const onlineArtists = useStore(onlineCatalogStore, (s) => s.artists);
+  const onlineArtists = ARTISTS;
   if (!genre) return <EmptyState icon={Shapes} title="Genre not found" />;
 
   const tracks = allTracks.filter((t) => t.genreId === genre.id);

@@ -4,8 +4,50 @@
 
 import { createStore } from '../core/core-store';
 import type { AudioDevice, LyricLine, RepeatMode, Track } from '../core/core-types';
-import { pushHistory, saveProgress, SEED_TRACKS } from './state-catalog';
+import { libraryStore, pushHistory, saveProgress, SEED_TRACKS } from './state-catalog';
 import { settingsStore } from './state-ui';
+
+const isSpoken = (t?: Track | null) => t?.kind === 'podcast' || t?.kind === 'audiobook';
+
+// ── Adaptive color: tint --accent from the playing track's artwork ──
+export function applyAccent(track: Track | null = playerStore.get().track) {
+  const root = document.documentElement;
+  if (settingsStore.get().adaptiveColor && track?.dominantColorHex) {
+    root.style.setProperty('--accent', track.dominantColorHex);
+  } else {
+    root.style.removeProperty('--accent');
+  }
+}
+
+// ── Media Session: lock screen, media keys, headsets, car ────────
+function updateMediaSession(track: Track) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artist,
+    album: track.album,
+    artwork: track.coverUrl ? [{ src: track.coverUrl, sizes: '600x600', type: 'image/jpeg' }] : [],
+  });
+}
+
+function bindMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const ms = navigator.mediaSession;
+  const safe = (action: MediaSessionAction, fn: MediaSessionActionHandler) => {
+    try {
+      ms.setActionHandler(action, fn);
+    } catch {
+      /* action unsupported on this platform */
+    }
+  };
+  safe('play', () => AudioEngine.play());
+  safe('pause', () => AudioEngine.pause());
+  safe('previoustrack', () => prev());
+  safe('nexttrack', () => next());
+  safe('seekbackward', () => skip(-15));
+  safe('seekforward', () => skip(15));
+  safe('seekto', (d) => d.seekTime != null && seek(d.seekTime));
+}
 
 // ── Audio Core Service ───────────────────────────────────────
 export class AudioEngine {
@@ -72,7 +114,7 @@ export class AudioEngine {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.audioContext = new AudioCtx();
       this.analyserNode = this.audioContext.createAnalyser();
-      this.analyserNode.fftSize = 64;
+      this.analyserNode.fftSize = 128;
       this.dataArray = new Uint8Array(this.analyserNode.frequencyBinCount);
 
       this.lowFilter = this.audioContext.createBiquadFilter();
@@ -263,17 +305,23 @@ function scheduleSleep(mins: number | null) {
   }, mins * 60_000);
 }
 
+let booted = false;
 export function bootPlayer() {
+  if (booted) return;
+  booted = true;
   AudioEngine.initialize();
   AudioEngine.onTimeUpdate((time, duration) => {
     timeStore.set({ time, duration });
     const { track } = playerStore.get();
-    if (track && (track.kind === 'podcast' || track.kind === 'audiobook')) {
+    if (track && isSpoken(track)) {
       saveProgress(track.id, time);
     }
   });
 
-  AudioEngine.onStateChange((isPlaying) => playerStore.set({ isPlaying }));
+  AudioEngine.onStateChange((isPlaying) => {
+    playerStore.set({ isPlaying });
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  });
   AudioEngine.onEnded(() => next(true));
 
   // Audio outputs
@@ -283,6 +331,10 @@ export function bootPlayer() {
       if (outs.length) playerStore.set({ devices: outs });
     }).catch(() => {});
   }
+
+  // Re-tint the accent whenever "Adaptive color" is toggled.
+  settingsStore.subscribe(() => applyAccent());
+  bindMediaSession();
 }
 
 export function playTrack(track: Track, newQueue?: Track[]) {
@@ -292,8 +344,15 @@ export function playTrack(track: Track, newQueue?: Track[]) {
 
   playerStore.set({ track, queue, isPlaying: true, lyrics });
   timeStore.set({ time: 0, duration: track.durationSeconds });
+  applyAccent(track);
+  updateMediaSession(track);
   AudioEngine.loadTrack(track.filePath, true);
-  pushHistory(track.id);
+
+  if (!settingsStore.get().privateSession && !track.isRadio) pushHistory(track.id);
+
+  // Resume podcasts/audiobooks from where you left off.
+  const resumeAt = isSpoken(track) ? libraryStore.get().progress[track.id] : 0;
+  if (resumeAt) setTimeout(() => AudioEngine.seek(resumeAt), 250);
 }
 
 export function playQueue(tracks: Track[], startIdx = 0) {

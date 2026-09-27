@@ -202,13 +202,17 @@ export type AgentAction =
   | { type: 'pause' }
   | { type: 'next' }
   | { type: 'prev' }
-  | { type: 'shuffle'; value: boolean }
-  | { type: 'repeat'; mode: RepeatMode }
+  | { type: 'shuffle'; value?: boolean }
+  | { type: 'repeat'; mode?: RepeatMode }
   | { type: 'navigate'; route: Route }
   | { type: 'theme'; theme: ThemePref }
   | { type: 'volume'; value: number }
   | { type: 'favorite'; trackId: string }
+  | { type: 'bookmark'; kind: BookmarkKind; id: string }
   | { type: 'sleep'; minutes: number | null }
+  | { type: 'speed'; value: number }
+  | { type: 'mode'; mode: PlayerMode }
+  | { type: 'playlist'; playlist: Playlist }
   | { type: 'none' };
 
 export interface AgentContext {
