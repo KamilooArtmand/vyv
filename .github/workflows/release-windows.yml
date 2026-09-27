@@ -68,7 +68,7 @@ jobs:
             export CSC_IDENTITY_AUTO_DISCOVERY=false
           fi
           npx electron-builder "${ARGS[@]}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: vyv-windows
           path: |
