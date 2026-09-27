@@ -43,62 +43,66 @@
 }
 
 :root {
-  /* Brand */
-  --accent-base: #ff3c00;
+  /* Strictly neutral monochrome palette — white, grayscale tonalities, and black */
+  --accent-base: #f5f5f7;
   --accent: var(--accent-base);
-  --live: var(--accent);
-  /* Reference brand gray — every neutral tone below is tuned around it. */
-  --gray: #a2a8b2;
+  --live: #ffffff;
+  /* Reference brand neutral tones */
+  --gray: #8e95a0;
   --dock-h: 76px;
   --nav-h: 64px;
   color-scheme: dark light;
 }
 
-/* Obsidian — dark */
+/* Obsidian — dark neutral (deep black, charcoal, silver, pure white) */
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: hsl(220 12% 6%);
-  --bg-2: hsl(220 11% 9%);
-  --surface: rgb(255 255 255 / 0.045);
-  --surface-2: rgb(255 255 255 / 0.08);
-  --surface-3: rgb(255 255 255 / 0.13);
-  --line: rgb(255 255 255 / 0.07);
-  --line-2: rgb(255 255 255 / 0.13);
-  --fg: hsl(220 14% 97%);
-  --fg-2: hsl(220 10% 68% / 0.86);
-  --fg-3: hsl(220 8% 68% / 0.52);
-  --glass: hsl(220 11% 9% / 0.62);
-  --glass-strong: hsl(220 12% 7% / 0.86);
-  --accent-ink: color-mix(in oklab, var(--accent) 78%, white);
-  --accent-soft: color-mix(in oklab, var(--accent) 18%, transparent);
-  --on-accent: #fff;
-  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px -12px rgb(0 0 0 / 0.6);
-  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 24px 60px -20px rgb(0 0 0 / 0.75);
-  --aura-opacity: 0.55;
+  --bg: #090a0c;
+  --bg-2: #121316;
+  --surface: rgb(255 255 255 / 0.05);
+  --surface-2: rgb(255 255 255 / 0.09);
+  --surface-3: rgb(255 255 255 / 0.15);
+  --line: rgb(255 255 255 / 0.08);
+  --line-2: rgb(255 255 255 / 0.16);
+  --fg: #f5f5f7;
+  --fg-2: #a1a1aa;
+  --fg-3: #71717a;
+  --glass: rgb(15 17 20 / 0.72);
+  --glass-strong: rgb(12 13 16 / 0.92);
+  --accent-base: #ffffff;
+  --accent: #ffffff;
+  --accent-ink: #e4e4e7;
+  --accent-soft: rgb(255 255 255 / 0.16);
+  --on-accent: #000000;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px -12px rgb(0 0 0 / 0.7);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 24px 60px -20px rgb(0 0 0 / 0.85);
+  --aura-opacity: 0.35;
 }
 
-/* Porcelain — light */
+/* Porcelain — light neutral (pure white, clean stone gray, slate, crisp black) */
 [data-theme="light"] {
   color-scheme: light;
-  --bg: hsl(220 16% 97%);
-  --bg-2: hsl(220 14% 93%);
-  --surface: rgb(255 255 255 / 0.72);
-  --surface-2: rgb(12 14 16 / 0.05);
-  --surface-3: rgb(12 14 16 / 0.09);
-  --line: rgb(12 14 16 / 0.07);
-  --line-2: rgb(12 14 16 / 0.12);
-  --fg: hsl(220 16% 8%);
-  --fg-2: hsl(220 9% 45% / 0.92);
-  --fg-3: hsl(220 8% 45% / 0.62);
-  --glass: hsl(220 20% 99% / 0.7);
-  --glass-strong: hsl(220 20% 99% / 0.9);
-  --accent-ink: color-mix(in oklab, var(--accent) 72%, black);
-  --accent-soft: color-mix(in oklab, var(--accent) 14%, transparent);
-  --on-accent: #fff;
-  --shadow-1: 0 1px 2px rgb(12 14 16 / 0.04), 0 8px 24px -14px rgb(12 14 16 / 0.18);
-  --shadow-2: 0 1px 2px rgb(12 14 16 / 0.05), 0 28px 60px -24px rgb(12 14 16 / 0.28);
-  --aura-opacity: 0.32;
+  --bg: #f8f9fa;
+  --bg-2: #eff1f4;
+  --surface: rgb(255 255 255 / 0.85);
+  --surface-2: rgb(0 0 0 / 0.05);
+  --surface-3: rgb(0 0 0 / 0.10);
+  --line: rgb(0 0 0 / 0.08);
+  --line-2: rgb(0 0 0 / 0.14);
+  --fg: #0d0f12;
+  --fg-2: #52525b;
+  --fg-3: #a1a1aa;
+  --glass: rgb(255 255 255 / 0.75);
+  --glass-strong: rgb(255 255 255 / 0.94);
+  --accent-base: #18181b;
+  --accent: #18181b;
+  --accent-ink: #27272a;
+  --accent-soft: rgb(0 0 0 / 0.08);
+  --on-accent: #ffffff;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -14px rgb(0 0 0 / 0.15);
+  --shadow-2: 0 1px 2px rgb(0 0 0 / 0.05), 0 28px 60px -24px rgb(0 0 0 / 0.22);
+  --aura-opacity: 0.20;
 }
 
 /* ── Base ─────────────────────────────────────────────────── */

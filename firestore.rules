@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public catalog collections: read-only for public, writes permitted for initialization/admin
+    match /tracks/{trackId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /artists/{artistId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /albums/{albumId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /genres/{genreId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /playlists/{playlistId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
