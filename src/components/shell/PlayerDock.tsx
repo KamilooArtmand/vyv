@@ -76,9 +76,9 @@ function NowPlayingMeta() {
   if (!track) return <div className="flex-1" />;
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <button type="button" aria-label="Open now playing" onClick={() => setMode('Cover')} className="press group/art relative">
-        <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} className="size-12 shadow-[var(--shadow-1)] [--art-r:12px]" />
-        <span className="absolute inset-0 flex items-center justify-center rounded-[12px] bg-black/40 text-white opacity-0 transition-opacity group-hover/art:opacity-100">
+      <button type="button" aria-label="Open now playing" onClick={() => setMode('Cover')} className="press group/art relative shrink-0">
+        <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} shape="circle" className="size-13 shadow-[var(--shadow-1)] ring-2 ring-white/10" />
+        <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/art:opacity-100">
           <Maximize2 size={16} />
         </span>
       </button>
@@ -101,14 +101,14 @@ function NowPlayingMeta() {
   );
 }
 
-/** Floating desktop player capsule. */
+/** Floating desktop player capsule — 100% fully rounded pill with semicircular ends. */
 export function PlayerDock() {
   const panel = useStore(uiStore, (s) => s.panel);
   const hasLyrics = useStore(playerStore, (s) => s.lyrics.length > 0);
 
   return (
-    <div className="glass anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 overflow-hidden rounded-[var(--radius-xl)] px-3 pr-4">
-      <Visualizer bars={48} className="pointer-events-none absolute inset-x-0 bottom-0 h-8 w-full opacity-[0.14]" />
+    <div className="glass anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 overflow-hidden rounded-full border border-line-2 px-4 pr-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+      <Visualizer bars={48} className="pointer-events-none absolute inset-x-8 bottom-0 h-9 w-[calc(100%-4rem)] opacity-[0.25]" />
       <NowPlayingMeta />
       <div className="flex w-[min(44vw,520px)] flex-col items-center gap-0.5">
         <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export function PlayerDock() {
         </div>
         <Scrubber className="w-full -mt-1" />
       </div>
-      <div className="flex items-center justify-end gap-0.5">
+      <div className="flex items-center justify-end gap-1">
         <IconButton icon={MicVocal} label="Lyrics" size="sm" active={panel === 'lyrics'} disabled={!hasLyrics} onClick={() => togglePanel('lyrics')} />
         <IconButton icon={ListMusic} label="Queue" size="sm" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
         <IconButton icon={Sparkles} label="Agent" size="sm" active={panel === 'agent'} onClick={() => togglePanel('agent')} className="max-xl:hidden" />
@@ -134,7 +134,7 @@ export function PlayerDock() {
   );
 }
 
-/** Compact mini player for phones: sits above the tab bar. */
+/** Compact mini player for phones: sits above the tab bar — fully rounded pill. */
 export function MiniPlayer() {
   const track = useStore(playerStore, (s) => s.track);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
@@ -145,18 +145,18 @@ export function MiniPlayer() {
       role="button"
       tabIndex={0}
       onClick={() => setMode('Cover')}
-      className="glass anim-rise relative flex h-16 items-center gap-3 overflow-hidden rounded-[22px] pl-2 pr-1.5"
+      className="glass anim-rise relative flex h-16 items-center gap-3 overflow-hidden rounded-full border border-line-2 pl-2.5 pr-3 shadow-[0_16px_36px_rgba(0,0,0,0.4)]"
     >
-      <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} className="size-12 [--art-r:14px]" />
+      <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} shape="circle" className="size-12 ring-2 ring-white/10 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-medium">{track.title}</div>
         <div className="truncate text-[12.5px] text-fg-3">{track.artist}</div>
       </div>
-      <div onClick={(e) => e.stopPropagation()} className="flex items-center">
+      <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-0.5">
         <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} tip={false} className="[&_svg]:fill-current text-fg" onClick={togglePlay} />
         <IconButton icon={SkipForward} label="Next" tip={false} className="[&_svg]:fill-current text-fg" onClick={() => next()} />
       </div>
-      <div className="absolute inset-x-3 bottom-0 h-[2px] overflow-hidden rounded-full bg-surface-3">
+      <div className="absolute inset-x-6 bottom-0 h-[2.5px] overflow-hidden rounded-full bg-surface-3">
         <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${progress * 100}%` }} />
       </div>
     </div>

@@ -20,7 +20,7 @@ export function BottomNav({ onAgent }: { onAgent: () => void }) {
   );
 
   return (
-    <nav aria-label="Tabs" className="glass flex h-[var(--nav-h)] items-stretch rounded-[26px] px-2">
+    <nav aria-label="Tabs" className="glass flex h-[var(--nav-h)] items-stretch rounded-full border border-line-2 px-3 shadow-[0_16px_36px_rgba(0,0,0,0.4)]">
       <Tab icon={House} label="Home" on={route === 'home'} onClick={() => navigate({ name: 'home' })} />
       <Tab icon={Search} label="Search" on={route === 'search'} onClick={() => navigate({ name: 'search' })} />
       <button type="button" aria-label="Agent" onClick={onAgent} className="press flex flex-1 items-center justify-center">

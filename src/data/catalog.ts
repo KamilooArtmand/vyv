@@ -12,13 +12,15 @@ import type {
   WikiArticle,
 } from '../types';
 
-/** Short, royalty-free preview clips used as stand-in audio for the demo catalog. */
+/** High-fidelity internet audio streams & songs for music playback, podcasts, and audiobooks. */
 const AUDIO = [
-  'https://cdn.freesound.org/previews/612/612644_5674468-lq.mp3',
-  'https://cdn.freesound.org/previews/568/568853_7037-lq.mp3',
-  'https://cdn.freesound.org/previews/689/689366_11861866-lq.mp3',
-  'https://cdn.freesound.org/previews/657/657954_11861866-lq.mp3',
-  'https://cdn.freesound.org/previews/560/560447_649468-lq.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
+  'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
 ];
 const audio = (i: number) => AUDIO[i % AUDIO.length];
 
@@ -223,11 +225,11 @@ const station = (id: string, title: string, artist: string, filePath: string, co
 });
 
 export const STATIONS: Track[] = [
-  station('radio-1', 'Lofi Beats', 'Lofi Girl', 'https://stream.zeno.fm/f3wvbbqmdg8uv', '#ec4899', 'lofi', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80'),
-  station('radio-2', 'Nightride', 'Nightride FM', 'https://stream.nightride.fm/nightride.m4a', '#8b5cf6', 'synthwave', 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&q=80'),
-  station('radio-3', 'Venice Classic', 'Venice Classic Radio', 'https://stream.zeno.fm/7x35bfe2tv8uv', '#d97706', 'classical', 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=600&q=80'),
-  station('radio-4', 'Deep House', 'Deep House Lounge', 'https://stream.zeno.fm/0r0xa792kwzuv', '#06b6d4', 'electronic', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80'),
-  station('radio-5', 'Jazz 24', 'Jazz24', 'https://live.wostreaming.net/direct/ppm-jazz24aac256-ibc1', '#10b981', 'jazz', 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&q=80'),
+  station('radio-1', 'Groove Salad', 'SomaFM Ambient', 'https://ice1.somafm.com/groovesalad-128-mp3', '#ec4899', 'ambient', 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80'),
+  station('radio-2', 'Vaporwaves', 'SomaFM Chill', 'https://ice1.somafm.com/vaporwaves-128-mp3', '#8b5cf6', 'synthwave', 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&q=80'),
+  station('radio-3', 'Drone Zone', 'SomaFM Space Ambient', 'https://ice1.somafm.com/dronezone-128-mp3', '#d97706', 'classical', 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=600&q=80'),
+  station('radio-4', 'DEF CON Radio', 'SomaFM Underground', 'https://ice1.somafm.com/defcon-128-mp3', '#06b6d4', 'electronic', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80'),
+  station('radio-5', 'Secret Agent', 'SomaFM Spy Lounge', 'https://ice1.somafm.com/secretagent-128-mp3', '#10b981', 'jazz', 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=600&q=80'),
 ];
 
 // ── Podcasts ──────────────────────────────────────────────────

@@ -20,7 +20,7 @@ export function Scrubber({ className, compact, fill }: { className?: string; com
   if (isRadio) {
     return (
       <div className={cn('flex items-center gap-3', className)}>
-        <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-surface-3">
+        <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3">
           <div className="skeleton absolute inset-0 opacity-70" />
         </div>
         <LiveBadge />
@@ -38,7 +38,7 @@ export function Scrubber({ className, compact, fill }: { className?: string; com
         step={0.1}
         fill={fill}
         onChange={(v) => setDrag(v)}
-        className="flex-1"
+        className="flex-1 rounded-full"
         // Commit the seek on release, not on every pixel.
         onPointerUp={commit}
         onKeyUp={commit}

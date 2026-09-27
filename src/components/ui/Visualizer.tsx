@@ -47,10 +47,11 @@ export function Visualizer({ bars = 24, className, mirror, color = 'var(--accent
       for (let i = 0; i < bars; i++) {
         smooth[i] += (data[i] - smooth[i]) * 0.25;
         const v = Math.max(0.04, smooth[i]);
-        const bh = mirror ? v * h * 0.9 : v * h;
+        const bh = Math.max(bw, mirror ? v * h * 0.9 : v * h);
         const x = i * gap + (gap - bw) / 2;
         const y = mirror ? (h - bh) / 2 : h - bh;
         ctx.beginPath();
+        // Fully rounded capsule bars
         ctx.roundRect(x, y, bw, bh, bw / 2);
         ctx.fill();
       }

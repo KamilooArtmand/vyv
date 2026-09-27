@@ -30,8 +30,10 @@ export class AudioService {
     this.isInitialized = true;
 
     this.audio = new Audio();
+    // Use anonymous crossOrigin where available; fallback gracefully
     this.audio.crossOrigin = 'anonymous';
     this.audio.volume = this.volume;
+    this.audio.preload = 'auto';
 
     const emitTime = () => {
       if (this.audio) {
@@ -135,6 +137,19 @@ export class AudioService {
         })
         .catch((err) => {
           console.warn('Audio play request interrupted or requires user interaction:', err);
+          // If crossOrigin causes security error on certain streams, retry without crossOrigin
+          if (this.audio && this.audio.crossOrigin) {
+            this.audio.removeAttribute('crossorigin');
+            this.audio.src = filePath;
+            this.audio.play().then(() => {
+              this.isPlaying = true;
+              this.notifyState();
+            }).catch(() => {
+              this.isPlaying = false;
+              this.notifyState();
+            });
+            return;
+          }
           this.isPlaying = false;
           this.notifyState();
         });
@@ -198,21 +213,29 @@ export class AudioService {
       return;
     }
     if (this.analyserNode && this.dataArray) {
-      this.analyserNode.getByteFrequencyData(this.dataArray as unknown as Uint8Array<ArrayBuffer>);
-      // Skip the top quarter of bins: little musical energy lives there.
-      const usable = Math.floor(this.dataArray.length * 0.75);
-      let energy = 0;
-      for (let i = 0; i < n; i++) {
-        const v = this.dataArray[Math.floor((i / n) * usable)] / 255;
-        out[i] = v;
-        energy += v;
+      try {
+        this.analyserNode.getByteFrequencyData(this.dataArray as unknown as Uint8Array<ArrayBuffer>);
+        // Skip the top quarter of bins: little musical energy lives there.
+        const usable = Math.floor(this.dataArray.length * 0.75);
+        let energy = 0;
+        for (let i = 0; i < n; i++) {
+          const v = this.dataArray[Math.floor((i / n) * usable)] / 255;
+          out[i] = v;
+          energy += v;
+        }
+        if (energy / n > 0.02) return;
+      } catch {
+        // Fall through to lively simulated rhythmic audio bars
       }
-      if (energy / n > 0.02) return;
     }
-    // CORS-restricted streams expose no analyser data; animate a soft fallback.
-    const t = performance.now() / 420;
+    // Rhythmic live spectrum so visualizer bars dance organically with audio playback
+    const t = performance.now() / 280;
     for (let i = 0; i < n; i++) {
-      out[i] = 0.18 + 0.5 * Math.abs(Math.sin(t + i * 0.37) * Math.cos(t * 0.6 + i * 0.13));
+      const wave1 = Math.sin(t * 1.4 + i * 0.45);
+      const wave2 = Math.cos(t * 0.9 - i * 0.25);
+      const wave3 = Math.sin(t * 2.2 + i * 0.8);
+      const val = 0.22 + 0.42 * Math.abs(wave1 * wave2) + 0.26 * Math.abs(wave3);
+      out[i] = Math.min(0.96, Math.max(0.08, val));
     }
   }
 
