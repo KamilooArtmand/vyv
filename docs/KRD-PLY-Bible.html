@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>vyv · KRD PLY Bible</title>
+<meta name="description" content="KRD PLY — vyv: پلتفرم ملی چندرسانه‌ای کوردهای جهان. سند برند، فلسفه، محصول، کسب‌وکار، فناوری، نقشه راه و چک‌لیست.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,600&family=Vazirmatn:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --ink:#121316;--paper:#F5F2EB;--ochre:#B8651B;--slate:#1C3350;--olive:#8A9A5B;--stone:#D9D2C3;
+  --wave:#2F6FA8;--wave-2:#8FB3D9;
+  --bg:#EEE9DF;--fg:#121316;--fg2:#4A4A48;--fg3:#7A766E;
+  --glass:rgba(255,255,255,.55);--glass-b:rgba(255,255,255,.75);--line:rgba(18,19,22,.10);
+  --shadow:0 10px 40px -12px rgba(28,51,80,.25);--r:22px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0B0D11;--fg:#EFEBE3;--fg2:#B9B4AA;--fg3:#7E7A73;--ochre:#D98A3F;--wave:#8FB3D9;
+  --glass:rgba(28,32,40,.55);--glass-b:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);--shadow:0 10px 40px -12px rgba(0,0,0,.6)}}
+:root[data-theme=dark]{--bg:#0B0D11;--fg:#EFEBE3;--fg2:#B9B4AA;--fg3:#7E7A73;--ochre:#D98A3F;--wave:#8FB3D9;
+  --glass:rgba(28,32,40,.55);--glass-b:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);--shadow:0 10px 40px -12px rgba(0,0,0,.6)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.95 Vazirmatn,system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;
+  background:radial-gradient(40% 35% at 85% 10%,color-mix(in srgb,var(--ochre) 28%,transparent),transparent 70%),
+  radial-gradient(45% 40% at 10% 80%,color-mix(in srgb,var(--wave) 30%,transparent),transparent 70%),
+  radial-gradient(30% 30% at 50% 50%,color-mix(in srgb,var(--olive) 14%,transparent),transparent 70%);filter:blur(10px)}
+.lat{font-family:Inter,sans-serif;direction:ltr;unicode-bidi:isolate}
+.glass{background:var(--glass);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid var(--glass-b);border-radius:var(--r);box-shadow:var(--shadow)}
+header.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:10px 16px;margin:10px;border-radius:18px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}
+.brand svg{width:54px;height:24px}
+.brand small{font:500 11px Inter;color:var(--fg3);letter-spacing:.12em}
+.top .sp{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--glass);color:var(--fg);
+  border-radius:12px;padding:7px 10px;cursor:pointer;font:inherit;font-size:14px}
+.btn:hover{border-color:var(--ochre)}
+.btn svg{width:17px;height:17px}
+#q{border:1px solid var(--line);background:transparent;color:var(--fg);border-radius:12px;padding:7px 12px;font:inherit;width:190px}
+.layout{display:grid;grid-template-columns:290px 1fr;gap:18px;padding:0 10px 40px;max-width:1380px;margin:auto}
+nav.idx{position:sticky;top:84px;height:calc(100vh - 100px);overflow:auto;padding:14px}
+nav.idx h4{margin:.4em 8px;font:600 11px Inter;letter-spacing:.14em;color:var(--fg3);text-transform:uppercase}
+nav.idx a{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:11px;color:var(--fg2);text-decoration:none;font-size:14.5px}
+nav.idx a svg{width:16px;height:16px;flex:none;opacity:.75}
+nav.idx a .n{font:600 11px Inter;color:var(--fg3);width:20px}
+nav.idx a:hover{background:color-mix(in srgb,var(--wave) 10%,transparent)}
+nav.idx a.on{background:color-mix(in srgb,var(--ochre) 16%,transparent);color:var(--fg)}
+main{min-width:0}
+section.pg{display:none;animation:in .45s ease}
+section.pg.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.card{padding:26px 30px;margin-bottom:18px}
+.kick{font:600 12px Inter;letter-spacing:.16em;color:var(--ochre);text-transform:uppercase;direction:ltr;text-align:right}
+h1{font-size:clamp(30px,4.2vw,50px);line-height:1.25;margin:.2em 0 .3em;font-weight:800}
+h2{font-size:27px;margin:.1em 0 .5em;display:flex;gap:10px;align-items:center}
+h2 svg{color:var(--ochre);width:26px;height:26px}
+h3{font-size:18.5px;margin:1.4em 0 .4em;color:var(--wave)}
+p{margin:.5em 0}
+.lead{font-size:18.5px;color:var(--fg2)}
+blockquote{margin:1em 0;padding:14px 20px;border-inline-start:4px solid var(--ochre);background:color-mix(in srgb,var(--ochre) 7%,transparent);border-radius:12px;font-size:17.5px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.tile{padding:18px;border-radius:18px;border:1px solid var(--line);background:color-mix(in srgb,var(--glass) 70%,transparent)}
+.tile svg{width:24px;height:24px;color:var(--wave)}
+.tile b{display:block;margin:.4em 0 .1em;font-size:16.5px}
+.tile span{color:var(--fg2);font-size:14.5px;line-height:1.8;display:block}
+.tag{display:inline-block;font:600 11px Inter;padding:2px 9px;border-radius:99px;background:color-mix(in srgb,var(--wave) 16%,transparent);color:var(--wave);margin-inline-end:4px}
+.tag.o{background:color-mix(in srgb,var(--ochre) 18%,transparent);color:var(--ochre)}
+.tag.g{background:color-mix(in srgb,var(--olive) 22%,transparent);color:var(--olive)}
+.tbl{overflow-x:auto;margin:.8em 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th{text-align:start;font-weight:700;padding:10px;border-bottom:2px solid var(--ochre);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+ul,ol{padding-inline-start:1.3em}li{margin:.25em 0}
+.hero{position:relative;overflow:hidden;padding:44px 34px}
+.hero .wm{width:min(430px,80%);height:auto;display:block;margin:10px 0 18px}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px}
+.stat div{padding:14px;border-radius:16px;border:1px solid var(--line)}
+.stat b{display:block;font:700 26px Inter;color:var(--ochre)}
+.stat span{font-size:13px;color:var(--fg2)}
+.sw{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.sw div{border-radius:16px;overflow:hidden;border:1px solid var(--line);font-size:13px}
+.sw i{display:block;height:70px}
+.sw span{display:block;padding:8px 10px}
+.chk label{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:12px;cursor:pointer}
+.chk label:hover{background:color-mix(in srgb,var(--wave) 8%,transparent)}
+.chk input{accent-color:var(--ochre);margin-top:7px;width:17px;height:17px;flex:none}
+.chk input:checked+span{opacity:.5;text-decoration:line-through}
+.bar{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin:8px 0 14px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--wave),var(--ochre));width:0;transition:width .4s}
+.pager{display:flex;justify-content:space-between;margin-top:6px}
+.lanes{display:grid;gap:10px}
+.lane{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:start;padding:14px;border-radius:16px;border:1px solid var(--line)}
+.lane b{color:var(--ochre)}
+code{font:13px ui-monospace,monospace;background:color-mix(in srgb,var(--wave) 10%,transparent);padding:1px 6px;border-radius:6px;direction:ltr;unicode-bidi:isolate}
+.menu{display:none}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.idx{position:fixed;inset:80px 10px 10px;z-index:30;display:none;height:auto}
+  nav.idx.open{display:block}
+  .menu{display:inline-flex}
+  #q{width:120px}
+  .card{padding:20px 18px}.hero{padding:30px 20px}
+  .lane{grid-template-columns:1fr}
+}
+@media print{nav.idx,header.top,.pager{display:none}section.pg{display:block!important}.layout{display:block}.glass{box-shadow:none;backdrop-filter:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="gw" x1="0" x2="1"><stop offset="0" stop-color="#2F6FA8"/><stop offset="1" stop-color="#B8651B"/></linearGradient>
+    <!-- vyv wordmark: symmetric v·y·v as wings / waveform. Concept sketch, not final logo. -->
+    <symbol id="vyv" viewBox="0 0 240 100">
+      <path d="M8 22 L40 82 L72 22" fill="none" stroke="url(#gw)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M92 22 L120 62 L148 22 M120 62 L120 90" fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M168 22 L200 82 L232 22" fill="none" stroke="url(#gw)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="top glass">
+  <button class="btn menu" id="mbtn" aria-label="index"><i data-lucide="menu"></i></button>
+  <div class="brand"><svg><use href="#vyv"/></svg><div>KRD PLY<br><small class="lat">vyv · NATIONAL PLAYER BIBLE 0.1</small></div></div>
+  <div class="sp"></div>
+  <input id="q" type="search" placeholder="جست‌وجو…">
+  <button class="btn" id="theme" aria-label="theme"><i data-lucide="sun-moon"></i></button>
+  <button class="btn" onclick="print()" aria-label="print"><i data-lucide="printer"></i></button>
+</header>
+
+<div class="layout">
+<nav class="idx glass" id="idx"></nav>
+<main id="main">
+
+<!-- 00 -->
+<section class="pg" id="s00" data-t="سرآغاز و خلاصه‌ی اجرایی" data-i="waves" data-g="آغاز">
+<div class="card glass hero">
+  <div class="kick">KRD PLY · Brand, Product &amp; Strategy Bible · v0.1 · 2026-09-27</div>
+  <svg class="wm" viewBox="0 0 240 100" style="color:var(--fg)"><use href="#vyv"/></svg>
+  <h1>صدای یک ملت، در یک موج.</h1>
+  <p class="lead"><b>vyv</b> (خوانش: <span class="lat">wave</span> / وِیو) پلتفرم ملی چندرسانه‌ای کوردهای جهان است: موسیقی، پادکست، رادیو، کتاب صوتی و متنی، موسیقی ساخته‌شده با AI، آرشیو میراث صوتی، دانشنامه‌ی موسیقی و — در فاز دوم — ویدیو و فیلم با زیرنویس کوردی. واحد مالک: <b>KRD PLY</b> در هلدینگ KRD.</p>
+  <div class="stat">
+    <div><b>9</b><span>ستون محصول</span></div>
+    <div><b>5+</b><span>گویش و خط: سورانی، کورمانجی، هورامی، بادینی، زازاکی</span></div>
+    <div><b>2</b><span>پلتفرم نسخه‌ی سرمایه‌گذار: وب + ویندوز (Microsoft Store)</span></div>
+    <div><b>AI</b><span>لایه‌ی عملیاتی خودگردان برای متادیتا، حقوق، پشتیبانی</span></div>
+  </div>
+</div>
+<div class="card glass">
+<h2><i data-lucide="target"></i>خلاصه‌ی اجرایی (برای سرمایه‌گذار)</h2>
+<ul>
+<li><b>مسئله:</b> کوردها هیچ پایگاه جامع، حرفه‌ای و ماندگاری برای شنیدن و دیدن میراث و تولید معاصر خود ندارند. آنچه هست پراکنده، سطحی، بدون متادیتا، بدون حقوق روشن و بدون تجربه‌ی کاربری مدرن است؛ و بخش بزرگی از میراث صوتی (صداهای ضبط‌شده، کلاسیک‌ها، دنگبێژها) در حال نابودی است.</li>
+<li><b>راه‌حل:</b> یک سوپراپ صوتی-تصویری با کیفیت جهانی که هم <b>سرویس پخش</b> است، هم <b>آرشیو ملی</b>، هم <b>بازار حقوق و لایسنس</b>، و با یک لایه‌ی AI اداره می‌شود.</li>
+<li><b>خندق رقابتی:</b> نه کاتالوگ جهانی (که Spotify و YouTube دارند)، بلکه <b>عمق کوردی</b>: متادیتای دقیق چندگویشی، شعر و ترانه‌ی تدوین‌شده، بیوگرافی، آرشیو میراث، زیرنویس کوردی، پرداخت محلی. این دارایی داده‌ای با گذر زمان غیرقابل کپی می‌شود.</li>
+<li><b>مدل درآمد:</b> فریمیوم + اشتراک شاخص‌بندی‌شده با قدرت خرید (IQD) + اشتراک خانواده/دانشجو + فروش آلبوم و لایسنس + قرارداد نهادی (B2G/B2B) + حمایت فرهنگی از آرشیو.</li>
+<li><b>درخواست:</b> سرمایه‌ی راه‌اندازی برای نسخه‌ی کامل وب + ویندوز، تیم هسته، پاک‌سازی حقوق ۱۰ هزار اثر نخست و دیجیتال‌سازی ۱۰۰۰ ساعت میراث.</li>
+</ul>
+<blockquote>vyv نه یک «اپ موسیقی کوردی»، بلکه <b>زیرساخت حافظه‌ی شنیداری و دیداری یک ملت</b> است که مثل یک سرویس جهانی کار می‌کند.</blockquote>
+</div>
+</section>
+
+<!-- 01 -->
+<section class="pg" id="s01" data-t="فلسفه‌ی وجودی و چشم‌انداز" data-i="compass" data-g="هویت">
+<div class="card glass">
+<h2><i data-lucide="compass"></i>فلسفه‌ی وجودی</h2>
+<p class="lead">ملتی که صدایش ثبت نشود، روایتش را دیگران می‌نویسند.</p>
+<h3>مأموریت</h3>
+<p>گردآوری، نگهداری، غنی‌سازی و پخش همه‌ی صداها و تصویرهای جهان کوردی — از دنگبێژی کهن تا موسیقی AI فردا — با کیفیت فنی جهانی، حقوق شفاف برای پدیدآورندگان و دسترسی منصفانه برای هر کورد، در هر کجا و با هر توان مالی.</p>
+<h3>چشم‌انداز ده‌ساله</h3>
+<p>هر اثر شنیداری و دیداری کوردی — تازه یا کهن — نخست در vyv منتشر، ثبت یا ارجاع داده شود، و vyv مرجع رسمی متادیتا و حقوق آثار کوردی برای جهان (پلتفرم‌ها، پژوهشگران، رسانه‌ها) باشد.</p>
+<h3>سه اصل از فلسفه‌ی هلدینگ</h3>
+<div class="grid">
+<div class="tile"><i data-lucide="mountain"></i><b>Kurdistan — ریشه</b><span>همه‌ی گویش‌ها و خط‌ها، همه‌ی بخش‌ها و دیاسپورا؛ بدون مرزکشی حزبی یا منطقه‌ای.</span></div>
+<div class="tile"><i data-lucide="brain"></i><b>Raman — اندیشه</b><span>داده، دانشنامه، راستی‌آزمایی متادیتا و حقوق؛ هیچ اطلاعاتی بدون منبع.</span></div>
+<div class="tile"><i data-lucide="sparkles"></i><b>Dahênan — آفرینش</b><span>محصول، ابزار پدیدآورنده، AI، تجربه‌ی کاربری در کلاس جهانی.</span></div>
+</div>
+<h3>ارزش‌ها</h3>
+<ul>
+<li><b>احترام به پدیدآورنده:</b> هر پخش، یک ردپای حقوقی و مالی دارد.</li>
+<li><b>دسترسی منصفانه:</b> قیمت با قدرت خرید، نه با نرخ دلار؛ لایه‌ی رایگان محترمانه.</li>
+<li><b>حفظ میراث:</b> آرشیو، کالای عمومی است؛ بخش میراث همیشه رایگان شنیده می‌شود.</li>
+<li><b>بی‌طرفی و کثرت:</b> هیچ گویش، منطقه یا جریان سیاسی بر دیگری برتری ندارد.</li>
+<li><b>شفافیت الگوریتم:</b> پیشنهادها قابل توضیح‌اند؛ سهمیه‌ی نمایش برای هنرمندان تازه و مناطق کم‌صدا.</li>
+</ul>
+</div>
+</section>
+
+<!-- 02 -->
+<section class="pg" id="s02" data-t="نام‌گذاری و معماری نام" data-i="type" data-g="هویت">
+<div class="card glass">
+<h2><i data-lucide="type"></i>نام‌گذاری: vyv در سیستم KRD</h2>
+<h3>معماری سه‌لایه (مطابق منشور هلدینگ)</h3>
+<div class="tbl"><table>
+<tr><th>لایه</th><th>نام</th><th>کاربرد</th></tr>
+<tr><td>۱ — هلدینگ</td><td class="lat">KRD</td><td>مالک، تضمین اعتبار، امضای «by KRD»</td></tr>
+<tr><td>۲ — واحد</td><td class="lat"><b>KRD PLY</b></td><td>نام شرکت/واحد، قراردادها، دامنه‌ی <code>ply.krd</code>، هندل <code>krd.ply</code> / <code>krdply</code></td></tr>
+<tr><td>۳ — محصول</td><td class="lat"><b>vyv</b></td><td>نام اپ، آیکن، فروشگاه‌ها، روایت مصرف‌کننده</td></tr>
+</table></div>
+<p>این دقیقاً همان قاعده‌ی منشور است: واحدها کد سه‌حرفی سرد دارند و <b>محصولات نام انسانی و احساسی</b> می‌گیرند تا سردی سیستم شکسته شود. vyv نام محصول است، PLY نام نهاد.</p>
+<h3>داوری نام vyv</h3>
+<div class="grid">
+<div class="tile"><i data-lucide="flip-horizontal-2"></i><b>کشف کلیدی: پالیندروم بصری</b><span><span class="lat">vyv</span> از دو سو یکسان خوانده می‌شود و قرینه است؛ مثل بال پرنده، مثل موج صوتی. این همان روح «١» است که در بحث KRD MAG کنار گذاشته شد: <b>چیزی که با چرخش تغییر نمی‌کند</b>. برای ملتی با خط‌های RTL و LTR، نامی که در هر دو جهت یکی است، یک بیانیه‌ی بی‌کلام وحدت است.</span></div>
+<div class="tile"><i data-lucide="eye"></i><b>قوت‌ها</b><span>سه حرف، کوتاه‌تر از هر رقیب؛ لوگوتایپ ذاتی؛ آیکن اپ قوی؛ بی‌بار سیاسی؛ قابل ثبت به‌عنوان لاک‌آپ.</span></div>
+<div class="tile"><i data-lucide="alert-triangle"></i><b>ریسک: تلفظ</b><span>بیشتر مردم آن را «vɪv» می‌خوانند نه «wave». راه‌حل: تلفظ را به‌عنوان بخشی از داستان برند آموزش بده («vyv — say wave») و در صدای آغاز اپ (sonic logo) تکرار کن. یا تلفظ آزاد را بپذیر؛ نام‌های بزرگ بسیاری با دو تلفظ زنده‌اند.</span></div>
+<div class="tile"><i data-lucide="search"></i><b>ریسک: جست‌وجوپذیری و ثبت</b><span>سه حرف ممکن است قبلاً ثبت شده باشد (کلاس ۹ و ۴۱ نیس). جست‌وجوی WIPO Global Brand Database و بررسی دامنه‌ها و هندل‌ها پیش از هر هزینه‌ی برندینگ.</span></div>
+</div>
+<h3>سیستم نام‌گذاری زیربخش‌ها</h3>
+<p>قاعده: <span class="lat">vyv</span> + یک واژه‌ی ساده (انگلیسی در UI جهانی، معادل کوردی در UI کوردی). نام‌های پیشنهادی (املای کوردی باید با ویراستار بومی تأیید شود):</p>
+<div class="tbl"><table>
+<tr><th>بخش</th><th>نام جهانی</th><th>نام کوردی پیشنهادی</th></tr>
+<tr><td>موسیقی</td><td class="lat">vyv Music</td><td>Muzîk / مۆسیقا</td></tr>
+<tr><td>پادکست</td><td class="lat">vyv Talk</td><td>Podkast / پۆدکاست</td></tr>
+<tr><td>رادیو</td><td class="lat">vyv Radio</td><td>Radyo / ڕادیۆ</td></tr>
+<tr><td>کتاب صوتی و متنی</td><td class="lat">vyv Books</td><td>Pirtûk / پەرتووک</td></tr>
+<tr><td>میراث صوتی</td><td class="lat">vyv Heritage</td><td>Mîrat / میرات</td></tr>
+<tr><td>دانشنامه</td><td class="lat">vyv Wiki</td><td>Zanîn / زانین</td></tr>
+<tr><td>موسیقی AI</td><td class="lat">vyv Lab</td><td>Lab</td></tr>
+<tr><td>ویدیو و فیلم</td><td class="lat">vyv Screen</td><td>Dîmen / دیمەن</td></tr>
+<tr><td>فروشگاه و لایسنس</td><td class="lat">vyv Store</td><td>Bazar / بازاڕ</td></tr>
+</table></div>
+<p>نکته‌ی هماهنگی: «Dîmen» در شعار KRD MAG (Rastî û Dîmen) هم آمده؛ استفاده‌ی آن برای ویدیو، دو واحد را در زبان به هم می‌دوزد.</p>
+<p><b>شعار پیشنهادی:</b> <span class="lat">One nation. One wave.</span> — نسخه‌ی کوردی توسط ویراستار بومی. (پژواک غیرسیاسی «1 نیشتمان 1 میدیا».)</p>
+</div>
+</section>
+
+<!-- 03 -->
+<section class="pg" id="s03" data-t="جایگاه و چشم‌انداز رقابتی" data-i="crosshair" data-g="استراتژی">
+<div class="card glass">
+<h2><i data-lucide="crosshair"></i>جایگاه (Positioning)</h2>
+<blockquote>برای کوردهای جهان و هر کسی که به فرهنگ کوردی علاقه دارد، vyv تنها پلتفرمی است که همه‌ی صداها و تصاویر کوردی — معاصر و میراثی — را با متادیتای دقیق، زیرنویس و ترانه‌ی کوردی، حقوق شفاف و قیمت منصفانه در یک تجربه‌ی جهانی گرد می‌آورد.</blockquote>
+<h3>نقشه‌ی رقابت</h3>
+<div class="tbl"><table>
+<tr><th>بازیگر</th><th>قوت</th><th>ضعف در برابر نیاز کوردی</th><th>رفتار vyv</th></tr>
+<tr><td class="lat">Spotify / Apple Music / Deezer</td><td>تجربه، مقیاس، کاتالوگ جهانی</td><td>کاتالوگ کوردی ناقص، متادیتای غلط گویش و خط، پرداخت کارت‌محور، بی‌اعتنایی به میراث</td><td>رقابت نکن، <b>مکمل و منبع متادیتا</b> باش؛ توزیع آثار vyv به آن‌ها (DSP distribution) = درآمد برای هنرمند</td></tr>
+<tr><td class="lat">YouTube</td><td>همه‌چیز رایگان، ویدیو</td><td>بی‌نظمی، کپی‌های غیرمجاز، درآمد ناچیز برای هنرمند کورد</td><td>نسخه‌ی رسمی، تمیز و مستند؛ Content ID برای بازپس‌گیری درآمد هنرمندان</td></tr>
+<tr><td class="lat">Anghami</td><td>منطقه‌ای، پرداخت محلی</td><td>تمرکز عربی؛ کوردی حاشیه‌ای</td><td>الگوی پرداخت و قیمت را بیاموز؛ جایگاه کوردی را اشغال کن</td></tr>
+<tr><td>سایت‌ها و اپ‌های محلی کوردی</td><td>کاتالوگ خام</td><td>کیفیت پایین، بدون حقوق، بدون متادیتا</td><td>ادغام یا خرید کاتالوگ‌های مشروع؛ دعوت به همکاری</td></tr>
+</table></div>
+<h3>سه لایه‌ی خندق (Moat)</h3>
+<ol>
+<li><b>داده:</b> گراف دانش کوردی (هنرمند، شاعر، آهنگساز، استودیو، اثر، گویش، ژانر مقامی) — ارزشمندترین دارایی بلندمدت.</li>
+<li><b>حقوق:</b> قراردادهای مستقیم با هنرمندان، وارثان و آرشیوها؛ نخستین «دفتر ثبت حقوق» آثار کوردی.</li>
+<li><b>جامعه و زبان:</b> UI و زیرنویس در ۵ گویش؛ پرداخت محلی؛ اعتماد هلدینگ KRD.</li>
+</ol>
+</div>
+</section>
+
+<!-- 04 -->
+<section class="pg" id="s04" data-t="معماری محصول: ۹ ستون" data-i="layout-grid" data-g="محصول">
+<div class="card glass">
+<h2><i data-lucide="layout-grid"></i>معماری محصول: نُه ستون</h2>
+<div class="grid">
+<div class="tile"><i data-lucide="music"></i><b>Music</b><span>پخش با کیفیت تا Lossless، پلی‌لیست، آلبوم، ترانه‌ی همگام (Synced lyrics) در خط اصلی + آوانگاری، رادیوی هنرمند، Crossfade، EQ، دانلود آفلاین. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="mic"></i><b>Podcasts</b><span>RSS ingest، میزبانی برای پادکسترهای کورد، فصل‌بندی، رونوشت خودکار (ASR) و جست‌وجو درون متن. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="radio"></i><b>Radio</b><span>استیشن‌های رسمی کوردی (با مجوز پخش)، رادیوهای مجازی خودکار بر اساس ژانر/گویش/منطقه، و سرویس‌های جهانی منتخب. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="book-open"></i><b>Books</b><span>کتاب صوتی + <b>نسخه‌ی متنی طراحی‌شده</b> (نه PDF): متن پاسخ‌گو با تایپوگرافی کوردی، همگام‌سازی جمله‌به‌جمله صدا و متن (Read-along)، هایلایت و یادداشت. پل مستقیم به KRD PUB. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="landmark"></i><b>Heritage — Mîrat</b><span>آرشیو میراث: دنگبێژها، کلاسیک‌ها، صداهای ماندگار شخصیت‌ها، ضبط‌های میدانی؛ با داستان اثر، عکس، سند، منبع و سطح اطمینان. همیشه رایگان. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="library"></i><b>Wiki — Zanîn</b><span>دانشنامه‌ی ساخت‌یافته: هنرمند، شاعر، ترانه‌سرا، آهنگساز، صداپیشه، استودیو، رسانه؛ صفحه‌ی هر اثر با شعر، بیوگرافی، اعتبارها (credits)، لینک‌ها. <span class="tag o">دمو</span></span></div>
+<div class="tile"><i data-lucide="bot"></i><b>Lab — AI Music</b><span>موسیقی تولیدشده با AI با برچسب شفاف، مجموعه‌ای جدا از آثار انسانی؛ ابزار خلق برای کاربران با مدل‌های دارای مجوز. <span class="tag">فاز ۲</span></span></div>
+<div class="tile"><i data-lucide="clapperboard"></i><b>Screen — Dîmen</b><span>موزیک‌ویدیو، کلیپ و Reels، فیلم کوتاه، انیمیشن، برنامه‌ی تلویزیونی، فیلم سینمایی با زیرنویس کوردی. (بخش ۵) <span class="tag o">دمو محدود</span></span></div>
+<div class="tile"><i data-lucide="shopping-bag"></i><b>Store — Bazar</b><span>خرید آلبوم و فایل، لایسنس همگام‌سازی (sync) برای فیلم و تبلیغ، حمایت مستقیم از هنرمند (Tip)، بلیت کنسرت. <span class="tag o">دمو</span></span></div>
+</div>
+<h3>قابلیت‌های افقی (در همه‌ی ستون‌ها)</h3>
+<ul>
+<li>ورود با Google و Facebook (OAuth 2.0 / OIDC)، و در آینده Apple و شماره‌ی تلفن؛ <b>KRD ID</b> مشترک با سایر واحدهای هلدینگ.</li>
+<li>UI در سورانی (RTL)، کورمانجی لاتین، انگلیسی، عربی، فارسی؛ هورامی، بادینی و زازاکی در محتوا و زیرنویس.</li>
+<li>جست‌وجوی هوشمند چندخطی: عبارت در خط عربی-کوردی، لاتین یا آوانگاری غلط هم پیدا شود (نرمال‌سازی و transliteration).</li>
+<li>Now Playing تمام‌صفحه با ویژوال موج، ترانه، داستان اثر و «چه کسانی ساختند».</li>
+<li>پروفایل هنرمند تأییدشده + داشبورد پدیدآورنده (vyv for Artists): آپلود، آمار، درآمد، ویرایش متادیتا.</li>
+<li>اجتماعی: اشتراک‌گذاری کارت زیبا در Reels/Stories، پلی‌لیست مشترک، «Listening Room» زنده.</li>
+<li>دسترس‌پذیری WCAG 2.2 AA؛ حالت داده‌ی کم (Low-data) برای اینترنت ضعیف منطقه.</li>
+</ul>
+</div>
+</section>
+
+<!-- 05 -->
+<section class="pg" id="s05" data-t="ویدیو: آری، اما مرحله‌ای" data-i="clapperboard" data-g="محصول">
+<div class="card glass">
+<h2><i data-lucide="clapperboard"></i>ویدیو: توصیه‌ی قطعی</h2>
+<blockquote><b>بله، ویدیو باید در vyv باشد</b> — چون سرمایه‌گذار امروز جامعیت را با ویدیو می‌سنجد و موزیک‌ویدیو بخش جدانشدنی موسیقی است. اما <b>مرحله‌ای</b>، چون هزینه‌ی زیرساخت و حقوق فیلم چند برابر صوت است.</blockquote>
+<div class="lanes">
+<div class="lane"><b>مرحله‌ی A — دمو</b><div>موزیک‌ویدیو و کلیپ عمودی (Reels) کنار هر آهنگ؛ ۳ تا ۵ فیلم کوتاه یا مستند کوردی با مجوز کامل و زیرنویس چندگویشی — برای نشان دادن پخش‌کننده‌ی ویدیو، سیستم زیرنویس و DRM.</div></div>
+<div class="lane"><b>مرحله‌ی B — سال ۱</b><div>کاتالوگ فیلم کوتاه، انیمیشن و برنامه‌های تلویزیونی کوردی؛ همکاری با فستیوال‌ها، تولیدکنندگان و شبکه‌ها؛ پیوند با KRD ART و KRD KID.</div></div>
+<div class="lane"><b>مرحله‌ی C — سال ۲+</b><div>فیلم جهانی با <b>لایسنس منطقه‌ای</b> و زیرنویس کوردی؛ مدل AVOD (رایگان با تبلیغ) و TVOD ارزان (اجاره‌ی تک‌فیلم با پرداخت محلی).</div></div>
+</div>
+<h3>فیلم جهانی برای کسانی که توان پرداخت بین‌المللی ندارند — رویکرد اخلاقی و حرفه‌ای</h3>
+<ul>
+<li>خرید <b>حقوق پخش سرزمینی</b> (Territory: اقلیم کوردستان/عراق، و «زبان کوردی» برای دیاسپورا) از توزیع‌کنندگان و Sales Agentها؛ فیلم‌های کلاسیک، مستقل و فستیوالی قیمت منطقه‌ای معقول دارند؛ بلاک‌باسترهای استودیویی فعلاً هدف نیستند.</li>
+<li>قیمت‌گذاری با قدرت خرید محلی و پرداخت با کیف پول محلی — این همان دلیلی است که پخش‌کنندگان جهانی در این بازار حاضر نیستند و vyv می‌تواند باشد.</li>
+<li><b>زیرنویس کوردی = ارزش افزوده‌ی قابل فروش:</b> زیرنویس‌ها (SRT/WebVTT) توسط مترجمان با قرارداد + AI تولید می‌شوند و حقوق ترجمه متعلق به PLY است؛ می‌تواند به توزیع‌کنندگان هم فروخته شود.</li>
+<li>هیچ فیلمی بدون لایسنس مکتوب. DRM (Widevine / PlayReady / FairPlay) برای محتوای دارای قرارداد الزامی است.</li>
+</ul>
+</div>
+</section>
+
+<!-- 06 -->
+<section class="pg" id="s06" data-t="لایه‌ی عملیاتی هوش مصنوعی" data-i="cpu" data-g="محصول">
+<div class="card glass">
+<h2><i data-lucide="cpu"></i>vyv Core: سیستم عامل هوشمند</h2>
+<p>کل پلتفرم توسط مجموعه‌ای از <b>AI Agentهای تخصصی</b> با نظارت انسانی اداره می‌شود. اصل حاکم: <b>AI پیشنهاد می‌دهد و اجرا می‌کند؛ انسان در نقاط حقوقی و فرهنگی حساس تأیید می‌کند</b> (Human-in-the-loop).</p>
+<div class="tbl"><table>
+<tr><th>Agent</th><th>وظیفه</th><th>سطح خودگردانی</th></tr>
+<tr><td class="lat">Curator</td><td>انتخاب، دسته‌بندی، ژانر، مقام، گویش، حال‌وهوا، پلی‌لیست‌سازی</td><td>کامل، با بازبینی نمونه‌ای</td></tr>
+<tr><td class="lat">Metadata</td><td>تکمیل عنوان، اعتبارها، ISRC/ISWC، کاور، سال، استودیو؛ ادغام رکوردهای تکراری</td><td>کامل برای پیشنهاد؛ تأیید انسانی برای تغییر اعتبار پدیدآورنده</td></tr>
+<tr><td class="lat">Lyrics</td><td>استخراج و همگام‌سازی ترانه (ASR کوردی)، آوانگاری بین خط‌ها، ترجمه</td><td>انتشار با برچسب «AI draft» تا تأیید ویراستار</td></tr>
+<tr><td class="lat">Rights</td><td>تشخیص اثر انگشت صوتی (Audio fingerprinting)، کشف کپی غیرمجاز، تطبیق قرارداد، تسویه‌ی حق‌الامتیاز</td><td>تأیید انسانی برای حذف و اختلاف</td></tr>
+<tr><td class="lat">Heritage</td><td>بازسازی صدای قدیمی (Denoise/Restore)، رونویسی، پیشنهاد داستان اثر با منبع</td><td>همیشه با بازبینی کارشناس</td></tr>
+<tr><td class="lat">Recommender</td><td>پیشنهاد شخصی با سهمیه‌ی کشف (هنرمند تازه، گویش کم‌صدا)</td><td>کامل، قابل توضیح</td></tr>
+<tr><td class="lat">Support</td><td>پشتیبانی مشترکین در ۵ زبان، بازپرداخت، راهنما</td><td>کامل با ارجاع به انسان</td></tr>
+<tr><td class="lat">Ops / SRE</td><td>مانیتورینگ، تشخیص خطا، تعمیر خودکار، پیشنهاد ارتقاء، گزارش هزینه</td><td>اجرای خودکار در محدوده‌ی Runbook</td></tr>
+<tr><td class="lat">Trust &amp; Safety</td><td>نظارت محتوا، نفرت‌پراکنی، محتوای کودکان</td><td>تأیید انسانی</td></tr>
+</table></div>
+<h3>سیاست‌های AI</h3>
+<ul>
+<li>هر داده‌ی تولیدشده با AI برچسب منبع و سطح اطمینان دارد؛ هیچ «واقعیت» تاریخی بدون منبع منتشر نمی‌شود.</li>
+<li>موسیقی AI همیشه برچسب‌دار و جدا؛ <b>ممنوعیت شبیه‌سازی صدای هنرمند زنده یا درگذشته بدون رضایت مکتوب</b> خود یا وارثان.</li>
+<li>آموزش مدل روی کاتالوگ فقط با رضایت صریح (Opt-in) و سهم درآمد برای صاحبان حقوق.</li>
+<li>ثبت کامل تصمیم‌ها (Audit log) برای هر تغییر حقوقی یا متادیتای اعتبار.</li>
+</ul>
+</div>
+</section>
+
+<!-- 07 -->
+<section class="pg" id="s07" data-t="حقوق، کپی‌رایت و اخلاق" data-i="scale" data-g="حاکمیت">
+<div class="card glass">
+<h2><i data-lucide="scale"></i>حقوق و کپی‌رایت: بزرگ‌ترین ریسک، بزرگ‌ترین خندق</h2>
+<p>هر اثر موسیقی دو حق دارد: <b>حق ضبط (Master)</b> متعلق به ناشر/خواننده/لیبل، و <b>حق اثر (Composition/Publishing)</b> متعلق به آهنگساز و ترانه‌سرا. vyv باید هر دو را پوشش دهد.</p>
+<h3>رده‌بندی کاتالوگ</h3>
+<div class="tbl"><table>
+<tr><th>رده</th><th>منبع</th><th>مدل حقوقی</th></tr>
+<tr><td>معاصر مستقیم</td><td>هنرمندان و لیبل‌های کورد</td><td>قرارداد غیرانحصاری دیجیتال، سهم ۶۰–۷۰٪ درآمد خالص برای صاحبان حقوق</td></tr>
+<tr><td>توزیع جهانی</td><td>Aggregatorها و لیبل‌های بین‌المللی</td><td>قرارداد لایسنس با گزارش‌دهی استاندارد (DDEX)</td></tr>
+<tr><td>میراث با وارث</td><td>خانواده‌ها، آرشیوها، رادیوهای قدیمی</td><td>قرارداد وارثان + سهم درآمد + صندوق میراث</td></tr>
+<tr><td>یتیم (Orphan works)</td><td>ضبط‌های بدون صاحب قابل‌ردیابی</td><td>انتشار با «جست‌وجوی دقیق مستند»، پرداخت به حساب امانی تا پیدا شدن صاحب، حذف فوری در صورت اعتراض</td></tr>
+<tr><td>مالکیت عمومی</td><td>آثار منقضی</td><td>آزاد، با اعتبار کامل</td></tr>
+</table></div>
+<h3>اصول</h3>
+<ul>
+<li>چون در عراق و اقلیم سازمان مدیریت جمعی حقوق (CMO) کارآمد وجود ندارد، <b>vyv خودش دفتر ثبت حقوق آثار کوردی</b> می‌شود؛ با شناسه‌ی داخلی و نگاشت به ISRC/ISWC — این یک خدمت نهادی قابل ارائه به دولت هم هست.</li>
+<li>رویه‌ی اعلام و حذف (Notice &amp; Takedown) سریع و عمومی؛ صفحه‌ی شفافیت فصلی.</li>
+<li>گزارش درآمد ماهانه به هر هنرمند در داشبورد؛ پرداخت با کیف پول محلی.</li>
+<li>حریم خصوصی مطابق GDPR برای کاربران اروپایی؛ داده‌ی کاربران در سرورهای خارج از حوزه‌های پرخطر.</li>
+<li>عدم استفاده از محتوا و داده برای اهداف سیاسی یا نظارتی؛ بی‌طرفی کامل در برجسته‌سازی.</li>
+</ul>
+<p class="lead" style="font-size:15px">این بخش راهنمای راهبردی است، نه مشاوره‌ی حقوقی؛ قراردادها باید با وکیل مالکیت فکری در اقلیم و اتحادیه‌ی اروپا تدوین شوند.</p>
+</div>
+</section>
+
+<!-- 08 -->
+<section class="pg" id="s08" data-t="مدل کسب‌وکار و پرداخت" data-i="wallet" data-g="استراتژی">
+<div class="card glass">
+<h2><i data-lucide="wallet"></i>مدل کسب‌وکار</h2>
+<h3>پلکان اشتراک (پیشنهادی؛ قیمت‌ها برای آزمون بازار)</h3>
+<div class="tbl"><table>
+<tr><th>سطح</th><th>محتوا</th><th>قیمت‌گذاری</th></tr>
+<tr><td><b>Free</b></td><td>موسیقی با تبلیغ و محدودیت، رادیو، پادکست، <b>همه‌ی Heritage</b>، Wiki</td><td>رایگان</td></tr>
+<tr><td><b>Plus</b></td><td>بی‌تبلیغ، آفلاین، کیفیت بالا، ترانه‌ی همگام</td><td>بر اساس قدرت خرید؛ نرخ پایه به IQD برای عراق، EUR/USD برای دیاسپورا</td></tr>
+<tr><td><b>Family / Student</b></td><td>تا ۶ حساب / تخفیف دانشجویی</td><td>ضریب کاهشی</td></tr>
+<tr><td><b>Max</b></td><td>Lossless، Books کامل، Screen کامل</td><td>بالاترین سطح</td></tr>
+</table></div>
+<h3>جریان‌های درآمد</h3>
+<div class="grid">
+<div class="tile"><i data-lucide="repeat"></i><b>اشتراک</b><span>ستون اصلی درآمد تکرارشونده.</span></div>
+<div class="tile"><i data-lucide="megaphone"></i><b>تبلیغ صوتی و تصویری</b><span>برندهای محلی در لایه‌ی رایگان، با سیاست تبلیغ پاک.</span></div>
+<div class="tile"><i data-lucide="disc-3"></i><b>فروش اثر و لایسنس</b><span>آلبوم دیجیتال، لایسنس Sync برای فیلم و تبلیغ، بلیت کنسرت، Tip؛ کمیسیون ۱۰–۲۰٪.</span></div>
+<div class="tile"><i data-lucide="building-2"></i><b>B2G / B2B</b><span>آرشیو ملی دیجیتال برای نهادها، رادیوهای رسمی، دانشگاه‌ها، هتل‌ها و خطوط هوایی (موسیقی محیطی).</span></div>
+<div class="tile"><i data-lucide="database"></i><b>داده و API</b><span>API متادیتای کوردی برای DSPهای جهانی و پژوهشگران؛ خدمات توزیع آثار به Spotify و دیگران.</span></div>
+<div class="tile"><i data-lucide="heart-handshake"></i><b>حمایت فرهنگی</b><span>گرنت‌ها و حامیان صندوق میراث (Mîrat Fund) — جدا از حساب تجاری.</span></div>
+</div>
+<h3>پرداخت</h3>
+<ul>
+<li><b>محلی عراق و اقلیم:</b> کیف‌پول‌ها و کارت‌های رایج محلی (مانند FastPay، ZainCash، Qi Card) — فهرست نهایی پس از قرارداد با درگاه‌ها.</li>
+<li><b>بین‌المللی:</b> Stripe/Adyen، Apple Pay و Google Pay، PayPal.</li>
+<li><b>کارت شارژ و کد هدیه</b> در فروشگاه‌ها — برای کسانی که حساب بانکی ندارند.</li>
+<li><b>پرداخت از طریق اپراتور تلفن (Carrier billing)</b> — مؤثرترین روش در بازارهای کم‌کارت.</li>
+<li><b>رمزارز:</b> با احتیاط. بانک مرکزی عراق نسبت به معاملات رمزارز هشدار و محدودیت اعلام کرده است؛ پیش از فعال‌سازی، استعلام حقوقی الزامی است. پیشنهاد: فقط برای کاربران خارج از عراق، از طریق درگاه دارای مجوز، و ترجیحاً استیبل‌کوین.</li>
+</ul>
+</div>
+</section>
+
+<!-- 09 -->
+<section class="pg" id="s09" data-t="سرمایه‌گذار و حاکمیت" data-i="briefcase" data-g="حاکمیت">
+<div class="card glass">
+<h2><i data-lucide="briefcase"></i>سرمایه‌گذار و ساختار حاکمیت</h2>
+<blockquote><b>هشدار راهبردی:</b> منشور هلدینگ KRD بر «استقلال، بدون بودجه‌ی دولتی و حزبی» استوار است — به‌ویژه برای KRD MAG. سرمایه‌ی حکومت اقلیم در vyv ممکن است این اصل را زیر سؤال ببرد. راه‌حل در خود منشور هست: <b>Ring-fencing</b>.</blockquote>
+<ul>
+<li><b>KRD PLY شخصیت حقوقی مستقل</b> دارد (مانند BOX و 360)؛ سرمایه‌ی دولتی یا خصوصی در سطح PLY وارد می‌شود، نه هلدینگ و نه MAG.</li>
+<li>مدل پیشنهادی با دولت: <b>مشارکت عمومی-خصوصی (PPP)</b>: دولت خریدار خدمت «آرشیو ملی دیجیتال» و حامی بخش Heritage، نه مالک کنترل‌کننده‌ی تحریریه و الگوریتم. سهام دولتی اقلیتی و بدون حق وتوی محتوایی.</li>
+<li><b>منشور استقلال vyv:</b> هیچ سهامداری در انتخاب، رتبه‌بندی یا حذف محتوا دخالت ندارد؛ کمیته‌ی محتوا مستقل با نمایندگانی از هنرمندان، پژوهشگران و مناطق مختلف.</li>
+<li>سرمایه‌گذاران خصوصی: تلکام‌ها (همکاری Carrier billing و بسته‌ی داده)، بانک‌ها و کیف‌پول‌ها، سرمایه‌گذاران دیاسپورا، صندوق‌های فرهنگی بین‌المللی.</li>
+</ul>
+<h3>پیام اصلی پرزنت به دولت</h3>
+<p>«vyv حافظه‌ی شنیداری کوردستان را حفظ می‌کند، اقتصاد خلاق را رسمی و مالیات‌پذیر می‌کند، به هنرمندان درآمد می‌دهد، و تصویر کوردستان را در جهان مدرن می‌سازد — بدون اینکه دولت مجبور به اداره‌ی یک رسانه شود.»</p>
+<h3>پیام اصلی به سرمایه‌گذار خصوصی</h3>
+<p>«بازار دست‌نخورده‌ی حدود ۳۰ تا ۴۰ میلیون نفر کوردزبان (برآوردها متفاوت‌اند)، بدون بازیگر مسلط، با دارایی داده‌ای انحصاری و چند جریان درآمد.»</p>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="pg" id="s10" data-t="معماری فنی و استک" data-i="server" data-g="فناوری">
+<div class="card glass">
+<h2><i data-lucide="server"></i>معماری فنی</h2>
+<p>این بخش مرجع هم‌راستایی با نشست Claude Code روی ریپازیتوری vyv Player است؛ استک نهایی را کد تعیین می‌کند، این سند اصول را.</p>
+<div class="tbl"><table>
+<tr><th>لایه</th><th>پیشنهاد</th><th>چرا</th></tr>
+<tr><td>کلاینت وب</td><td class="lat">PWA · React/Next.js یا استک فعلی ریپو</td><td>یک پایه‌ی کد برای وب و دسکتاپ؛ نصب‌پذیر</td></tr>
+<tr><td>ویندوز</td><td class="lat">Tauri یا Electron → MSIX → Microsoft Store (یا PWA در Store)</td><td>الزام نسخه‌ی سرمایه‌گذار؛ Media Session و کلیدهای رسانه‌ای سیستم</td></tr>
+<tr><td>موبایل (بعد)</td><td class="lat">React Native / Flutter یا Capacitor</td><td>Android، iOS؛ سپس macOS و Linux از همان دسکتاپ</td></tr>
+<tr><td>احراز هویت</td><td class="lat">OIDC: Google, Facebook → KRD ID</td><td>ورود یک‌کلیکی؛ هویت مشترک هلدینگ</td></tr>
+<tr><td>پخش</td><td class="lat">HLS/CMAF, Opus/AAC + FLAC, ABR</td><td>کیفیت تطبیقی برای اینترنت ضعیف</td></tr>
+<tr><td>DRM</td><td class="lat">Widevine · PlayReady · FairPlay</td><td>شرط لازم لایسنس فیلم و لیبل‌ها</td></tr>
+<tr><td>داده</td><td class="lat">PostgreSQL + Graph (Knowledge graph) + Object storage + CDN</td><td>گراف هنرمند-اثر-شاعر-گویش</td></tr>
+<tr><td>جست‌وجو</td><td class="lat">Meilisearch/OpenSearch + نرمال‌سازی کوردی + Vector search</td><td>جست‌وجوی چندخطی و معنایی</td></tr>
+<tr><td>AI</td><td class="lat">Agent orchestration + ASR کوردی + fingerprinting + LLM</td><td>vyv Core</td></tr>
+<tr><td>زیرنویس</td><td class="lat">WebVTT/SRT، چندگویشی، RTL-safe</td><td>Screen و Books</td></tr>
+<tr><td>پرداخت</td><td class="lat">Payment orchestration layer</td><td>چند درگاه محلی و جهانی پشت یک API</td></tr>
+<tr><td>مشاهده‌پذیری</td><td class="lat">OpenTelemetry, alerts, Ops Agent</td><td>تعمیر و نگهداری خودکار</td></tr>
+</table></div>
+<h3>دامنه‌ی نسخه‌ی سرمایه‌گذار (نه MVP — «Product Zero»)</h3>
+<ul>
+<li>وب + ویندوز کاملاً کاربردی، ورود با Gmail/Facebook، پخش واقعی، پلی‌لیست، جست‌وجو، ترانه‌ی همگام، رادیو زنده، پادکست، Heritage با ۵۰+ اثر مستند، Wiki با ۱۰۰+ صفحه، یک کتاب صوتی با Read-along، چند موزیک‌ویدیو و یک فیلم کوتاه با زیرنویس سورانی/کورمانجی/هورامی، فروشگاه با پرداخت آزمایشی (Sandbox)، داشبورد هنرمند، و داشبورد AI Ops زنده.</li>
+<li>همه‌ی محتوای دمو <b>با مجوز مکتوب</b> — سرمایه‌گذار جدی اولین سؤالش حقوق است.</li>
+</ul>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="pg" id="s11" data-t="هویت بصری و دیزاین سیستم" data-i="palette" data-g="هویت">
+<div class="card glass">
+<h2><i data-lucide="palette"></i>هویت بصری</h2>
+<h3>لوگو</h3>
+<p>لوگوتایپ <span class="lat">vyv</span> قرینه است: دو <span class="lat">v</span> مثل دو بال، <span class="lat">y</span> مثل بدن پرنده یا سوزن سوزن‌گرام؛ کل آن یک موج ارتعاش. طرح این سند فقط اسکیس مفهومی است؛ لوگوی نهایی کار دست بنیان‌گذار است. قواعد: قرینگی مطلق، بدون متن داخل آیکن، خوانایی در ۱۶ پیکسل، نسخه‌ی تک‌رنگ.</p>
+<h3>پالت (خانواده‌ی KRD + رنگ تأکیدی واحد)</h3>
+<div class="sw">
+<div><i style="background:#121316"></i><span>Ink<br><code>#121316</code></span></div>
+<div><i style="background:#F5F2EB"></i><span>Paper<br><code>#F5F2EB</code></span></div>
+<div><i style="background:#B8651B"></i><span>Zagros Ochre (امضای هلدینگ)<br><code>#B8651B</code></span></div>
+<div><i style="background:#2F6FA8"></i><span><b>vyv Wave</b> (تأکید واحد)<br><code>#2F6FA8</code></span></div>
+<div><i style="background:#8FB3D9"></i><span>Wave Light<br><code>#8FB3D9</code></span></div>
+<div><i style="background:#1C3350"></i><span>Deep Slate<br><code>#1C3350</code></span></div>
+<div><i style="background:#8A9A5B"></i><span>Olive (Heritage)<br><code>#8A9A5B</code></span></div>
+</div>
+<p>قاعده‌ی منشور: هر واحد فقط <b>یک</b> رنگ تأکیدی ثانوی می‌گیرد. رنگ PLY «Wave» است؛ گرادیان Wave→Ochre امضای حرکت و پخش. Heritage با Olive و Sepia مشخص می‌شود.</p>
+<h3>تایپوگرافی</h3>
+<ul>
+<li>لاتین UI: <span class="lat">Inter</span> · عنوان‌های ادیتوریال: <span class="lat">Newsreader</span> · خط عربی-کوردی: <span class="lat">Vazirmatn</span> (تا نهایی شدن فونت اختصاصی سه‌خطی KRD).</li>
+<li>آزمون اجباری: <span class="lat">Şêrko Bêkes · Çûk</span> و «ڕۆژ · ڵ · ێ · ۆ».</li>
+</ul>
+<h3>Liquid Glass — قواعد</h3>
+<ul>
+<li>شیشه فقط برای لایه‌های شناور (نوار پخش، ناوبری، شیت‌ها)، نه برای متن طولانی.</li>
+<li>پس‌زمینه‌ی پشت شیشه: کاور اثر در حال پخش، محو و رنگی — اپ با هر آهنگ رنگ عوض می‌کند.</li>
+<li>کنتراست متن روی شیشه حداقل ۴.۵:۱؛ در حالت کاهش شفافیت سیستم، شیشه مات می‌شود.</li>
+</ul>
+<h3>آیکن و حرکت</h3>
+<ul>
+<li>آیکن‌ها: <span class="lat">Lucide</span>، خط ۱.۷۵، گوشه‌ی گرد — همان سیستمی که این سند استفاده می‌کند.</li>
+<li>حرکت: همه‌ی انیمیشن‌ها بر منحنی موج (ease-in-out سینوسی)؛ ویژوالایزر موج در Now Playing؛ احترام به prefers-reduced-motion.</li>
+<li>Sonic logo: یک موتیف سه‌نتی کوتاه (v·y·v) با سازی کوردی (مثلاً تنبور یا بلور) — سفارش به آهنگساز کورد.</li>
+</ul>
+<h3>لحن</h3>
+<p>گرم، میزبان، دقیق، بی‌شعار. «به vyv خوش آمدی» نه «بزرگ‌ترین پلتفرم کوردی». ادعای «اولین» ممنوع؛ استاندارد را نشان بده.</p>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="pg" id="s12" data-t="هم‌افزایی با واحدهای KRD" data-i="network" data-g="استراتژی">
+<div class="card glass">
+<h2><i data-lucide="network"></i>اتاق فکر هماهنگی میان برندها</h2>
+<div class="tbl"><table>
+<tr><th>واحد</th><th>پیوند با vyv</th></tr>
+<tr><td><b>KRD MAG</b></td><td>پلی‌لیست هر شماره، نسخه‌ی صوتی مقالات، پادکست تحریریه؛ پرونده‌های ماه = مجموعه‌های Heritage؛ «Dîmen» مشترک در زبان برند</td></tr>
+<tr><td><b>KRD PUB</b></td><td>تأمین کتاب‌ها برای vyv Books؛ کتاب صوتی و متنی طراحی‌شده</td></tr>
+<tr><td><b>KRD ART</b></td><td>کاورها، موزیک‌ویدیو، انیمیشن، هنرمندان تصویری؛ استودیوی خلاق داخلی</td></tr>
+<tr><td><b>KRD KID</b></td><td>بخش کودک: لالایی، قصه‌ی صوتی، انیمیشن، آموزش زبان مادری — با پروفایل امن کودک</td></tr>
+<tr><td><b>KRD LDY</b></td><td>پادکست‌ها و محتوای سلامت و زندگی زنان؛ برجسته‌سازی هنرمندان زن</td></tr>
+<tr><td><b>KRD 360</b></td><td>مشاوره‌ی برند و حرفه برای هنرمندان vyv</td></tr>
+<tr><td><b>KRD JOB</b></td><td>بازار کار موسیقی: نوازنده، صدابردار، مترجم زیرنویس</td></tr>
+<tr><td><b>KRD BOX</b></td><td>فروش فیزیکی: وینیل، سی‌دی، مرچندایز هنرمندان</td></tr>
+<tr><td><b>KRD NGO</b></td><td>صندوق میراث (Mîrat Fund) و دیجیتال‌سازی آرشیوهای مردمی</td></tr>
+<tr><td><b>KRD HUB</b></td><td>KRD ID، پرداخت مشترک، زیرساخت ابری، حقوقی و مالی</td></tr>
+</table></div>
+<h3>جلسه‌ی ثابت «اتاق فکر KRD»</h3>
+<p>ماهانه: یک تقویم محتوایی مشترک (هر ماه یک موضوع که در MAG، vyv، PUB و ART هم‌زمان زنده می‌شود)، بررسی هویت بصری مشترک، و ثبت تصمیم‌ها در منشور هلدینگ.</p>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="pg" id="s13" data-t="شاخص‌های کلیدی (KPI)" data-i="activity" data-g="استراتژی">
+<div class="card glass">
+<h2><i data-lucide="activity"></i>شاخص‌های کلیدی</h2>
+<div class="grid">
+<div class="tile"><i data-lucide="users"></i><b>کاربر</b><span>MAU، DAU/MAU، نرخ نگهداشت روز ۳۰، تبدیل Free→Plus</span></div>
+<div class="tile"><i data-lucide="library-big"></i><b>کاتالوگ</b><span>تعداد آثار دارای حقوق روشن، درصد متادیتای کامل، ساعت میراث دیجیتال‌شده</span></div>
+<div class="tile"><i data-lucide="mic-vocal"></i><b>هنرمند</b><span>هنرمندان تأییدشده، مجموع پرداختی به صاحبان حقوق، زمان پرداخت</span></div>
+<div class="tile"><i data-lucide="globe"></i><b>پوشش</b><span>توزیع شنیدن بین گویش‌ها و مناطق (سنجه‌ی بی‌طرفی)</span></div>
+<div class="tile"><i data-lucide="gauge"></i><b>فنی</b><span>زمان شروع پخش، نرخ قطعی، هزینه‌ی هر ساعت پخش</span></div>
+<div class="tile"><i data-lucide="coins"></i><b>مالی</b><span>ARPU، CAC، LTV، سهم درآمد غیراشتراکی</span></div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="pg" id="s14" data-t="نقشه راه" data-i="map" data-g="اجرا">
+<div class="card glass">
+<h2><i data-lucide="map"></i>نقشه راه</h2>
+<div class="lanes">
+<div class="lane"><b>فاز ۰ — ۰ تا ۳ ماه<br>Product Zero</b><div>قفل نام و استعلام علامت تجاری؛ منشور vyv؛ هویت بصری؛ نسخه‌ی کامل وب + ویندوز (Store)؛ کاتالوگ دمو با مجوز؛ داشبورد AI Ops؛ دک سرمایه‌گذار و دموی زنده.</div></div>
+<div class="lane"><b>فاز ۱ — ۳ تا ۹ ماه<br>راه‌اندازی عمومی</b><div>Android و iOS؛ پرداخت محلی؛ قراردادهای ۱۰۰۰ هنرمند؛ دیجیتال‌سازی ۱۰۰۰ ساعت میراث؛ Wiki ۵۰۰۰ صفحه؛ vyv for Artists.</div></div>
+<div class="lane"><b>فاز ۲ — ۹ تا ۱۸ ماه<br>گسترش</b><div>Screen: فیلم کوتاه، انیمیشن، برنامه‌ی تلویزیونی؛ Lab (AI Music)؛ macOS و Linux؛ API متادیتا؛ توزیع به DSPهای جهانی.</div></div>
+<div class="lane"><b>فاز ۳ — ۱۸ ماه+<br>پلتفرم ملی</b><div>فیلم جهانی با لایسنس منطقه‌ای و زیرنویس کوردی؛ Smart TV و خودرو؛ دفتر ثبت حقوق آثار کوردی؛ همکاری‌های B2G.</div></div>
+</div>
+</div>
+</section>
+
+<!-- 15 -->
+<section class="pg" id="s15" data-t="ریسک‌ها و پاسخ‌ها" data-i="shield-alert" data-g="اجرا">
+<div class="card glass">
+<h2><i data-lucide="shield-alert"></i>ریسک‌ها</h2>
+<div class="tbl"><table>
+<tr><th>ریسک</th><th>پاسخ</th></tr>
+<tr><td>حقوق نامشخص آثار؛ دعوای کپی‌رایت</td><td>قرارداد پیش از انتشار، Fingerprinting، حساب امانی آثار یتیم، Takedown سریع</td></tr>
+<tr><td>هزینه‌ی سنگین ویدیو و CDN</td><td>مرحله‌بندی ویدیو، CDN منطقه‌ای، کدک‌های کارآمد</td></tr>
+<tr><td>وابستگی به سرمایه‌ی دولتی و ادراک وابستگی سیاسی</td><td>Ring-fencing، PPP، سهم اقلیتی، منشور استقلال</td></tr>
+<tr><td>پرداخت: نبود کارت بانکی و محدودیت رمزارز</td><td>Carrier billing، کارت شارژ، کیف پول محلی، استعلام حقوقی رمزارز</td></tr>
+<tr><td>حساسیت‌های سیاسی و گویشی</td><td>کمیته‌ی محتوای متکثر، سنجه‌ی پوشش گویش‌ها، بی‌طرفی الگوریتم</td></tr>
+<tr><td>تلفظ و ثبت نام vyv</td><td>جست‌وجوی WIPO، ثبت لاک‌آپ، آموزش تلفظ در برند</td></tr>
+<tr><td>خطای AI در داده‌ی تاریخی</td><td>برچسب منبع و اطمینان، بازبینی کارشناس برای Heritage</td></tr>
+<tr><td>گستردگی بیش از حد دامنه در Product Zero</td><td>۹ ستون در دمو، اما عمق واقعی فقط در Music، Heritage، Wiki؛ بقیه نمایشی ولی کاربردی</td></tr>
+<tr><td>ایمنی کاربران در کشورهای پرخطر</td><td>حداقل داده، رمزنگاری، بدون افشای فهرست شنیداری</td></tr>
+</table></div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="pg" id="s16" data-t="چک‌لیست اجرایی" data-i="list-checks" data-g="اجرا">
+<div class="card glass chk" id="chk">
+<h2><i data-lucide="list-checks"></i>چک‌لیست اجرایی فاز ۰</h2>
+<p class="lead" style="font-size:15px">پیشرفت در همین مرورگر ذخیره می‌شود.</p>
+<div class="bar"><i id="pbar"></i></div>
+<h3>نام و حقوق</h3>
+<label><input type="checkbox"><span>جست‌وجوی WIPO و ثبت‌های محلی برای «vyv» (کلاس ۹، ۳۸، ۴۱، ۴۲)</span></label>
+<label><input type="checkbox"><span>رزرو دامنه‌ها: ply.krd، vyv.krd، و دامنه‌های تدافعی</span></label>
+<label><input type="checkbox"><span>رزرو هندل‌ها: krd.ply / krdply و vyv در همه‌ی پلتفرم‌ها</span></label>
+<label><input type="checkbox"><span>ثبت شخصیت حقوقی مستقل KRD PLY</span></label>
+<label><input type="checkbox"><span>قرارداد استاندارد هنرمند، وارث، آرشیو، مترجم زیرنویس</span></label>
+<h3>برند</h3>
+<label><input type="checkbox"><span>لوگوتایپ نهایی vyv + آیکن اپ (همه‌ی اندازه‌ها)</span></label>
+<label><input type="checkbox"><span>Sonic logo سه‌نتی با ساز کوردی</span></label>
+<label><input type="checkbox"><span>توکن‌های دیزاین (رنگ، تایپ، فاصله، شیشه) در کد</span></label>
+<label><input type="checkbox"><span>تأیید املای نام‌های کوردی بخش‌ها با ویراستار بومی</span></label>
+<h3>محصول و فناوری</h3>
+<label><input type="checkbox"><span>ورود Google و Facebook (OIDC) کارکردی</span></label>
+<label><input type="checkbox"><span>پخش، پلی‌لیست، جست‌وجوی چندخطی، ترانه‌ی همگام</span></label>
+<label><input type="checkbox"><span>رادیو زنده + پادکست RSS</span></label>
+<label><input type="checkbox"><span>Heritage با ۵۰ اثر مستند + Wiki با ۱۰۰ صفحه</span></label>
+<label><input type="checkbox"><span>یک کتاب صوتی با Read-along</span></label>
+<label><input type="checkbox"><span>موزیک‌ویدیو + یک فیلم کوتاه با زیرنویس سه‌گویشی</span></label>
+<label><input type="checkbox"><span>فروشگاه با پرداخت Sandbox</span></label>
+<label><input type="checkbox"><span>داشبورد هنرمند و داشبورد AI Ops</span></label>
+<label><input type="checkbox"><span>بسته‌بندی MSIX و انتشار در Microsoft Store</span></label>
+<h3>سرمایه‌گذار</h3>
+<label><input type="checkbox"><span>دک سرمایه‌گذار (نسخه‌ی دولت و نسخه‌ی خصوصی)</span></label>
+<label><input type="checkbox"><span>مدل مالی ۳ ساله و برآورد بازار با منبع</span></label>
+<label><input type="checkbox"><span>منشور استقلال vyv و ساختار PPP</span></label>
+<label><input type="checkbox"><span>اسکریپت دموی زنده ۱۲ دقیقه‌ای</span></label>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="pg" id="s17" data-t="تصمیم‌های باز" data-i="help-circle" data-g="اجرا">
+<div class="card glass">
+<h2><i data-lucide="help-circle"></i>تصمیم‌های باز</h2>
+<ol>
+<li>تلفظ رسمی: «wave» آموزش داده شود یا تلفظ آزاد پذیرفته شود؟</li>
+<li>نام کوردی بخش‌ها (Mîrat، Zanîn، Dîmen، Bazar…) — تأیید ویراستار بومی.</li>
+<li>سهم دولت: مشتری خدمت (PPP) یا سهامدار اقلیتی؟</li>
+<li>رمزارز: حذف در نسخه‌ی عراق یا فعال‌سازی فقط برای دیاسپورا؟</li>
+<li>Electron یا Tauri یا PWA برای Microsoft Store — تصمیم بر اساس کد فعلی ریپو.</li>
+<li>سهم درآمد پیشنهادی به صاحبان حقوق (۶۰٪ یا ۷۰٪).</li>
+<li>کدام ۵۰ اثر Heritage و کدام فیلم کوتاه برای دمو؟</li>
+</ol>
+<p><b>اسناد مرتبط:</b> <code>KRD HUB/docs/KRD-Holding-Charter</code> · <code>KRD MAG/docs/KRD-MAG-Charter</code></p>
+</div>
+</section>
+
+<div class="pager"><button class="btn" id="prev"><i data-lucide="arrow-right"></i>قبلی</button><button class="btn" id="next">بعدی<i data-lucide="arrow-left"></i></button></div>
+</main>
+</div>
+
+<script>
+const pgs=[...document.querySelectorAll('section.pg')],idx=document.getElementById('idx');
+let g='';pgs.forEach((s,i)=>{if(s.dataset.g!==g){g=s.dataset.g;idx.insertAdjacentHTML('beforeend',`<h4>${g}</h4>`)}
+ idx.insertAdjacentHTML('beforeend',`<a href="#${s.id}" data-id="${s.id}"><span class="n">${String(i).padStart(2,'0')}</span><i data-lucide="${s.dataset.i}"></i>${s.dataset.t}</a>`)});
+function show(){const id=(location.hash||'#s00').slice(1);let k=pgs.findIndex(s=>s.id===id);if(k<0)k=0;
+ pgs.forEach((s,i)=>s.classList.toggle('on',i===k));idx.querySelectorAll('a').forEach(a=>a.classList.toggle('on',a.dataset.id===pgs[k].id));
+ idx.classList.remove('open');window.scrollTo({top:0});cur=k}
+let cur=0;addEventListener('hashchange',show);show();
+prev.onclick=()=>location.hash=pgs[Math.max(0,cur-1)].id;next.onclick=()=>location.hash=pgs[Math.min(pgs.length-1,cur+1)].id;
+mbtn.onclick=()=>idx.classList.toggle('open');
+theme.onclick=()=>{const r=document.documentElement,d=matchMedia('(prefers-color-scheme:dark)').matches;
+ const now=r.dataset.theme||(d?'dark':'light');r.dataset.theme=now==='dark'?'light':'dark';try{localStorage.setItem('vyv-theme',r.dataset.theme)}catch(e){}};
+try{const t=localStorage.getItem('vyv-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+q.oninput=()=>{const v=q.value.trim();if(!v)return;const s=pgs.find(s=>s.textContent.includes(v));if(s&&location.hash!=='#'+s.id)location.hash=s.id};
+const boxes=[...document.querySelectorAll('#chk input')];let st=[];try{st=JSON.parse(localStorage.getItem('vyv-chk')||'[]')}catch(e){}
+boxes.forEach((b,i)=>{b.checked=!!st[i];b.onchange=upd});function upd(){const a=boxes.map(b=>b.checked);try{localStorage.setItem('vyv-chk',JSON.stringify(a))}catch(e){}
+ pbar.style.width=(a.filter(Boolean).length/a.length*100)+'%'}upd();
+if(window.lucide)lucide.createIcons({attrs:{'stroke-width':1.75}});
+</script>
+</body>
+</html>
