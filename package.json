@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "electron": "^38.8.6",
     "electron-builder": "^26.15.3",
-    "lucide-react": "^1.16.0",
+    "lucide-react": "^1.50.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
