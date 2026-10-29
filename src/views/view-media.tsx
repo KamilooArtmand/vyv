@@ -1,3 +1,4 @@
+import { ShowSkeleton } from '../ui/skeletons';
 // ─────────────────────────────────────────────────────────────
 // view-media.tsx: Podcasts, Audiobooks, Radio, Library & Profile
 // ─────────────────────────────────────────────────────────────
@@ -342,7 +343,7 @@ function RemoteShowView({ id }: { id: string }) {
   useEffect(() => {
     if (res.data) rememberShow(res.data.show);
   }, [res.data]);
-  if (res.loading && !res.data) return <div className="skeleton h-64 rounded-[var(--radius-2xl)]" />;
+  if (res.loading && !res.data) return <ShowSkeleton />;
   if (!res.data) return <EmptyState icon={RadioTower} title="Podcast unavailable" hint={res.error} />;
   const { show, episodes } = res.data;
   return (

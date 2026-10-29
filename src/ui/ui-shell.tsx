@@ -2,14 +2,17 @@
 // ui-shell.tsx: TopBar, Sidebar, PlayerDock, Modals & Toast
 // ─────────────────────────────────────────────────────────────
 
-import { useRef, useState } from 'react';
-import { useBackdropTone } from './ui-backdrop';
+import { useEffect, useRef, useState } from 'react';
+import { useBackdropTone, syncBackdropFromArtwork } from './ui-backdrop';
 import {
+  ArrowDownToLine,
+  ArrowUpToLine,
   Bell,
   Bookmark,
   Check,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Heart,
   History,
   House,
@@ -122,7 +125,7 @@ export function TopBar({ onAgent }: { onAgent?: () => void }) {
   const route = useStore(uiStore, (s) => s.route.name);
   const panel = useStore(uiStore, (s) => s.panel);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
-  const dark = resolveTheme(pref) === 'dark';
+  const dark = resolveTheme(pref) !== 'light';
 
   return (
     <header
@@ -293,8 +296,8 @@ function NowPlayingMeta() {
 }
 
 /**
- * Floating desktop player: a true capsule (radius = height / 2) whose two
- * round ends sit concentric inside the window's curved bottom corners.
+ * Floating desktop player: a true capsule (radius = height / 2)
+ * Supports dynamic horizontal resizing with edge handles and docking to top/bottom.
  */
 export function PlayerDock() {
   const track = useStore(playerStore, (s) => s.track);
@@ -305,35 +308,195 @@ export function PlayerDock() {
   const muted = useStore(playerStore, (s) => s.muted);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
   const hasLyrics = useStore(playerStore, (s) => s.lyrics.length > 0);
+  const dockPos = useStore(settingsStore, (s) => s.dockPosition);
+  const dockWidthPref = useStore(settingsStore, (s) => s.dockWidth);
+
+  const [width, setWidth] = useState(dockWidthPref || 840);
+  const [resizing, setResizing] = useState(false);
+  const [draggingPos, setDraggingPos] = useState(false);
+
   const ref = useRef<HTMLDivElement>(null);
   const { tone, busy } = useBackdropTone(ref, !!track);
+
+  useEffect(() => {
+    if (dockWidthPref && Math.abs(dockWidthPref - width) > 10 && !resizing) {
+      setWidth(dockWidthPref);
+    }
+  }, [dockWidthPref]);
+
   if (!track) return null;
+
+  const isCompact = width < 760;
+  const isUltraCompact = width < 600;
+
+  // Handle horizontal width resizing from left or right edge
+  const startResize = (edge: 'left' | 'right', e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizing(true);
+    const startX = e.clientX;
+    const startW = width;
+    let currentW = startW;
+
+    const onPointerMove = (ev: PointerEvent) => {
+      const deltaX = ev.clientX - startX;
+      const diff = edge === 'right' ? deltaX * 2 : -deltaX * 2;
+      currentW = Math.max(480, Math.min(window.innerWidth - 32, Math.round(startW + diff)));
+      setWidth(currentW);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      setResizing(false);
+      settingsStore.set({ dockWidth: currentW });
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  // Reset to default width on double-click
+  const resetWidth = () => {
+    const defW = 840;
+    setWidth(defW);
+    settingsStore.set({ dockWidth: defW });
+  };
+
+  // Drag to dock to top or bottom
+  const startDragPos = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setDraggingPos(true);
+    const startY = e.clientY;
+    let moved = false;
+
+    const onMove = (ev: PointerEvent) => {
+      if (Math.abs(ev.clientY - startY) > 24) moved = true;
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setDraggingPos(false);
+      if (moved) {
+        const next = ev.clientY < window.innerHeight / 2 ? 'top' : 'bottom';
+        settingsStore.set({ dockPosition: next });
+      } else {
+        settingsStore.set({ dockPosition: dockPos === 'bottom' ? 'top' : 'bottom' });
+      }
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
 
   return (
     <div
       ref={ref}
       data-tone={tone}
-      style={{ '--busy': busy } as React.CSSProperties}
-      className="dock-surface anim-rise pointer-events-auto grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-[var(--dock-gap)]"
+      style={{
+        '--busy': busy,
+        width: `${width}px`,
+        maxWidth: 'calc(100vw - 32px)',
+        minWidth: '480px',
+      } as React.CSSProperties}
+      className={cn(
+        "dock-surface anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-[var(--dock-gap)] select-none transition-all duration-200",
+        resizing && "ring-2 ring-accent/60 shadow-lg",
+        draggingPos && "opacity-80 scale-[0.98]"
+      )}
     >
-      <NowPlayingMeta />
-      <div className="flex w-[min(40vw,500px)] flex-col items-center">
+      {/* Left Resize Handle */}
+      <div
+        role="separator"
+        aria-label="Resize deck width (left)"
+        onPointerDown={(e) => startResize('left', e)}
+        onDoubleClick={resetWidth}
+        title="بکشید تا عرض تغییر کند / دابل کلیک برای اندازه پیش‌فرض"
+        className="group absolute -left-1 inset-y-2 z-20 flex w-4 cursor-ew-resize items-center justify-center touch-none"
+      >
+        <span className="h-6 w-1 rounded-full bg-fg-3/30 transition-all group-hover:h-8 group-hover:w-1.5 group-hover:bg-accent group-active:bg-accent" />
+      </div>
+
+      {/* Right Resize Handle */}
+      <div
+        role="separator"
+        aria-label="Resize deck width (right)"
+        onPointerDown={(e) => startResize('right', e)}
+        onDoubleClick={resetWidth}
+        title="بکشید تا عرض تغییر کند / دابل کلیک برای اندازه پیش‌فرض"
+        className="group absolute -right-1 inset-y-2 z-20 flex w-4 cursor-ew-resize items-center justify-center touch-none"
+      >
+        <span className="h-6 w-1 rounded-full bg-fg-3/30 transition-all group-hover:h-8 group-hover:w-1.5 group-hover:bg-accent group-active:bg-accent" />
+      </div>
+
+      {/* Left section: Drag grip & NowPlaying metadata */}
+      <div className="flex min-w-0 items-center gap-1.5">
+        <button
+          type="button"
+          onPointerDown={startDragPos}
+          title="بکشید به بالا یا پایین، یا کلیک کنید تا جابه‌جا شود"
+          className="press flex size-7 cursor-grab active:cursor-grabbing shrink-0 items-center justify-center rounded-lg text-fg-3 hover:bg-surface-2 hover:text-fg"
+        >
+          <GripVertical size={15} />
+        </button>
+        <NowPlayingMeta />
+      </div>
+
+      {/* Center section: Controls and Scrubber */}
+      <div
+        className="flex flex-col items-center"
+        style={{
+          width: isUltraCompact ? '190px' : isCompact ? '260px' : 'min(36vw, 440px)',
+        }}
+      >
         <div className="flex items-center gap-1.5">
-          <IconButton icon={Shuffle} label="Shuffle" size="xs" variant="bare" active={shuffle} onClick={toggleShuffle} />
+          {!isUltraCompact && (
+            <IconButton icon={Shuffle} label="Shuffle" size="xs" variant="bare" active={shuffle} onClick={toggleShuffle} />
+          )}
           <IconButton icon={SkipBack} label="Previous" size="sm" variant="bare" onClick={prev} className="[&_svg]:fill-current" />
-          <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" size="md" onClick={togglePlay} className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')} />
+          <IconButton
+            icon={isPlaying ? Pause : Play}
+            label={isPlaying ? 'Pause' : 'Play'}
+            variant="solid"
+            size="md"
+            onClick={togglePlay}
+            className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')}
+          />
           <IconButton icon={SkipForward} label="Next" size="sm" variant="bare" onClick={() => next()} className="[&_svg]:fill-current" />
-          <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label={`Repeat ${repeat}`} size="xs" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />
+          {!isUltraCompact && (
+            <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label={`Repeat ${repeat}`} size="xs" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />
+          )}
         </div>
         <Scrubber className="-mt-0.5 w-full" />
       </div>
+
+      {/* Right section: Actions, Volume & Position Switch */}
       <div className="flex items-center justify-end gap-0.5">
         <IconButton icon={MicVocal} label="Lyrics" size="sm" variant="bare" active={panel === 'lyrics'} disabled={!hasLyrics} onClick={() => togglePanel('lyrics')} />
-        <IconButton icon={ListMusic} label="Queue" size="sm" variant="bare" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
-        <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} className="ml-1" />
-        <Slider label="Volume" value={muted ? 0 : volume} onChange={setVolume} className="w-24 max-xl:hidden" />
-        <IconButton icon={PictureInPicture2} label="Micro" size="sm" variant="bare" onClick={() => setMode('Micro')} className="ml-1" />
-        <IconButton icon={Circle} label="Nano" size="sm" variant="bare" onClick={() => setMode('Nano')} />
+        {!isUltraCompact && (
+          <IconButton icon={ListMusic} label="Queue" size="sm" variant="bare" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
+        )}
+        <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} className="ml-0.5" />
+        {!isCompact && (
+          <Slider label="Volume" value={muted ? 0 : volume} onChange={setVolume} className="w-20 max-xl:hidden" />
+        )}
+        {!isCompact && (
+          <IconButton icon={PictureInPicture2} label="Micro" size="sm" variant="bare" onClick={() => setMode('Micro')} className="ml-0.5" />
+        )}
+        {!isCompact && (
+          <IconButton icon={Circle} label="Nano" size="sm" variant="bare" onClick={() => setMode('Nano')} />
+        )}
+
+        {/* Position Toggle: Top (Header) vs Bottom (Footer) */}
+        <IconButton
+          icon={dockPos === 'bottom' ? ArrowUpToLine : ArrowDownToLine}
+          label={dockPos === 'bottom' ? 'Dock to Top (انتقال به بالا)' : 'Dock to Bottom (انتقال به پایین)'}
+          size="sm"
+          variant="bare"
+          onClick={() => settingsStore.set({ dockPosition: dockPos === 'bottom' ? 'top' : 'bottom' })}
+        />
+
         {/* Right end: a round control concentric with the capsule's end. */}
         <IconButton icon={Maximize2} label="Cover" variant="bare" onClick={() => setMode('Cover')} className="!size-[calc(var(--dock-h)-var(--dock-gap)*2)]" />
       </div>
@@ -399,13 +562,36 @@ export function Toast() {
 export function Aura() {
   const on = useStore(settingsStore, (s) => s.aura);
   const playing = useStore(playerStore, (s) => s.isPlaying);
+  const track = useStore(playerStore, (s) => s.track);
+
+  useEffect(() => {
+    if (on) {
+      syncBackdropFromArtwork(track?.coverUrl, track?.dominantColorHex);
+    }
+  }, [on, track?.coverUrl, track?.dominantColorHex]);
+
   if (!on) return null;
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-30">
-      <div
-        className="anim-drift absolute -left-[10%] -top-[20%] size-[60vmax] rounded-full blur-[110px]"
-        style={{ background: 'radial-gradient(circle, var(--fg) 0%, transparent 65%)', opacity: 0.1, animationPlayState: playing ? 'running' : 'paused' }}
-      />
-    </div>
+    <>
+      <div className="vyv-ambient-stage" aria-hidden="true" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-35">
+        <div
+          className="anim-drift absolute -left-[10%] -top-[20%] size-[65vmax] rounded-full blur-[120px]"
+          style={{
+            background: 'radial-gradient(circle, var(--vyv-ambient-primary, var(--fg)) 0%, transparent 68%)',
+            opacity: 0.18,
+            animationPlayState: playing ? 'running' : 'paused',
+          }}
+        />
+        <div
+          className="anim-drift-reverse absolute -right-[10%] -bottom-[20%] size-[55vmax] rounded-full blur-[130px]"
+          style={{
+            background: 'radial-gradient(circle, var(--vyv-ambient-secondary, var(--accent)) 0%, transparent 65%)',
+            opacity: 0.14,
+            animationPlayState: playing ? 'running' : 'paused',
+          }}
+        />
+      </div>
+    </>
   );
 }

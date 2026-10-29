@@ -10,6 +10,13 @@
    ────────────────────────────────────────────────────────────── */
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant oled (&:where([data-theme="oled"], [data-theme="oled"] *));
+@custom-variant grey (&:where([data-theme="grey"], [data-theme="grey"] *));
+@custom-variant silver (&:where([data-theme="silver"], [data-theme="silver"] *));
+@custom-variant golden (&:where([data-theme="golden"], [data-theme="golden"] *));
+@custom-variant bronze (&:where([data-theme="bronze"], [data-theme="bronze"] *));
+@custom-variant pink (&:where([data-theme="pink"], [data-theme="pink"] *));
+@custom-variant red (&:where([data-theme="red"], [data-theme="red"] *));
 
 @theme inline {
   --color-bg: var(--bg);
@@ -28,7 +35,7 @@
   --color-on-accent: var(--on-accent);
   --color-live: var(--live);
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", "IRANSansX", "Vazirmatn", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --radius-xs: 8px;
@@ -85,6 +92,32 @@
   --aura-opacity: 0.35;
 }
 
+/* Cinema OLED — pure pitch black for OLED displays */
+:root[data-theme="oled"],
+[data-theme="oled"] {
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-2: #050505;
+  --surface: rgb(255 255 255 / 0.04);
+  --surface-2: rgb(255 255 255 / 0.07);
+  --surface-3: rgb(255 255 255 / 0.12);
+  --line: rgb(255 255 255 / 0.06);
+  --line-2: rgb(255 255 255 / 0.12);
+  --fg: #f5f5f7;
+  --fg-2: #9e9ea6;
+  --fg-3: #63636b;
+  --glass: rgb(0 0 0 / 0.85);
+  --glass-strong: rgb(0 0 0 / 0.96);
+  --accent-base: #ffffff;
+  --accent: #ffffff;
+  --accent-ink: #e4e4e7;
+  --accent-soft: rgb(255 255 255 / 0.12);
+  --on-accent: #000000;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px -12px rgb(0 0 0 / 0.9);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 24px 60px -20px rgb(0 0 0 / 0.98);
+  --aura-opacity: 0.25;
+}
+
 /* Porcelain — light neutral (pure white, clean stone gray, slate, crisp black) */
 [data-theme="light"] {
   color-scheme: light;
@@ -108,6 +141,174 @@
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -14px rgb(0 0 0 / 0.15);
   --shadow-2: 0 1px 2px rgb(0 0 0 / 0.05), 0 28px 60px -24px rgb(0 0 0 / 0.22);
   --aura-opacity: 0.20;
+}
+
+/* Titanium Slate — modern refined matte grey */
+:root[data-theme="grey"],
+[data-theme="grey"] {
+  color-scheme: dark;
+  --bg: #131518;
+  --bg-2: #1b1e23;
+  --surface: rgb(255 255 255 / 0.05);
+  --surface-2: rgb(255 255 255 / 0.09);
+  --surface-3: rgb(255 255 255 / 0.15);
+  --line: rgb(255 255 255 / 0.08);
+  --line-2: rgb(255 255 255 / 0.16);
+  --fg: #eef1f6;
+  --fg-2: #9da4b0;
+  --fg-3: #6b7280;
+  --glass: rgb(19 21 24 / 0.80);
+  --glass-strong: rgb(17 19 22 / 0.95);
+  --accent-base: #94a3b8;
+  --accent: #94a3b8;
+  --accent-ink: #cbd5e1;
+  --accent-soft: rgb(148 163 184 / 0.18);
+  --on-accent: #0f172a;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.05) inset, 0 8px 24px -12px rgb(0 0 0 / 0.7);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.07) inset, 0 24px 60px -20px rgb(0 0 0 / 0.85);
+  --aura-opacity: 0.30;
+  --vyv-ambient-primary: oklch(50% 0.03 260);
+  --vyv-ambient-secondary: oklch(40% 0.02 240);
+}
+
+/* Platinum Silver — specular chrome & high-gloss metallic */
+:root[data-theme="silver"],
+[data-theme="silver"] {
+  color-scheme: dark;
+  --bg: #090b0e;
+  --bg-2: #12161c;
+  --surface: rgb(226 232 240 / 0.06);
+  --surface-2: rgb(226 232 240 / 0.11);
+  --surface-3: rgb(226 232 240 / 0.18);
+  --line: rgb(226 232 240 / 0.10);
+  --line-2: rgb(226 232 240 / 0.20);
+  --fg: #f8fafc;
+  --fg-2: #cbd5e1;
+  --fg-3: #8291a5;
+  --glass: rgb(11 13 18 / 0.82);
+  --glass-strong: rgb(9 11 15 / 0.96);
+  --accent-base: #e2e8f0;
+  --accent: #e2e8f0;
+  --accent-ink: #ffffff;
+  --accent-soft: rgb(226 232 240 / 0.22);
+  --on-accent: #020617;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.12) inset, 0 8px 24px -12px rgb(0 0 0 / 0.75);
+  --shadow-2: 0 1px 0 rgb(255 255 255 / 0.16) inset, 0 24px 60px -20px rgb(0 0 0 / 0.90);
+  --aura-opacity: 0.36;
+  --vyv-ambient-primary: oklch(70% 0.05 250);
+  --vyv-ambient-secondary: oklch(58% 0.04 220);
+}
+
+/* Royal Gold — luxury warm champagne & amber radiance */
+:root[data-theme="golden"],
+[data-theme="golden"] {
+  color-scheme: dark;
+  --bg: #0c0905;
+  --bg-2: #17130c;
+  --surface: rgb(245 207 115 / 0.05);
+  --surface-2: rgb(245 207 115 / 0.09);
+  --surface-3: rgb(245 207 115 / 0.15);
+  --line: rgb(245 207 115 / 0.11);
+  --line-2: rgb(245 207 115 / 0.22);
+  --fg: #fdfaf2;
+  --fg-2: #dfbc82;
+  --fg-3: #927c56;
+  --glass: rgb(15 12 7 / 0.82);
+  --glass-strong: rgb(12 9 5 / 0.96);
+  --accent-base: #f5cf73;
+  --accent: #f5cf73;
+  --accent-ink: #ffe89e;
+  --accent-soft: rgb(245 207 115 / 0.20);
+  --on-accent: #231602;
+  --shadow-1: 0 1px 0 rgb(245 207 115 / 0.12) inset, 0 8px 24px -12px rgb(0 0 0 / 0.8);
+  --shadow-2: 0 1px 0 rgb(245 207 115 / 0.18) inset, 0 24px 60px -20px rgb(0 0 0 / 0.9);
+  --aura-opacity: 0.40;
+  --vyv-ambient-primary: oklch(72% 0.17 85);
+  --vyv-ambient-secondary: oklch(58% 0.14 65);
+}
+
+/* Cyber Bronze — antique copper & industrial terracotta */
+:root[data-theme="bronze"],
+[data-theme="bronze"] {
+  color-scheme: dark;
+  --bg: #0d0907;
+  --bg-2: #19120e;
+  --surface: rgb(224 122 74 / 0.06);
+  --surface-2: rgb(224 122 74 / 0.10);
+  --surface-3: rgb(224 122 74 / 0.16);
+  --line: rgb(224 122 74 / 0.12);
+  --line-2: rgb(224 122 74 / 0.22);
+  --fg: #faf4f0;
+  --fg-2: #d49f85;
+  --fg-3: #896350;
+  --glass: rgb(16 11 8 / 0.82);
+  --glass-strong: rgb(13 9 7 / 0.96);
+  --accent-base: #e07a4a;
+  --accent: #e07a4a;
+  --accent-ink: #f99f70;
+  --accent-soft: rgb(224 122 74 / 0.20);
+  --on-accent: #210a02;
+  --shadow-1: 0 1px 0 rgb(224 122 74 / 0.12) inset, 0 8px 24px -12px rgb(0 0 0 / 0.8);
+  --shadow-2: 0 1px 0 rgb(224 122 74 / 0.16) inset, 0 24px 60px -20px rgb(0 0 0 / 0.9);
+  --aura-opacity: 0.38;
+  --vyv-ambient-primary: oklch(62% 0.18 45);
+  --vyv-ambient-secondary: oklch(50% 0.15 35);
+}
+
+/* Neon Rose — cyberpunk electric pink & vibrant magenta */
+:root[data-theme="pink"],
+[data-theme="pink"] {
+  color-scheme: dark;
+  --bg: #0d070b;
+  --bg-2: #180d15;
+  --surface: rgb(244 63 94 / 0.06);
+  --surface-2: rgb(244 63 94 / 0.10);
+  --surface-3: rgb(244 63 94 / 0.16);
+  --line: rgb(244 63 94 / 0.12);
+  --line-2: rgb(244 63 94 / 0.22);
+  --fg: #fdf2f5;
+  --fg-2: #f472b6;
+  --fg-3: #a34e70;
+  --glass: rgb(17 9 14 / 0.82);
+  --glass-strong: rgb(13 7 11 / 0.96);
+  --accent-base: #f43f5e;
+  --accent: #f43f5e;
+  --accent-ink: #fb7185;
+  --accent-soft: rgb(244 63 94 / 0.20);
+  --on-accent: #ffffff;
+  --shadow-1: 0 1px 0 rgb(244 63 94 / 0.14) inset, 0 8px 24px -12px rgb(0 0 0 / 0.8);
+  --shadow-2: 0 1px 0 rgb(244 63 94 / 0.18) inset, 0 24px 60px -20px rgb(0 0 0 / 0.9);
+  --aura-opacity: 0.42;
+  --vyv-ambient-primary: oklch(65% 0.24 350);
+  --vyv-ambient-secondary: oklch(56% 0.22 320);
+}
+
+/* Velvet Red — dramatic cinematic crimson & deep ruby */
+:root[data-theme="red"],
+[data-theme="red"] {
+  color-scheme: dark;
+  --bg: #0b0506;
+  --bg-2: #17090b;
+  --surface: rgb(225 29 72 / 0.06);
+  --surface-2: rgb(225 29 72 / 0.10);
+  --surface-3: rgb(225 29 72 / 0.16);
+  --line: rgb(225 29 72 / 0.12);
+  --line-2: rgb(225 29 72 / 0.22);
+  --fg: #fff1f3;
+  --fg-2: #f87171;
+  --fg-3: #9b3c3e;
+  --glass: rgb(16 7 9 / 0.82);
+  --glass-strong: rgb(12 5 6 / 0.96);
+  --accent-base: #e11d48;
+  --accent: #e11d48;
+  --accent-ink: #f43f5e;
+  --accent-soft: rgb(225 29 72 / 0.20);
+  --on-accent: #ffffff;
+  --shadow-1: 0 1px 0 rgb(225 29 72 / 0.14) inset, 0 8px 24px -12px rgb(0 0 0 / 0.8);
+  --shadow-2: 0 1px 0 rgb(225 29 72 / 0.18) inset, 0 24px 60px -20px rgb(0 0 0 / 0.9);
+  --aura-opacity: 0.42;
+  --vyv-ambient-primary: oklch(58% 0.24 25);
+  --vyv-ambient-secondary: oklch(46% 0.20 15);
 }
 
 /* ── Base ─────────────────────────────────────────────────── */
@@ -674,4 +875,182 @@
     .dock-surface[data-tone="dark"] { background-color: rgb(14 15 18); }
     .dock-surface[data-tone="light"] { background-color: rgb(250 250 252); }
   }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   VYV Platinum Design System & Ambient Stage (v4)
+   OKLCH primitives, dynamic ambient backdrop, glass surfaces & spotlight cards
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* OKLCH Perceptual Scale */
+  --vyv-ref-neutral-000: oklch(100% 0 0);
+  --vyv-ref-neutral-050: oklch(98.2% 0.003 265);
+  --vyv-ref-neutral-100: oklch(95.5% 0.005 265);
+  --vyv-ref-neutral-200: oklch(90.0% 0.008 265);
+  --vyv-ref-neutral-300: oklch(82.0% 0.012 265);
+  --vyv-ref-neutral-400: oklch(70.5% 0.015 265);
+  --vyv-ref-neutral-500: oklch(58.0% 0.018 265);
+  --vyv-ref-neutral-600: oklch(45.0% 0.018 265);
+  --vyv-ref-neutral-700: oklch(32.0% 0.016 265);
+  --vyv-ref-neutral-800: oklch(22.0% 0.014 265);
+  --vyv-ref-neutral-850: oklch(17.5% 0.013 265);
+  --vyv-ref-neutral-900: oklch(13.8% 0.012 265);
+  --vyv-ref-neutral-950: oklch(10.2% 0.010 265);
+  --vyv-ref-neutral-980: oklch(7.5% 0.008 265);
+  --vyv-ref-neutral-999: oklch(0% 0 0);
+
+  /* Brand & Cyber Accents */
+  --vyv-ref-brand-400: oklch(72% 0.16 275);
+  --vyv-ref-brand-500: oklch(64% 0.21 275);
+  --vyv-ref-brand-600: oklch(55% 0.22 275);
+  --vyv-ref-cyber-400: oklch(80% 0.14 195);
+  --vyv-ref-cyber-500: oklch(72% 0.16 195);
+  --vyv-ref-emerald-400: oklch(76% 0.17 155);
+  --vyv-ref-amber-400: oklch(82% 0.16 80);
+  --vyv-ref-crimson-400: oklch(70% 0.19 22);
+  --vyv-ref-crimson-500: oklch(62% 0.22 25);
+
+  /* Spatial & Typography Scale */
+  --vyv-text-2xs: clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem);
+  --vyv-text-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem);
+  --vyv-text-sm: clamp(0.8125rem, 0.78rem + 0.2vw, 0.875rem);
+  --vyv-text-base: clamp(0.875rem, 0.84rem + 0.25vw, 0.96875rem);
+  --vyv-text-md: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+  --vyv-text-lg: clamp(1.125rem, 1.05rem + 0.4vw, 1.3125rem);
+  --vyv-text-xl: clamp(1.3125rem, 1.2rem + 0.6vw, 1.625rem);
+
+  --vyv-space-1: 0.25rem;
+  --vyv-space-2: 0.5rem;
+  --vyv-space-2-5: 0.625rem;
+  --vyv-space-3: 0.75rem;
+  --vyv-space-4: 1rem;
+  --vyv-space-5: 1.25rem;
+  --vyv-space-6: 1.5rem;
+  --vyv-space-8: 2rem;
+
+  --vyv-radius-xs: 6px;
+  --vyv-radius-sm: 10px;
+  --vyv-radius-md: 14px;
+  --vyv-radius-lg: 18px;
+  --vyv-radius-xl: 24px;
+  --vyv-radius-pill: 9999px;
+
+  --vyv-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+  --vyv-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --vyv-ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --vyv-duration-fast: 160ms;
+  --vyv-duration-normal: 260ms;
+  --vyv-duration-ambient: 1200ms;
+
+  /* Ambient Stage Lighting Tokens */
+  --vyv-ambient-primary: oklch(55% 0.20 275);
+  --vyv-ambient-secondary: oklch(50% 0.18 200);
+  --vyv-ambient-tertiary: oklch(45% 0.16 320);
+  --vyv-ambient-intensity: 0.24;
+
+  /* Surfaces & Glass */
+  --vyv-surface-glass-1: oklch(14% 0.015 265 / 0.62);
+  --vyv-surface-glass-2: oklch(18% 0.018 265 / 0.72);
+  --vyv-surface-glass-heavy: oklch(12% 0.014 265 / 0.86);
+  --vyv-blur-sm: 12px;
+  --vyv-blur-md: 24px;
+  --vyv-blur-xl: 64px;
+
+  --vyv-text-primary: var(--vyv-ref-neutral-050);
+  --vyv-text-secondary: var(--vyv-ref-neutral-300);
+  --vyv-text-tertiary: var(--vyv-ref-neutral-500);
+
+  --vyv-border-hairline: oklch(100% 0 0 / 0.07);
+  --vyv-border-subtle: oklch(100% 0 0 / 0.11);
+  --vyv-border-specular-top: oklch(100% 0 0 / 0.18);
+  --vyv-border-strong: oklch(100% 0 0 / 0.22);
+
+  --vyv-shadow-sm: 0 2px 8px -2px oklch(0% 0 0 / 0.45), 0 1px 0 0 var(--vyv-border-specular-top) inset;
+  --vyv-shadow-md: 0 12px 28px -6px oklch(0% 0 0 / 0.55), 0 1px 0 0 var(--vyv-border-specular-top) inset;
+  --vyv-shadow-lg: 0 24px 48px -12px oklch(0% 0 0 / 0.70), 0 1px 0 0 var(--vyv-border-specular-top) inset;
+  --vyv-shadow-glow-brand: 0 0 32px -4px oklch(64% 0.21 275 / 0.42);
+
+  --vyv-density-scale: 1;
+}
+
+/* Dynamic Ambient Stage */
+.vyv-ambient-stage {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 18% 15%,
+      color-mix(in oklch, var(--vyv-ambient-primary) calc(var(--vyv-ambient-intensity) * 100%), transparent) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 82% 80%,
+      color-mix(in oklch, var(--vyv-ambient-secondary) calc(var(--vyv-ambient-intensity) * 85%), transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklch, var(--vyv-ambient-tertiary) calc(var(--vyv-ambient-intensity) * 55%), transparent) 0%,
+      transparent 70%
+    );
+  transition: background var(--vyv-duration-ambient) var(--vyv-ease-out-expo);
+}
+
+/* Glass Surfaces */
+.vyv-glass-surface {
+  background: var(--vyv-surface-glass-1);
+  backdrop-filter: blur(var(--vyv-blur-md)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--vyv-blur-md)) saturate(180%);
+  border: 1px solid var(--vyv-border-subtle);
+  box-shadow: var(--vyv-shadow-md);
+}
+
+.vyv-glass-heavy {
+  background: var(--vyv-surface-glass-heavy);
+  backdrop-filter: blur(var(--vyv-blur-xl)) saturate(190%);
+  -webkit-backdrop-filter: blur(var(--vyv-blur-xl)) saturate(190%);
+  border: 1px solid var(--vyv-border-subtle);
+  box-shadow: var(--vyv-shadow-lg);
+}
+
+/* Spotlight Card with Interactive Mouse Radial Lighting */
+.vyv-spotlight-card {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition:
+    transform var(--vyv-duration-normal) var(--vyv-ease-spring),
+    border-color var(--vyv-duration-fast) var(--vyv-ease-out-quart),
+    box-shadow var(--vyv-duration-normal) var(--vyv-ease-out-expo);
+}
+
+.vyv-spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    420px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgb(255 255 255 / 0.08),
+    transparent 42%
+  );
+  opacity: 0;
+  transition: opacity var(--vyv-duration-normal) ease;
+  pointer-events: none;
+}
+
+.vyv-spotlight-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-2);
+}
+
+.vyv-spotlight-card:hover::before {
+  opacity: 1;
 }

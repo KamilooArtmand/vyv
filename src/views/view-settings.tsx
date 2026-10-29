@@ -81,6 +81,19 @@ function Toggle({ k, icon, label, hint }: { k: keyof S; icon: LucideIcon; label:
   );
 }
 
+const THEME_OPTIONS: Array<{ id: ThemePref; name: string; sub: string; bg: string; surface: string; accent: string }> = [
+  { id: 'dark', name: 'Dark', sub: 'Obsidian Black', bg: '#090a0c', surface: '#1b1d22', accent: '#ffffff' },
+  { id: 'oled', name: 'Cinema OLED', sub: 'Pure Pitch Black', bg: '#000000', surface: '#0c0c0e', accent: '#ffffff' },
+  { id: 'light', name: 'Light', sub: 'Porcelain White', bg: '#f8f9fa', surface: '#e4e7eb', accent: '#0d0f12' },
+  { id: 'grey', name: 'Grey', sub: 'Titanium Slate', bg: '#131518', surface: '#23272e', accent: '#94a3b8' },
+  { id: 'silver', name: 'Silver', sub: 'Platinum Chrome', bg: '#090b0e', surface: '#19202a', accent: '#e2e8f0' },
+  { id: 'golden', name: 'Golden', sub: 'Royal Champagne', bg: '#0c0905', surface: '#241c0e', accent: '#f5cf73' },
+  { id: 'bronze', name: 'Bronze', sub: 'Cyber Copper', bg: '#0d0907', surface: '#28170f', accent: '#e07a4a' },
+  { id: 'pink', name: 'Pink', sub: 'Neon Rose', bg: '#0d070b', surface: '#270e1e', accent: '#f43f5e' },
+  { id: 'red', name: 'Red', sub: 'Velvet Crimson', bg: '#0b0506', surface: '#250b10', accent: '#e11d48' },
+  { id: 'auto', name: 'Auto', sub: 'Follow System', bg: '#18191c', surface: '#282a30', accent: '#38bdf8' },
+];
+
 export default function SettingsView() {
   const theme = useStore(settingsStore, (s) => s.theme);
   const eq = useStore(settingsStore, (s) => s.eq);
@@ -100,20 +113,64 @@ export default function SettingsView() {
       <PageHeader title="Settings" />
 
       <Group title="Look">
-        <Row icon={Palette} label="Theme">
-          <Segmented<ThemePref>
-            value={theme}
-            onChange={(t) => {
-              settingsStore.set({ theme: t });
-              applyTheme(t);
-            }}
-            options={[
-              { value: 'light', label: 'Light', icon: Sun },
-              { value: 'dark', label: 'Dark', icon: Moon },
-              { value: 'auto', label: 'Auto', icon: SunMoon },
-            ]}
-          />
-        </Row>
+        <div className="p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-surface-3 text-fg-2">
+                <Palette size={15} strokeWidth={2} />
+              </span>
+              <div>
+                <div className="text-[14.5px] font-semibold text-fg">Themes & Aesthetics</div>
+                <div className="text-[12px] text-fg-3">Choose from 10 handcrafted visual profiles</div>
+              </div>
+            </div>
+            <span className="rounded-full bg-surface-3 px-2.5 py-0.5 text-[11px] font-medium text-fg-2">
+              {THEME_OPTIONS.find((t) => t.id === theme)?.name ?? 'Theme'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-5">
+            {THEME_OPTIONS.map((t) => {
+              const active = theme === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={(e) => {
+                    settingsStore.set({ theme: t.id });
+                    applyTheme(t.id, { x: e.clientX, y: e.clientY });
+                  }}
+                  className={cn(
+                    'group relative flex flex-col items-start rounded-xl p-2.5 text-left transition-all duration-200 cursor-pointer outline-none',
+                    active
+                      ? 'ring-2 ring-accent shadow-md bg-surface-2'
+                      : 'bg-surface hover:bg-surface-2 hover:scale-[1.02]'
+                  )}
+                >
+                  <div
+                    className="relative mb-2 flex h-8 w-full items-center justify-between rounded-lg border border-white/10 px-2 shadow-inner"
+                    style={{ background: t.bg }}
+                  >
+                    <div className="size-3.5 rounded-full border border-white/20" style={{ background: t.surface }} />
+                    <div className="size-3 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.35)]" style={{ background: t.accent }} />
+                  </div>
+
+                  <div className="flex w-full items-center justify-between">
+                    <span className={cn('text-[13px] font-semibold tracking-tight', active ? 'text-fg' : 'text-fg-2')}>
+                      {t.name}
+                    </span>
+                    {active && (
+                      <span className="flex size-3.5 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate max-w-full text-[11px] text-fg-3">{t.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <Toggle k="adaptiveColor" icon={Blend} label="Adaptive color" hint="Tint from artwork" />
         <Toggle k="aura" icon={Wind} label="Ambient aura" />
         <Toggle k="reduceMotion" icon={Rabbit} label="Reduce motion" />

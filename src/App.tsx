@@ -4,7 +4,7 @@
 
 import { Suspense, lazy, useCallback, useEffect, useState, type ComponentType } from 'react';
 import { useStore } from './core/core-store';
-import { useMediaQuery } from './core/core-utils';
+import { cn, useMediaQuery } from './core/core-utils';
 import { bootPlayer, next, prev, skip, toggleMute, togglePlay } from './state/state-player';
 import { applyTheme, navigate, settingsStore, setMode, togglePanel, uiStore } from './state/state-ui';
 import { Aura, BottomNav, MiniPlayer, PlayerDock, Sidebar, Toast, TopBar } from './ui/ui-shell';
@@ -13,6 +13,7 @@ import { AgentOverlay, SidePanel } from './ui/ui-panels';
 import { Sheets } from './ui/ui-sheets';
 import { ResizeEdges } from './ui/ui-window';
 import { UpdateBanner } from './ui/ui-update';
+import { PageSkeleton } from './ui/skeletons';
 import { desktop } from './core/core-desktop';
 import { loadSnapshot } from './services/snapshot';
 import { startSync } from './services/sync';
@@ -52,6 +53,7 @@ export function App() {
   const route = useStore(uiStore, (s) => s.route);
   const mode = useStore(uiStore, (s) => s.mode);
   const themePref = useStore(settingsStore, (s) => s.theme);
+  const dockPos = useStore(settingsStore, (s) => s.dockPosition);
   const wide = useMediaQuery('(min-width: 1024px)');
   const [agentOpen, setAgentOpen] = useState(false);
 
@@ -128,8 +130,16 @@ export function App() {
         <div className="hidden md:flex">
           <Sidebar />
         </div>
-        <main id="main-scroll" className="scrollbar-none min-w-0 flex-1 overflow-y-auto px-4 pb-40 pt-2 md:px-8 md:pb-[calc(var(--dock-h)+var(--dock-gap)*2+24px)]">
-          <Suspense fallback={<div className="p-8 text-center text-fg-3">Loading…</div>}>
+        <main
+          id="main-scroll"
+          className={cn(
+            "scrollbar-none min-w-0 flex-1 overflow-y-auto px-4 transition-[padding] duration-300 md:px-8",
+            dockPos === 'top'
+              ? "pb-24 pt-4 md:pb-24 md:pt-[calc(var(--dock-h)+var(--dock-gap)+24px)]"
+              : "pb-40 pt-2 md:pb-[calc(var(--dock-h)+var(--dock-gap)*2+24px)]"
+          )}
+        >
+          <Suspense fallback={<PageSkeleton route={route.name} id={route.id} />}>
             <ViewComponent id={route.id} />
           </Suspense>
         </main>
@@ -142,7 +152,14 @@ export function App() {
         <BottomNav onAgent={openAgent} />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-[var(--dock-gap)] bottom-[var(--dock-gap)] z-30 hidden md:block">
+      <div
+        className={cn(
+          "pointer-events-none fixed inset-x-0 z-30 hidden justify-center px-4 transition-all duration-300 [transition-timing-function:var(--ease-spring)] md:flex",
+          dockPos === 'top'
+            ? "top-[calc(var(--header-h)+6px)]"
+            : "bottom-[var(--dock-gap)]"
+        )}
+      >
         <PlayerDock />
       </div>
 

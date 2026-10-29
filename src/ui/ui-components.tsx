@@ -2,7 +2,7 @@
 // ui-components.tsx: Buttons, Artwork, Cards, Visualizers & Sheet
 // ─────────────────────────────────────────────────────────────
 
-import { forwardRef, memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Bookmark, Heart, MicVocal, MoreHorizontal, Pause, Play, Shuffle, X, type LucideIcon } from 'lucide-react';
 import type { BookmarkKind, Track } from '../core/core-types';
 import { cn, formatTime, hash } from '../core/core-utils';
@@ -704,3 +704,184 @@ export function LyricsView({ className, large }: { className?: string; large?: b
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// Platinum UI Components: Spotlight Card, Button & Badge
+// ─────────────────────────────────────────────────────────────
+
+export interface VyvSpotlightCardProps extends React.HTMLAttributes<HTMLDivElement> {
+  interactive?: boolean;
+}
+
+export const VyvSpotlightCard: React.FC<VyvSpotlightCardProps> = ({
+  interactive = true,
+  children,
+  className = '',
+  onMouseMove,
+  ...rest
+}) => {
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (interactive) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+        e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+      }
+      onMouseMove?.(e);
+    },
+    [interactive, onMouseMove]
+  );
+
+  return (
+    <div
+      className={cn('vyv-spotlight-card', className)}
+      onMouseMove={handleMouseMove}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+};
+
+export interface VyvButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'glass' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  icon?: ReactNode;
+  loading?: boolean;
+}
+
+export const VyvButton: React.FC<VyvButtonProps> = ({
+  variant = 'primary',
+  size = 'md',
+  icon,
+  loading = false,
+  children,
+  style,
+  disabled,
+  ...rest
+}) => {
+  const sizeStyles: Record<'sm' | 'md' | 'lg', React.CSSProperties> = {
+    sm: {
+      height: 'calc(32px * var(--vyv-density-scale, 1))',
+      padding: '0 var(--vyv-space-3, 12px)',
+      fontSize: 'var(--vyv-text-xs, 12px)',
+      borderRadius: 'var(--vyv-radius-sm, 10px)',
+    },
+    md: {
+      height: 'calc(40px * var(--vyv-density-scale, 1))',
+      padding: '0 var(--vyv-space-4, 16px)',
+      fontSize: 'var(--vyv-text-sm, 14px)',
+      borderRadius: 'var(--vyv-radius-md, 14px)',
+    },
+    lg: {
+      height: 'calc(48px * var(--vyv-density-scale, 1))',
+      padding: '0 var(--vyv-space-6, 24px)',
+      fontSize: 'var(--vyv-text-base, 16px)',
+      borderRadius: 'var(--vyv-radius-lg, 18px)',
+    },
+  };
+
+  const variantStyles: Record<'primary' | 'glass' | 'ghost' | 'danger', React.CSSProperties> = {
+    primary: {
+      background: 'var(--vyv-accent-primary, var(--accent))',
+      color: 'var(--vyv-text-on-brand, var(--on-accent))',
+      border: '1px solid var(--vyv-border-specular-top, var(--line-2))',
+      boxShadow: 'var(--vyv-shadow-glow-brand, var(--shadow-1))',
+    },
+    glass: {
+      background: 'var(--vyv-surface-glass-2, var(--surface-2))',
+      color: 'var(--vyv-text-primary, var(--fg))',
+      border: '1px solid var(--vyv-border-subtle, var(--line))',
+      backdropFilter: 'blur(var(--vyv-blur-sm, 12px))',
+      boxShadow: 'var(--vyv-shadow-sm, var(--shadow-1))',
+    },
+    ghost: {
+      background: 'transparent',
+      color: 'var(--vyv-text-secondary, var(--fg-2))',
+      border: '1px solid transparent',
+    },
+    danger: {
+      background: 'color-mix(in oklch, var(--vyv-status-danger, #ef4444) 18%, transparent)',
+      color: 'var(--vyv-status-danger, #ef4444)',
+      border: '1px solid color-mix(in oklch, var(--vyv-status-danger, #ef4444) 40%, transparent)',
+    },
+  };
+
+  return (
+    <button
+      disabled={disabled || loading}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'var(--vyv-space-2, 8px)',
+        fontWeight: 600,
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.45 : 1,
+        transition: 'all var(--vyv-duration-fast, 160ms) var(--vyv-ease-out-quart, ease-out)',
+        ...sizeStyles[size],
+        ...variantStyles[variant],
+        ...style,
+      }}
+      {...rest}
+    >
+      {loading ? <span aria-hidden="true">•••</span> : icon}
+      {children && <span>{children}</span>}
+    </button>
+  );
+};
+
+export const VyvBadge: React.FC<{
+  tone?: 'brand' | 'live' | 'agent' | 'neutral';
+  children: ReactNode;
+}> = ({ tone = 'neutral', children }) => {
+  const toneMap = {
+    brand: {
+      bg: 'var(--vyv-accent-primary-soft, var(--accent-soft))',
+      fg: 'var(--vyv-accent-primary-hover, var(--accent))',
+    },
+    live: {
+      bg: 'color-mix(in oklch, var(--vyv-accent-live, #ef4444) 20%, transparent)',
+      fg: 'var(--vyv-accent-live, #ef4444)',
+    },
+    agent: {
+      bg: 'color-mix(in oklch, var(--vyv-accent-agent, #06b6d4) 18%, transparent)',
+      fg: 'var(--vyv-accent-agent, #06b6d4)',
+    },
+    neutral: {
+      bg: 'var(--vyv-bg-interactive-hover, var(--surface-2))',
+      fg: 'var(--vyv-text-secondary, var(--fg-2))',
+    },
+  }[tone];
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 'var(--vyv-space-1, 4px)',
+        padding: '2px var(--vyv-space-2-5, 10px)',
+        fontSize: 'var(--vyv-text-2xs, 11px)',
+        fontWeight: 600,
+        borderRadius: 'var(--vyv-radius-pill, 9999px)',
+        background: toneMap.bg,
+        color: toneMap.fg,
+        border: '1px solid var(--vyv-border-hairline, var(--line))',
+      }}
+    >
+      {tone === 'live' && (
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--vyv-accent-live, #ef4444)',
+            boxShadow: '0 0 8px var(--vyv-accent-live, #ef4444)',
+          }}
+        />
+      )}
+      {children}
+    </span>
+  );
+};
+

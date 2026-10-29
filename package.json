@@ -15,7 +15,8 @@
     "dist:store": "npm run build && electron-builder --win appx",
     "release:win": "npm run build && electron-builder --win nsis --publish always",
     "catalog": "node scripts/snapshot-catalog.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "generate:skeletons": "node scripts/generate-skeletons.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.9"
@@ -38,11 +39,11 @@
     "vite": "^6.0.0"
   },
   "main": "electron/main.cjs",
-  "description": "vyv \u2014 KRD PLY national multimedia player (web + desktop)",
+  "description": "vyv — KRD PLY national multimedia player (web + desktop)",
   "build": {
     "appId": "io.krd.vyv",
     "productName": "vyv",
-    "copyright": "\u00a9 KRD",
+    "copyright": "© KRD",
     "files": [
       "dist/**",
       "electron/**",

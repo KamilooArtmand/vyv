@@ -223,7 +223,7 @@ export interface AudioDevice {
   name: string;
 }
 
-export type ThemePref = 'auto' | 'light' | 'dark';
+export type ThemePref = 'auto' | 'light' | 'dark' | 'oled' | 'grey' | 'golden' | 'silver' | 'bronze' | 'pink' | 'red';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 

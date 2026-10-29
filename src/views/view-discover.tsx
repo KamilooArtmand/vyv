@@ -1,3 +1,4 @@
+import { DiscoverSkeleton } from '../ui/skeletons';
 // ─────────────────────────────────────────────────────────────
 // view-discover.tsx: The whole catalogue — hundreds of real items
 //
@@ -109,7 +110,7 @@ export default function DiscoverView() {
     loadSnapshot().then(setSnap);
   }, []);
 
-  if (snap === undefined) return <div className="skeleton h-72 rounded-[var(--radius-2xl)]" />;
+  if (snap === undefined) return <DiscoverSkeleton />;
   if (!snap) return <EmptyState icon={Compass} title="Catalogue unavailable" hint="Check your connection and try again." />;
 
   const updated = new Date(snap.generatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });

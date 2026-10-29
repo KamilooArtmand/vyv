@@ -159,3 +159,112 @@ export function useBackdropTone(ref: RefObject<HTMLElement | null>, enabled = tr
 
   return state;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Platinum Dynamic Ambient Palette Extractor
+// ─────────────────────────────────────────────────────────────
+
+export interface AmbientPalette {
+  primary: string;
+  secondary: string;
+  tertiary: string;
+  intensity?: number;
+}
+
+export const DEFAULT_AMBIENT_PALETTE: AmbientPalette = {
+  primary: 'oklch(55% 0.20 275)',
+  secondary: 'oklch(50% 0.18 200)',
+  tertiary: 'oklch(45% 0.16 320)',
+  intensity: 0.22,
+};
+
+const paletteCache = new Map<string, AmbientPalette>();
+
+export function applyAmbientTokens(palette: AmbientPalette = DEFAULT_AMBIENT_PALETTE): void {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+
+  requestAnimationFrame(() => {
+    root.style.setProperty('--vyv-ambient-primary', palette.primary);
+    root.style.setProperty('--vyv-ambient-secondary', palette.secondary);
+    root.style.setProperty('--vyv-ambient-tertiary', palette.tertiary);
+    if (typeof palette.intensity === 'number') {
+      root.style.setProperty('--vyv-ambient-intensity', String(palette.intensity));
+    }
+  });
+}
+
+export async function syncBackdropFromArtwork(artworkUrl?: string | null, fallbackHex?: string): Promise<AmbientPalette> {
+  const fallbackPalette: AmbientPalette = fallbackHex
+    ? {
+        primary: fallbackHex,
+        secondary: 'oklch(50% 0.18 200)',
+        tertiary: 'oklch(45% 0.16 320)',
+        intensity: 0.25,
+      }
+    : DEFAULT_AMBIENT_PALETTE;
+
+  if (!artworkUrl) {
+    applyAmbientTokens(fallbackPalette);
+    return fallbackPalette;
+  }
+
+  const cached = paletteCache.get(artworkUrl);
+  if (cached) {
+    applyAmbientTokens(cached);
+    return cached;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 24;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        if (!ctx) {
+          applyAmbientTokens(fallbackPalette);
+          resolve(fallbackPalette);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+
+        const samplePixel = (x: number, y: number): string => {
+          const idx = (y * size + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          return `rgb(${r}, ${g}, ${b})`;
+        };
+
+        const extracted: AmbientPalette = {
+          primary: samplePixel(6, 6),
+          secondary: samplePixel(18, 12),
+          tertiary: samplePixel(12, 18),
+          intensity: 0.28,
+        };
+
+        paletteCache.set(artworkUrl, extracted);
+        applyAmbientTokens(extracted);
+        resolve(extracted);
+      } catch {
+        applyAmbientTokens(fallbackPalette);
+        resolve(fallbackPalette);
+      }
+    };
+
+    img.onerror = () => {
+      applyAmbientTokens(fallbackPalette);
+      resolve(fallbackPalette);
+    };
+
+    img.src = artworkUrl;
+  });
+}

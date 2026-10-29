@@ -38,8 +38,21 @@ const MOODS: { mood: Mood; name: string; prompt: string }[] = [
 ];
 
 function QuickTile({ title, color, seed, src, icon, onClick, onPlay }: { title: string; color: string; seed: string; src?: string; icon?: typeof Heart; onClick: () => void; onPlay: () => void }) {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+    e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+  };
+
   return (
-    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => e.key === 'Enter' && onClick()} className="group/q press flex h-14 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-md)] bg-surface pr-2 hover:bg-surface-2 md:h-16">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      onMouseMove={handleMouseMove}
+      className="vyv-spotlight-card group/q press flex h-14 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-md)] bg-surface pr-2 hover:bg-surface-2 md:h-16"
+    >
       <Artwork seed={seed} color={color} src={src} glyph={icon} className="aspect-square h-full !rounded-none" />
       <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium md:text-[14.5px]">{title}</span>
       <PlayFab onClick={onPlay} className="!size-9 opacity-0 transition-opacity group-hover/q:opacity-100 max-md:hidden" />

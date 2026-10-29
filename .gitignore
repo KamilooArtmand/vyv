@@ -23,3 +23,22 @@ dist/
 .env
 
 release/
+
+# Heavy media and binary files
+*.pdf
+*.epub
+*.mobi
+*.mp4
+*.mov
+*.mkv
+*.zip
+*.tar
+*.gz
+*.iso
+*.exe
+*.dmg
+*.dll
+*.sqlite
+.graphifyrc
+.graphifyrc*
+.env*

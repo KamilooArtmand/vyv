@@ -157,6 +157,8 @@ export interface Settings {
   eq: [number, number, number];
   speed: number;
   deviceId: string;
+  dockPosition: 'bottom' | 'top';
+  dockWidth: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -180,6 +182,8 @@ export const DEFAULT_SETTINGS: Settings = {
   eq: [0, 0, 0],
   speed: 1,
   deviceId: 'default',
+  dockPosition: 'bottom',
+  dockWidth: 840,
 };
 
 export const settingsStore = createStore<Settings>(DEFAULT_SETTINGS, 'vyv.settings.v3');
@@ -192,7 +196,9 @@ export const EQ_PRESETS: { id: string; label: string; gains: [number, number, nu
   { id: 'night', label: 'Night', gains: [3, -1, -5] },
 ];
 
-export function resolveTheme(pref: ThemePref): 'light' | 'dark' {
+export type ResolvedTheme = Exclude<ThemePref, 'auto'>;
+
+export function resolveTheme(pref: ThemePref): ResolvedTheme {
   if (pref !== 'auto') return pref;
   if (typeof window === 'undefined') return 'dark';
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
