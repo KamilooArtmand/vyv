@@ -14,9 +14,16 @@ const isSpoken = (t?: Track | null) => t?.kind === 'podcast' || t?.kind === 'aud
 export function applyAccent(track: Track | null = playerStore.get().track) {
   const root = document.documentElement;
   if (settingsStore.get().adaptiveColor && track?.dominantColorHex) {
-    root.style.setProperty('--accent', track.dominantColorHex);
+    const hex = track.dominantColorHex;
+    root.style.setProperty('--accent', hex);
+    root.style.setProperty('--accent-soft', `color-mix(in oklch, ${hex} 16%, transparent)`);
+    root.style.setProperty('--accent-ink', hex);
+    root.style.setProperty('--live', hex);
   } else {
     root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent-soft');
+    root.style.removeProperty('--accent-ink');
+    root.style.removeProperty('--live');
   }
 }
 
@@ -68,7 +75,7 @@ export class AudioEngine {
   private static eq: [number, number, number] = [0, 0, 0];
 
   private static onEndedCallbacks: (() => void)[] = [];
-  private static onTimeUpdateCallbacks: ((time: number, duration: number) => void)[] = [];
+  private static onTimeUpdateCallbacks: ((time: number, duration: number, buffered?: number) => void)[] = [];
   private static onStateChangeCallbacks: ((isPlaying: boolean) => void)[] = [];
   private static onErrorCallbacks: (() => void)[] = [];
   private static onStallCallbacks: (() => void)[] = [];
@@ -89,13 +96,22 @@ export class AudioEngine {
     if (cors) el.crossOrigin = 'anonymous';
     el.volume = this.volume;
     el.preload = 'auto';
+    const getBuffered = () => {
+      try {
+        return el.buffered && el.buffered.length > 0 ? el.buffered.end(el.buffered.length - 1) : 0;
+      } catch {
+        return 0;
+      }
+    };
     const emitTime = () => {
       if (el !== this.audio) return;
       this.currentTime = el.currentTime || 0;
       this.duration = Number.isFinite(el.duration) ? el.duration : 0;
-      this.onTimeUpdateCallbacks.forEach((cb) => cb(this.currentTime, this.duration));
+      const buffered = getBuffered();
+      this.onTimeUpdateCallbacks.forEach((cb) => cb(this.currentTime, this.duration, buffered));
     };
     el.addEventListener('timeupdate', emitTime);
+    el.addEventListener('progress', emitTime);
     el.addEventListener('loadedmetadata', emitTime);
     el.addEventListener('ended', () => {
       if (el !== this.audio) return;
@@ -238,8 +254,26 @@ export class AudioEngine {
   static setEQ(gains: [number, number, number]): void {
     this.eq = gains;
     if (this.lowFilter) this.lowFilter.gain.value = gains[0];
-    if (this.midFilter) this.midFilter.gain.value = gains[1];
+    if (this.midFilter && this.vocalMode === 'off') this.midFilter.gain.value = gains[1];
     if (this.highFilter) this.highFilter.gain.value = gains[2];
+  }
+
+  private static vocalMode: 'off' | 'karaoke' | 'vocals' = 'off';
+
+  static setVocalIsolation(mode: 'off' | 'karaoke' | 'vocals'): void {
+    this.vocalMode = mode;
+    if (!this.midFilter) return;
+    if (mode === 'karaoke') {
+      this.midFilter.gain.value = -14;
+    } else if (mode === 'vocals') {
+      this.midFilter.gain.value = +9;
+    } else {
+      this.midFilter.gain.value = this.eq[1];
+    }
+  }
+
+  static getVocalIsolation(): 'off' | 'karaoke' | 'vocals' {
+    return this.vocalMode;
   }
 
   static async setSinkId(deviceId: string): Promise<boolean> {
@@ -268,8 +302,20 @@ export class AudioEngine {
     }
   }
 
+  static fillWaveform(out: Float32Array): void {
+    if (!this.analyserNode || !this.isPlaying || !this.dataArray || this.audio !== this.graphEl) {
+      out.fill(0);
+      return;
+    }
+    (this.analyserNode as unknown as { getByteTimeDomainData: (arr: Uint8Array) => void }).getByteTimeDomainData(this.dataArray);
+    const step = this.dataArray.length / out.length;
+    for (let i = 0; i < out.length; i++) {
+      out[i] = ((this.dataArray[Math.floor(i * step)] || 128) - 128) / 128;
+    }
+  }
+
   static onEnded(cb: () => void) { this.onEndedCallbacks.push(cb); }
-  static onTimeUpdate(cb: (t: number, d: number) => void) { this.onTimeUpdateCallbacks.push(cb); }
+  static onTimeUpdate(cb: (t: number, d: number, b?: number) => void) { this.onTimeUpdateCallbacks.push(cb); }
   static onStateChange(cb: (p: boolean) => void) { this.onStateChangeCallbacks.push(cb); }
   static onError(cb: () => void) { this.onErrorCallbacks.push(cb); }
   static onStall(cb: () => void) { this.onStallCallbacks.push(cb); }
@@ -317,6 +363,7 @@ interface PlayerState {
   lyrics: LyricLine[];
   sleepAt: number | null;
   devices: AudioDevice[];
+  vocalIsolation: 'off' | 'karaoke' | 'vocals';
 }
 
 export const playerStore = createStore<PlayerState>({
@@ -330,9 +377,10 @@ export const playerStore = createStore<PlayerState>({
   lyrics: parseLrc(SEED_TRACKS[0]?.lrcLyrics),
   sleepAt: null,
   devices: [],
+  vocalIsolation: 'off',
 });
 
-export const timeStore = createStore({ time: 0, duration: 0 });
+export const timeStore = createStore({ time: 0, duration: 0, buffered: 0 });
 
 let sleepTimer: number | undefined;
 
@@ -355,8 +403,8 @@ export function bootPlayer() {
   if (booted) return;
   booted = true;
   AudioEngine.initialize();
-  AudioEngine.onTimeUpdate((time, duration) => {
-    timeStore.set({ time, duration });
+  AudioEngine.onTimeUpdate((time, duration, buffered = 0) => {
+    timeStore.set({ time, duration, buffered });
     const { track } = playerStore.get();
     if (track && isSpoken(track)) {
       saveProgress(track.id, time);
@@ -409,7 +457,7 @@ export function playTrack(track: Track, newQueue?: Track[]) {
   const lyrics = parseLrc(track.lrcLyrics);
 
   playerStore.set({ track, queue, isPlaying: true, lyrics });
-  timeStore.set({ time: 0, duration: track.durationSeconds });
+  timeStore.set({ time: 0, duration: track.durationSeconds, buffered: 0 });
   applyAccent(track);
   updateMediaSession(track);
   retriedId = null;
@@ -501,6 +549,11 @@ export function setSpeed(speed: number) {
 export function setEQ(eq: [number, number, number], preset?: string) {
   settingsStore.set({ eq, eqPreset: preset ?? 'custom' });
   AudioEngine.setEQ(eq);
+}
+
+export function setVocalIsolation(mode: 'off' | 'karaoke' | 'vocals') {
+  playerStore.set({ vocalIsolation: mode });
+  AudioEngine.setVocalIsolation(mode);
 }
 
 export function setSleep(mins: number | null) { scheduleSleep(mins); }

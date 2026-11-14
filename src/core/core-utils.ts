@@ -21,12 +21,13 @@ import type { BookmarkKind, Route } from './core-types';
 export const cn = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' ');
 
 export function formatTime(secs: number): string {
-  if (!Number.isFinite(secs) || secs < 0) return '0:00';
+  if (!Number.isFinite(secs) || secs < 0) return '00:00';
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   const s = Math.floor(secs % 60);
+  const mm = m.toString().padStart(2, '0');
   const ss = s.toString().padStart(2, '0');
-  return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
 export function formatDuration(secs: number): string {

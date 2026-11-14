@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گزارش جامع مقایسه و معماری vyv Player</title>
+    <style>
+        @import url('https://v1.fontapi.ir/css/Vazir');
+        
+        :root {
+            --bg-color: #f5f5f7;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(0, 0, 0, 0.06);
+            --text-main: #1d1d1f;
+            --text-muted: #515154;
+            --text-light: #86868b;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            --accent-black: #000000;
+            --accent-gray: #424245;
+            --accent-light-gray: #d2d2d7;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --glass-bg: rgba(28, 28, 30, 0.5);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --text-main: #f5f5f7;
+                --text-muted: #a1a1a6;
+                --text-light: #6e6e73;
+                --shadow: 0 10px 40px rgba(255, 255, 255, 0.03);
+                --accent-black: #ffffff;
+                --accent-gray: #d2d2d7;
+                --accent-light-gray: #424245;
+            }
+        }
+
+        body {
+            font-family: 'Vazir', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(120, 120, 120, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(60, 60, 60, 0.05), transparent 25%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-light-gray); border-radius: 10px; }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 50px;
+            margin-bottom: 50px;
+            box-shadow: var(--shadow);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .glass-card:hover { border-color: rgba(255,255,255,0.15); }
+        }
+
+        h1, h2, h3, h4 {
+            font-weight: 800;
+            margin-top: 0;
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            font-size: 3.8rem;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--accent-black);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            margin-bottom: 80px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background: var(--accent-black);
+            margin-left: 15px;
+            border-radius: 4px;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: var(--accent-gray);
+            margin-bottom: 20px;
+        }
+
+        p, li {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+        }
+
+        ul {
+            padding-right: 25px;
+            list-style-type: none;
+        }
+
+        li {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        ul.bullet-list li::before {
+            content: '■';
+            position: absolute;
+            right: -20px;
+            top: 2px;
+            font-size: 0.7rem;
+            color: var(--accent-black);
+        }
+
+        /* Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+        }
+
+        /* Comparison Table/Boxes */
+        .comparison-box {
+            background: rgba(150, 150, 150, 0.04);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 35px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .comparison-box::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-black);
+            opacity: 0.2;
+        }
+        .comparison-box.dop2::after { background: var(--text-light); }
+        .comparison-box.dop3::after { background: var(--accent-black); }
+
+        .pro, .con {
+            position: relative;
+            padding-right: 25px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+        .pro { color: var(--text-main); font-weight: 500; }
+        .pro::before {
+            content: '+';
+            position: absolute;
+            right: 0;
+            color: var(--accent-black);
+            font-size: 1.2rem;
+            font-weight: bold;
+            top: -2px;
+        }
+        .con { color: var(--text-muted); }
+        .con::before {
+            content: '−';
+            position: absolute;
+            right: 0;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            font-weight: bold;
+            top: -2px;
+        }
+
+        /* Badges / Tags */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 18px;
+            background: var(--accent-black);
+            color: var(--bg-color);
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .feature-tag.outline {
+            background: transparent;
+            color: var(--accent-black);
+            border: 1.5px solid var(--accent-black);
+        }
+
+        .feature-tag.gray {
+            background: var(--accent-light-gray);
+            color: var(--text-main);
+            border: none;
+        }
+
+        /* Tech Stack Cards */
+        .tech-card {
+            display: flex;
+            flex-direction: column;
+            padding: 35px;
+            border-radius: 20px;
+            background: rgba(128, 128, 128, 0.02);
+            border: 1px solid var(--glass-border);
+            text-align: right;
+            transition: border-color 0.3s;
+        }
+        .tech-card:hover {
+            border-color: var(--accent-black);
+        }
+        
+        .tech-card.recommended {
+            background: rgba(0,0,0,0.03);
+            border: 2px solid var(--accent-black);
+            position: relative;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+             .tech-card.recommended {
+                 background: rgba(255,255,255,0.05);
+             }
+        }
+
+        .tech-card.recommended::before {
+            content: 'انتخاب پیشنهادی';
+            position: absolute;
+            top: -12px;
+            right: 30px;
+            background: var(--accent-black);
+            color: var(--bg-color);
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--glass-border);
+            border-radius: 3px;
+            margin-top: auto;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: var(--accent-black);
+            border-radius: 3px;
+        }
+
+        /* Architecture Diagram */
+        .arch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 40px 0;
+        }
+        
+        .arch-layer {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+            text-align: center;
+            border-radius: 16px;
+            border: 1px solid var(--accent-light-gray);
+            background: rgba(150,150,150,0.05);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent-black);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .arch-box {
+            padding: 8px 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .arch-arrow {
+            color: var(--text-light);
+            font-size: 1.2rem;
+        }
+
+        .highlight-text {
+            color: var(--accent-black);
+            font-weight: bold;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: var(--glass-border);
+            margin: 50px 0;
+        }
+        
+        .ai-assist-box {
+            border-right: 4px solid var(--accent-black);
+            padding-right: 20px;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02));
+            margin: 30px 0;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            border-radius: 8px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .ai-assist-box { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03)); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>vyv Player</h1>
+    <div class="subtitle">
+        گزارش مقایسه‌ای معماری، تحلیل بدهی‌های فنی و نقشه راه توسعه استک نسل آینده (Premium Liquid Glass Edition)
+    </div>
+
+    <!-- Section 1: Comparative Analysis -->
+    <div class="glass-card">
+        <h2>۱. تحلیل تقابلی: Dopamine 2 در برابر Dopamine 3</h2>
+        <p>
+            برای خلق <span class="highlight-text">vyv Player</span>، ابتدا باید بدانیم از کجا آمده‌ایم. پروژه‌های Dopamine 2 و Dopamine 3 هر کدام در دوران خود دستاوردهای مهمی داشته‌اند، اما هر یک دارای نقص‌های بنیادین و بدهی‌های فنی سنگینی هستند که مانع از گسترش آن‌ها به یک اکوسیستم مدرن (ویندوز، مک، لینوکس، اندروید و iOS) می‌شود.
+        </p>
+        
+        <div class="grid-2">
+            <div class="comparison-box dop2">
+                <h3>Dopamine 2 (WPF / C#)</h3>
+                <div class="tags-container">
+                    <span class="feature-tag outline">Native Windows</span>
+                    <span class="feature-tag outline">CSCore Audio</span>
+                </div>
+                <div class="pro">مصرف رم بسیار پایین و عملکرد بهینه بومی.</div>
+                <div class="pro">طراحی ماژولار و ساختار چند پروژه‌ای تمیز.</div>
+                <div class="pro">حالت‌های مختلف رابط کاربری: Cover, Micro, Nano.</div>
+                <div class="con">بدهی فنی رابط کاربری: فریم‌ورک قدیمی Metro/WPF با گوشه‌های گرد ویندوز ۱۱ و Snap Layouts ناسازگار است.</div>
+                <div class="con">موتور صوتی رها شده (CSCore) که در سیستم‌های مدرن باگ‌های توقف/پخش (Pops/Clicks) دارد.</div>
+                <div class="con">کاملاً محدود به ویندوز. امکان پورت به موبایل یا لینوکس/مک صفر است.</div>
+                <div class="con">حفره‌های امنیتی در کتابخانه‌های قدیمی (ZipSlip, FFmpeg قدیمی).</div>
+            </div>
+
+            <div class="comparison-box dop3">
+                <h3>Dopamine 3 (Electron / Angular)</h3>
+                <div class="tags-container">
+                    <span class="feature-tag outline">Cross-Platform</span>
+                    <span class="feature-tag outline">Web Audio API</span>
+                </div>
+                <div class="pro">پشتیبانی کراس‌پلتفرم برای ویندوز، لینوکس و مک.</div>
+                <div class="pro">استخراج رنگ هوشمند از کاور آلبوم (node-vibrant).</div>
+                <div class="pro">معماری دیتابیس قوی‌تر (Knex) و سیستم پشتیبان‌گیری JSON.</div>
+                <div class="con">مصرف وحشتناک منابع (RAM) به دلیل استفاده از Electron و دیکد کامل فایل‌ها در حافظه (Gapless).</div>
+                <div class="con">حذف شدن فرم‌های محبوب پخش‌کننده (عدم وجود Micro و Nano).</div>
+                <div class="con">محدودیت‌های فرمت صوتی مرورگر Chromium (عدم پشتیبانی مناسب از WMA, ALAC, ASIO).</div>
+                <div class="con">پیکربندی امنیتی خطرناک Electron (nodeIntegration: true) و آسیب‌پذیری‌های XSS.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Vision & Inherited Features -->
+    <div class="glass-card">
+        <h2>۲. چشم‌انداز vyv Player و ویژگی‌های موروثی</h2>
+        <p>
+            پروژه <strong>vyv Player</strong> صرفاً یک پخش‌کننده نیست؛ یک اکوسیستم صوتی مدرن، مینیمال و مبتنی بر هوش مصنوعی است. رابط کاربری آن دقیقاً مشابه همین سند خواهد بود: یک <em>Liquid Glass</em> تک‌رنگ (سفید، سیاه، خاکستری) که تمرکز را تماماً به کاور آرت موزیک و محتوا معطوف می‌کند.
+        </p>
+        
+        <h3>ویژگی‌های استخراج شده برای انتقال به vyv Player:</h3>
+        <ul class="bullet-list">
+            <li><span class="highlight-text">فرم‌های چندگانه و داینامیک (از Dopamine 2):</span> بازگرداندن حالت‌های Nano Player، Micro Player، Cover Player و Full Player به صورت پنجره‌های شناور و بدون حاشیه.</li>
+            <li><span class="highlight-text">استخراج هوشمند رنگ (از Dopamine 3):</span> اما به جای رنگ‌آمیزی کل رابط کاربری، رنگ‌ها صرفاً به صورت سایه‌های ملایم (Glow) در پس‌زمینه شیشه‌ای محو می‌شوند تا پالت سیاه-سفید-خاکستری حفظ شود.</li>
+            <li><span class="highlight-text">دیتابیس مقاوم (از Dopamine 3):</span> سیستم پشتیبان‌گیری امتیازات و پلی‌لیست‌ها.</li>
+        </ul>
+
+        <hr>
+
+        <h3>قابلیت‌های نوین و نسل آینده (Next-Gen Features):</h3>
+        <ul class="bullet-list">
+            <li><strong>توزیع ویندوز مدرن (Modern Windows App):</strong> انتشار به صورت اپلیکیشن یکپارچه ویندوزی (MSIX / Windows Store) بدون نصب‌کننده‌های کلاسیک، با پشتیبانی کامل از انیمیشن‌های Windows 11، Mica و Acrylic.</li>
+            <li><strong>پشتیبانی از پلتفرم‌های موبایل (Android & iOS):</strong> توسعه یکپارچه به همراه ویجت‌های شخصی‌سازی شده برای صفحه نمایش گوشی.</li>
+            <li><strong>پلتفرم‌های استریم یکپارچه:</strong> جستجو و پخش مستقیم از YouTube و Spotify در کنار فایل‌های محلی.</li>
+            <li><strong>AI-Agent داخلی (MCP):</strong> یک دستیار هوش مصنوعی محلی که می‌تواند بر اساس حس‌وحال شما پلی‌لیست بسازد، متن آهنگ را تفسیر کند، در وب جستجو کند و دیتابیس موسیقی شما را سازماندهی نماید.</li>
+            <li><strong>هویت بصری لوکس:</strong> تایپوگرافی اختصاصی، آیکون‌های مینیمال و متریال، انیمیشن‌های روان ۶۰ فریم و پشتیبانی کامل از زبان‌های مختلف از جمله فارسی (RTL).</li>
+            <li><strong>Landing Page یکپارچه:</strong> طراحی داخلی صفحه لندینگ برای معرفی امکانات اپلیکیشن.</li>
+        </ul>
+    </div>
+
+    <!-- Section 3: Architecture & Tech Stack Evaluation -->
+    <div class="glass-card">
+        <h2>۳. ارزیابی معماری نرم‌افزاری و استک تکنولوژی</h2>
+        <p>
+            با توجه به خواسته‌های شما (رابط کاربری فوق‌العاده مدرن، پشتیبانی از ویندوز، مک، لینوکس، <strong>و همچنین موبایل</strong>)، انتخاب تکنولوژی بسیار حساس است. فریم‌ورک‌های قدیمی مانند WPF یا Electron پاسخگوی این نیاز همه‌جانبه نیستند (Electron از موبایل پشتیبانی نمی‌کند، WPF فقط ویندوز است). 
+        </p>
+        <p>
+            همچنین توسعه این اپلیکیشن با دستیاران هوش مصنوعی پیشرفته مانند <strong>Claude 3.5 Sonnet / Opus 5.5</strong> و <strong>Gemini Pro 3.1</strong> انجام خواهد شد، بنابراین استک انتخابی باید دارای مستندات غنی، ساختار کدهای واضح و اکوسیستم مدرن باشد تا AI بهترین عملکرد را در تولید کد داشته باشد.
+        </p>
+
+        <div class="grid-3">
+            <!-- Option 1 -->
+            <div class="tech-card recommended">
+                <h3>.NET MAUI + Blazor Hybrid</h3>
+                <div class="tags-container">
+                    <span class="feature-tag gray">C#</span>
+                    <span class="feature-tag gray">Web UI</span>
+                    <span class="feature-tag gray">All Platforms</span>
+                </div>
+                <p>
+                    <strong>بهترین گزینه معماری:</strong> با ترکیب MAUI و Blazor، شما منطق صوتی قدرتمند C# (مثلاً استفاده از ManagedBass که عالیست) را با رابط کاربری وب (HTML/CSS برای استایل Liquid Glass) ترکیب می‌کنید. خروجی آن در ویندوز یک اپلیکیشن مدرن (WinUI 3/MSIX) و در اندروید/iOS اپلیکیشن نیتیو موبایل است.
+                </p>
+                <div class="score-bar"><div class="score-fill" style="width: 95%;"></div></div>
+                <small>سازگاری با AI: بسیار بالا</small>
+            </div>
+
+            <!-- Option 2 -->
+            <div class="tech-card">
+                <h3>Tauri V2 (Rust + React/Vue)</h3>
+                <div class="tags-container">
+                    <span class="feature-tag gray">Rust</span>
+                    <span class="feature-tag gray">TS</span>
+                    <span class="feature-tag gray">Lightweight</span>
+                </div>
+                <p>
+                    <strong>جایگزین مدرن برای Electron:</strong> مصرف رم نزدیک به صفر، حجم فایل اجرایی زیر ۱۰ مگابایت. نسخه ۲ آن از موبایل هم پشتیبانی می‌کند. برای ساخت رابط کاربری Liquid Glass با فریم‌ورک‌های مدرن جاوااسکریپت عالی است، اما کار با موتور صوتی در زبان Rust نیاز به تخصص بالایی دارد.
+                </p>
+                <div class="score-bar"><div class="score-fill" style="width: 80%;"></div></div>
+                <small>سازگاری با AI: متوسط (Rust برای AI چالش‌برانگیز است)</small>
+            </div>
+
+            <!-- Option 3 -->
+            <div class="tech-card">
+                <h3>Flutter / Dart</h3>
+                <div class="tags-container">
+                    <span class="feature-tag gray">Dart</span>
+                    <span class="feature-tag gray">Skia Canvas</span>
+                </div>
+                <p>
+                    <strong>بهترین برای موبایل:</strong> فلاتر روی تمام پلتفرم‌ها خروجی می‌گیرد. انیمیشن‌های ۶۰ فریم و طراحی رابط کاربری اختصاصی به راحتی قابل پیاده‌سازی است. نقطه ضعف آن، پلاگین‌های صوتی دسکتاپ است که هنوز به بلوغ کافی نرسیده‌اند و ممکن است در ویندوز/مک نیاز به نوشتن کدهای نیتیو (C++) داشته باشد.
+                </p>
+                <div class="score-bar"><div class="score-fill" style="width: 85%;"></div></div>
+                <small>سازگاری با AI: بالا</small>
+            </div>
+        </div>
+
+        <div class="ai-assist-box">
+            <h4>💡 تصمیم‌گیری استراتژیک برای AI-Agent Development</h4>
+            <p>
+                پیشنهاد قطعی معماری برای پروژه <strong>vyv Player</strong>، استفاده از <strong>.NET MAUI Blazor Hybrid</strong> است. دلایل:
+                <br>۱. ما می‌توانیم از کدهای بک‌اند C# پروژه‌های Dopamine به عنوان رفرنس برای هوش مصنوعی استفاده کنیم و آنها را سریعاً پورت کنیم.
+                <br>۲. ساخت UI شیشه‌ای (Liquid Glass) و استایل‌های تیره/روشن/خاکستری در CSS/HTML بسیار راحت‌تر از XAML (WPF) است.
+                <br>۳. خروجی در ویندوز به شکل یک اپلیکیشن کاملاً مدرن سیستم‌عامل (Windows App) خواهد بود و موبایل به صورت بومی رندر می‌شود.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 4: Architecture Diagram & MCP Integration -->
+    <div class="glass-card">
+        <h2>۴. معماری سیستم و ادغام هوش مصنوعی (MCP)</h2>
+        <p>
+            معماری زیر برای پشتیبانی از پخش محلی، استریمینگ آنلاین و یکپارچه‌سازی عامل هوش مصنوعی (AI-Agent) طراحی شده است. پروتکل <strong>MCP (Model Context Protocol)</strong> به AI اجازه می‌دهد تا به عنوان یک دستیار به دیتابیس موسیقی شما دسترسی داشته باشد و دستورات شما را اجرا کند.
+        </p>
+
+        <div class="arch-container">
+            <div class="arch-layer">
+                رابط کاربری هیبریدی (Liquid Glass UI)
+                <div class="arch-box">React/Next.js یا Blazor Web</div>
+            </div>
+            
+            <div class="arch-arrow">↓ Bridge ↓</div>
+            
+            <div class="arch-layer">
+                لایه منطق مرکزی (Core Logic)
+                <div class="arch-box">مدیریت وضعیت</div>
+                <div class="arch-box">سیستم پشتیبان‌گیری JSON</div>
+                <div class="arch-box">موتور جستجوی محلی</div>
+            </div>
+            
+            <div class="arch-arrow">↓ ارتباط دوطرفه ↓</div>
+            
+            <div class="arch-layer">
+                <div class="arch-box">
+                    <strong>AI-Agent (MCP Server)</strong><br>
+                    <span style="font-weight:normal; font-size: 0.85rem;">جستجوی وب / ساخت پلی‌لیست هوشمند / تفسیر متون</span>
+                </div>
+                <div class="arch-box">
+                    <strong>API استریمینگ</strong><br>
+                    <span style="font-weight:normal; font-size: 0.85rem;">YouTube Audio / Spotify SDK</span>
+                </div>
+                <div class="arch-box">
+                    <strong>موتور صوتی نیتیو</strong><br>
+                    <span style="font-weight:normal; font-size: 0.85rem;">ManagedBass / دکودرهای سخت‌افزاری</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 60px; color: var(--text-light); font-size: 0.9rem;">
+        طراحی و معماری شده توسط دستیار هوش مصنوعی | پروژه vyv Player | ۲۰۲۴
+    </div>
+</div>
+
+</body>
+</html>

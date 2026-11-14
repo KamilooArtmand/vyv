@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کالبدشکافی عمیق، تحلیل فنی و درس‌های معماری Dopamine 3</title>
+  
+  <!-- فونت وزیرمتن برای تایپوگرافی تمیز، مدرن و خوانای فارسی -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+
+  <style>
+    /* پالت رنگی کاملاً اختصاصی: سفید، خاکستری، سیاه (Monochrome Pure Grayscale) بدون هیچ رنگ اضافی */
+    :root {
+      --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      
+      --c-pure-white: #ffffff;
+      --c-off-white: #f8fafc;
+      --c-gray-50: #f1f5f9;
+      --c-gray-100: #e2e8f0;
+      --c-gray-200: #cbd5e1;
+      --c-gray-300: #94a3b8;
+      --c-gray-400: #64748b;
+      --c-gray-500: #475569;
+      --c-gray-600: #334155;
+      --c-gray-700: #1e293b;
+      --c-gray-800: #0f172a;
+      --c-pure-black: #000000;
+
+      --bg-ambient: radial-gradient(at 0% 0%, rgba(226, 232, 240, 0.6) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.8) 0px, transparent 50%),
+                    radial-gradient(at 50% 100%, rgba(203, 213, 225, 0.4) 0px, transparent 50%),
+                    radial-gradient(at 0% 100%, rgba(248, 250, 252, 0.7) 0px, transparent 50%),
+                    #f8fafc;
+
+      --glass-bg: rgba(255, 255, 255, 0.75);
+      --glass-bg-subtle: rgba(255, 255, 255, 0.5);
+      --glass-bg-hover: rgba(255, 255, 255, 0.95);
+      --glass-border: rgba(255, 255, 255, 0.9);
+      --glass-border-subtle: rgba(148, 163, 184, 0.25);
+      --glass-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(0, 0, 0, 0.02);
+      --glass-shadow-lg: 0 24px 60px -15px rgba(15, 23, 42, 0.12), 0 8px 20px rgba(0, 0, 0, 0.03);
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-pill: 9999px;
+
+      --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-ambient);
+      background-attachment: fixed;
+      color: var(--c-gray-800);
+      line-height: 1.8;
+      font-size: 14.5px;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 80px;
+    }
+
+    /* Ambient Liquid Orbs در مقیاس خاکستری */
+    .ambient-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .ambient-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      animation: floatOrb 25s infinite alternate ease-in-out;
+    }
+    .orb-1 { width: 520px; height: 520px; top: -120px; left: -100px; background: rgba(148, 163, 184, 0.35); }
+    .orb-2 { width: 480px; height: 480px; bottom: 5%; right: -80px; background: rgba(203, 213, 225, 0.45); animation-delay: -7s; }
+    .orb-3 { width: 420px; height: 420px; top: 35%; left: 35%; background: rgba(100, 116, 139, 0.2); animation-delay: -14s; }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(50px, 35px) scale(1.06); }
+      100% { transform: translate(-35px, 60px) scale(0.96); }
+    }
+
+    /* کانتینر اصلی */
+    .app-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* کارت‌های شیشه مایع تک‌رنگ (Monochrome Liquid Glass) */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glass-shadow);
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+    .glass-card:hover {
+      box-shadow: var(--glass-shadow-lg);
+      border-color: rgba(255, 255, 255, 1);
+    }
+
+    /* هدر اصلی */
+    header.hero-header {
+      padding: 36px 40px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      border-top: 2px solid var(--c-gray-700);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand-icon-box {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--c-gray-800) 0%, var(--c-gray-600) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3);
+      color: var(--c-pure-white);
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .brand-titles h1 {
+      font-size: 25px;
+      font-weight: 800;
+      color: var(--c-gray-800);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-titles p {
+      font-size: 13.5px;
+      color: var(--c-gray-500);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    /* برچسب‌های مونوکروم (Monochrome Badges) */
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 13px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--c-gray-200);
+      white-space: nowrap;
+      background: var(--c-pure-white);
+      color: var(--c-gray-700);
+    }
+    .badge-dark {
+      background: var(--c-gray-800);
+      color: var(--c-pure-white);
+      border-color: var(--c-gray-800);
+    }
+    .badge-mid {
+      background: var(--c-gray-600);
+      color: var(--c-pure-white);
+      border-color: var(--c-gray-600);
+    }
+    .badge-outline {
+      background: transparent;
+      color: var(--c-gray-700);
+      border-color: var(--c-gray-400);
+    }
+    .badge-subtle {
+      background: var(--c-gray-100);
+      color: var(--c-gray-600);
+      border-color: var(--c-gray-200);
+    }
+
+    /* نوار متریک‌ها */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+    }
+    .metric-pill {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--glass-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: var(--transition-smooth);
+    }
+    .metric-pill:hover {
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      border-color: var(--c-gray-300);
+    }
+    .metric-label {
+      font-size: 11.5px;
+      color: var(--c-gray-400);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .metric-value {
+      font-size: 18.5px;
+      font-weight: 800;
+      color: var(--c-gray-800);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .metric-sub {
+      font-size: 11px;
+      color: var(--c-gray-500);
+      font-weight: 400;
+    }
+
+    /* نوار کنترل، جستجو و فیلتر */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 14px 22px;
+      margin-bottom: 24px;
+    }
+    .search-box-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+    .search-box {
+      width: 100%;
+      padding: 11px 40px 11px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--c-gray-200);
+      background: rgba(255, 255, 255, 0.9);
+      font-family: var(--font-family);
+      font-size: 13.5px;
+      color: var(--c-gray-800);
+      outline: none;
+      transition: var(--transition-smooth);
+    }
+    .search-box:focus {
+      border-color: var(--c-gray-700);
+      box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+      background: var(--c-pure-white);
+    }
+    .search-icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--c-gray-400);
+      pointer-events: none;
+      font-size: 15px;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 7px 15px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--c-gray-200);
+      background: rgba(255, 255, 255, 0.7);
+      font-family: var(--font-family);
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--c-gray-600);
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-btn:hover {
+      background: var(--c-pure-white);
+      color: var(--c-pure-black);
+      border-color: var(--c-gray-400);
+    }
+    .filter-btn.active {
+      background: var(--c-gray-800);
+      color: var(--c-pure-white);
+      border-color: var(--c-gray-800);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+    }
+
+    /* نوار تب‌های SPA */
+    .tabs-nav {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--c-gray-300) transparent;
+    }
+    .tabs-nav::-webkit-scrollbar { height: 6px; }
+    .tabs-nav::-webkit-scrollbar-thumb { background: var(--c-gray-300); border-radius: 4px; }
+
+    .tab-nav-btn {
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-gray-500);
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .tab-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--c-gray-800);
+    }
+    .tab-nav-btn.active {
+      background: var(--c-pure-white);
+      color: var(--c-pure-black);
+      border-color: var(--c-gray-200);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+      font-weight: 700;
+    }
+
+    /* محتوای تب‌ها */
+    .tab-section {
+      display: none;
+      animation: fadeInTab 0.3s ease-out forwards;
+    }
+    .tab-section.active {
+      display: block;
+    }
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* هدر سکشن */
+    .section-header {
+      padding: 22px 28px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-right: 4px solid var(--c-gray-800);
+    }
+    .section-title {
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--c-gray-800);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: var(--c-gray-500);
+      margin-top: 3px;
+    }
+
+    /* ساختارهای گرید */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    /* کارت‌های داخلی */
+    .item-card {
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .item-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .item-card-title {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--c-gray-800);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .item-card-body {
+      font-size: 13.8px;
+      color: var(--c-gray-600);
+      line-height: 1.8;
+    }
+    .item-card-body p {
+      margin-bottom: 10px;
+    }
+    .item-card-body ul, .item-card-body ol {
+      padding-right: 22px;
+      margin-bottom: 10px;
+    }
+    .item-card-body li {
+      margin-bottom: 5px;
+    }
+
+    /* بلوک کد مونوکروم */
+    .code-block {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: Consolas, 'Cascadia Code', monospace;
+      font-size: 12.5px;
+      direction: ltr;
+      text-align: left;
+      overflow-x: auto;
+      border: 1px solid var(--c-gray-600);
+      margin: 12px 0;
+      line-height: 1.6;
+    }
+    .code-comment { color: #94a3b8; font-style: italic; }
+    .code-keyword { color: #ffffff; font-weight: bold; }
+    .code-type { color: #cbd5e1; }
+    .code-string { color: #94a3b8; }
+    .code-alert { color: #ffffff; background: #334155; padding: 1px 4px; border-radius: 4px; }
+
+    /* جداول مونوکروم */
+    .table-container {
+      overflow-x: auto;
+      margin: 14px 0;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--c-gray-200);
+    }
+    table.liquid-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+      font-size: 13.5px;
+    }
+    table.liquid-table th {
+      background: var(--c-gray-100);
+      padding: 13px 18px;
+      font-weight: 700;
+      color: var(--c-gray-800);
+      border-bottom: 1px solid var(--c-gray-200);
+      white-space: nowrap;
+    }
+    table.liquid-table td {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--c-gray-100);
+      color: var(--c-gray-600);
+    }
+    table.liquid-table tr:hover td {
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--c-pure-black);
+    }
+
+    /* بنرهای اعلان (Callouts) در تنالیته مونوکروم */
+    .callout {
+      padding: 15px 18px;
+      border-radius: var(--radius-md);
+      margin: 12px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13.5px;
+      line-height: 1.7;
+    }
+    .callout-dark {
+      background: var(--c-gray-800);
+      border: 1px solid var(--c-gray-700);
+      color: var(--c-pure-white);
+    }
+    .callout-subtle {
+      background: var(--c-gray-100);
+      border: 1px solid var(--c-gray-200);
+      color: var(--c-gray-700);
+    }
+    .callout-bordered {
+      background: var(--c-pure-white);
+      border: 1px solid var(--c-gray-400);
+      color: var(--c-gray-800);
+    }
+
+    /* تایم‌لاین و رودمپ مونوکروم */
+    .timeline {
+      position: relative;
+      padding: 16px 0;
+      margin: 16px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 22px;
+      width: 2px;
+      background: var(--c-gray-300);
+    }
+    .timeline-item {
+      position: relative;
+      padding-right: 56px;
+      margin-bottom: 26px;
+    }
+    .timeline-dot {
+      position: absolute;
+      right: 14px;
+      top: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--c-pure-white);
+      border: 4px solid var(--c-gray-800);
+      box-shadow: 0 0 0 3px var(--c-gray-200);
+    }
+    .timeline-content {
+      background: rgba(255, 255, 255, 0.75);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    /* فوتر */
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--c-gray-400);
+      font-size: 12.5px;
+      border-top: 1px solid var(--c-gray-200);
+      margin-top: 40px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .header-top { flex-direction: column; align-items: flex-start; }
+      .timeline::before { right: 12px; }
+      .timeline-dot { right: 3px; }
+      .timeline-item { padding-right: 36px; }
+      .app-container { padding: 12px; }
+      header.hero-header { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- جلوه‌های بلور شناور مونوکروم -->
+  <div class="ambient-container">
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+
+    <!-- هدر اصلی و خلاصه متریک‌های پروژه Dopamine 3 -->
+    <header class="hero-header glass-card">
+      <div class="header-top">
+        <div class="brand-group">
+          <div class="brand-icon-box">
+            <span>D3</span>
+          </div>
+          <div class="brand-titles">
+            <h1>کالبدشکافی عمیق و تحلیل فنی پروژه Dopamine 3</h1>
+            <p>بررسی زیرسیستم‌های Electron + Angular، معماری صوتی Web Audio API، نوآوری‌ها، آسیب‌پذیری‌های امنیتی و درس‌های آموخته‌شده</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="badge-pill badge-dark">مخزن: digimezzo/dopamine</span>
+          <span class="badge-pill badge-mid">نسخه فعلی: 3.0.11</span>
+          <span class="badge-pill badge-subtle">مسیر محلی: vyv-player/dopamine3</span>
+        </div>
+      </div>
+
+      <!-- نوار شاخص‌های کلیدی کالبدشکافی -->
+      <div class="metrics-bar">
+        <div class="metric-pill">
+          <span class="metric-label">پلتفرم و معماری ران‌تایم</span>
+          <div class="metric-value">Electron 38 <span class="metric-sub">+ Node.js</span></div>
+          <span class="metric-sub">ران‌تایم کرومیوم و وب اپلیکیشن دسکتاپ</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">فریم‌ورک رابط کاربری</span>
+          <div class="metric-value">Angular 16 <span class="metric-sub">TypeScript 4.9</span></div>
+          <span class="metric-sub">RxJS 6.6 + Angular Material + CDK</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">موتور پردازش صوت</span>
+          <div class="metric-value">Web Audio API <span class="metric-sub">HTML5 Audio</span></div>
+          <span class="metric-sub">معماری سه‌گانه: Legacy, Gapless, Crossfade</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">موتور ذخیره‌سازی داده</span>
+          <div class="metric-value">better-sqlite3 <span class="metric-sub">v12.5 (C++)</span></div>
+          <span class="metric-sub">پایگاه داده همگام بومی با ۱۳ مرحله مایگریشن</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">سطح ریسک امنیتی رندرِر</span>
+          <div class="metric-value">بحرانی <span class="metric-sub">P0</span></div>
+          <span class="metric-sub">webSecurity: false & nodeIntegration: true</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- نوار جستجو و فیلتر درجه اولویت -->
+    <div class="controls-bar glass-card">
+      <div class="search-box-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-box" placeholder="جستجوی بلادرنگ در ماژول‌ها، معماری، تکنیک‌ها، امنیت، باگ‌ها و ایده‌ها...">
+      </div>
+      <div class="filter-pills">
+        <button class="filter-btn active" data-filter="all">همه مباحث</button>
+        <button class="filter-btn" data-filter="p0">● اولویت بحرانی (P0)</button>
+        <button class="filter-btn" data-filter="p1">● اولویت بالا (P1)</button>
+        <button class="filter-btn" data-filter="p2">● اولویت متوسط (P2)</button>
+        <button class="filter-btn" data-filter="lessons">○ نوآوری و درس‌ها</button>
+      </div>
+    </div>
+
+    <!-- تب‌های ناوبری SPA -->
+    <nav class="tabs-nav glass-card">
+      <button class="tab-nav-btn active" data-tab="tab-overview">📋 ۱. شناسنامه و هویت پروژه</button>
+      <button class="tab-nav-btn" data-tab="tab-stack">⚙️ ۲. پشته فنی و معماری Electron + Angular</button>
+      <button class="tab-nav-btn" data-tab="tab-features">🎛️ ۳. کاتالوگ قابلیت‌ها و ویژگی‌ها</button>
+      <button class="tab-nav-btn" data-tab="tab-audio">🔊 ۴. کالبدشکافی موتور صوتی سه‌گانه</button>
+      <button class="tab-nav-btn" data-tab="tab-innovations">💡 ۵. نوآوری‌ها، تکنیک‌ها و درس‌های آموخته</button>
+      <button class="tab-nav-btn" data-tab="tab-security">🛡️ ۶. ممیزی آسیب‌پذیری‌های امنیتی</button>
+      <button class="tab-nav-btn" data-tab="tab-bugs">🐛 ۷. باگ‌ها، گلوگاه‌ها و بدهی فنی</button>
+      <button class="tab-nav-btn" data-tab="tab-design">🎨 ۸. دیزاین سیستم و ارزیابی UI/UX</button>
+      <button class="tab-nav-btn" data-tab="tab-compatibility">💻 ۹. سازگاری ویندوز ۱۱ و محدودیت فرمت‌ها</button>
+      <button class="tab-nav-btn" data-tab="tab-roadmap">🗺️ ۱۰. نقشه راه و ایده‌های تحول</button>
+    </nav>
+
+    <!-- تب ۱: شناسنامه و هویت پروژه -->
+    <section id="tab-overview" class="tab-section active">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>📋</span> شناسنامه، اهداف و فلسفه بازآفرینی Dopamine 3</h2>
+          <p class="section-desc">نگاهی جامع به هویت، اهداف چندسکویی (Cross-Platform) و دلایل کوچ سازنده به سمت وب‌تکنولوژی در نسخه ۳</p>
+        </div>
+        <span class="badge-pill badge-dark">پروفایل فنی</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">📖 تاریخچه و مأموریت Dopamine 3</h3>
+            <span class="badge-pill badge-outline">زمینه پیدایش</span>
+          </div>
+          <div class="item-card-body">
+            <p>پروژه <strong>Dopamine 3</strong> حاصل تصمیم استراتژیک سازنده برای خروج از انحصار ویندوز و دستیابی به یک پخش‌کننده چندسکویی برای لینوکس (AppImage, deb, rpm)، مک‌اواس (Intel, Apple Silicon) و ویندوز است.</p>
+            <p>در این نگارش، تمامی چارچوب نرم‌افزار بر پایه استک <strong>Electron + TypeScript + Angular 16</strong> بازنویسی شد تا یک کدبیس مشترک برای هر سه سیستم‌عامل ارائه دهد. پروژه دارای ۱۳۰۰ فایل سورس، لایه‌بندی ماژولار مبتنی بر معماری سرویس‌گرا در Angular و ماژول‌های بومی C++ برای عملیات دیتابیس و متادیتا است.</p>
+            <div class="callout callout-subtle">
+              <strong>نکته هویتی:</strong> تمرکز اصلی در Dopamine 3 بر سادگی ظاهری، انیمیشن‌های روان CSS، استخراج خودکار تم متناسب با کاور آلبوم و اجرای یکپارچه در گنو/لینوکس و مک علاوه بر ویندوز قرار گرفته است.
+            </div>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">📊 جدول شناسنامه فنی قطعات نرم‌افزار</h3>
+            <span class="badge-pill badge-dark">داده‌های سورس‌کد</span>
+          </div>
+          <div class="item-card-body">
+            <div class="table-container">
+              <table class="liquid-table">
+                <thead>
+                  <tr>
+                    <th>شاخص ساختاری</th>
+                    <th>مشخصات در پروژه Dopamine 3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>نام و نگارش</strong></td>
+                    <td>Dopamine v3.0.11 (کپی رایت ۲۰۱۴ - ۲۰۲۶)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>فریم‌ورک‌های رابط کاربری</strong></td>
+                    <td>Angular 16.2.12 + Angular Material + Angular CDK</td>
+                  </tr>
+                  <tr>
+                    <td><strong>موتور جاوااسکریپت و ران‌تایم</strong></td>
+                    <td>Node.js 18+ به همراه Chromium (بسته Electron 38)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>موتور پایگاه‌داده</strong></td>
+                    <td>better-sqlite3 12.5.0 (C++ Addon بومی)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>موتور پردازش متادیتا</strong></td>
+                    <td>@digimezzo/node-taglib-sharp 1.0.3 (بومی C++)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>سیستم تست خودکار</strong></td>
+                    <td>Jest 29.6.1 + ts-jest + Typemoq</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۲: پشته فنی و معماری هسته -->
+    <section id="tab-stack" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>⚙️</span> پشته فنی و معماری فرآیندی (Electron Main & Renderer)</h2>
+          <p class="section-desc">تحلیل نحوه تفکیک پردازش‌ها میان پروسس اصلی (Node.js) و پروسس رندرینگ (Angular)، سیستم IPC و ماژول‌های C++</p>
+        </div>
+        <span class="badge-pill badge-dark">کالبدشکافی زیرسیستم‌ها</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🖥️ پردازش اصلی (Main Process)</h3>
+            <span class="badge-pill badge-dark">main.ts</span>
+          </div>
+          <div class="item-card-body">
+            <p>در فایل <code>main.ts</code> مدیریت چرخه حیات پنجره‌ها، ترِی (Tray Icon)، کلیدهای میانبر سیستمی، تنظیم اندازه و موقعیت پنجره در رجیستری و سرویس Discord RPC انجام می‌شود:</p>
+            <ul>
+              <li><strong>مدیریت پنجره:</strong> تنظیم هندسه پنجره برای دو مود Full Player و Cover Player.</li>
+              <li><strong>کنترل تسک‌بار:</strong> ثبت دکمه‌های کنترلی Play/Pause/Next/Prev در تامب‌نیل نوار وظیفه ویندوز.</li>
+              <li><strong>سوئیچ‌های کرومیوم:</strong> غیرفعال کردن Color Correct Rendering و لغو محدودیت Autoplay Policy برای پخش آزاد صدا بدون تعامل اولیه کاربر.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🌐 پردازش رندر (Angular Renderer)</h3>
+            <span class="badge-pill badge-mid">src/app</span>
+          </div>
+          <div class="item-card-body">
+            <p>لایه کاربری کاملاً درون کانتینر Angular 16 اجرا می‌شود که به چهار بخش اصلی ساختاربندی شده است:</p>
+            <ul>
+              <li><strong>services:</strong> شامل ۳۹ سرویس تزریق‌پذیر (Injectable) برای مدیریت پخش، کاور، متادیتا، اسکنر فایل‌ها و تم‌ها.</li>
+              <li><strong>data:</strong> مدیریت موجودیت‌ها (Entities)، ریپازیتوری‌ها، الگوهای کوئری‌سازی و کلاس پایگاه داده.</li>
+              <li><strong>ui:</strong> کامپوننت‌های بصری، دایرکتیوها، انیمیشن‌های Angular و پایپ‌های سفارشی.</li>
+              <li><strong>common:</strong> توابع کمکی سیستم فایل، کار با تصاویر، رنگ‌ها و تنظیمات عمومی.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">⚡ ماژول‌های باینری بومی (C++ Addons)</h3>
+            <span class="badge-pill badge-outline">Native Addons</span>
+          </div>
+          <div class="item-card-body">
+            <p>برای پرهیز از افت پرفورمنس پردازش‌های سنگین در جاوااسکریپت، از دو پکیج C++ بومی استفاده شده است:</p>
+            <ul>
+              <li><strong>better-sqlite3:</strong> درایور مستقیم دیتابیس SQLite که بدون سربار Async/Promise به شکل همگام (Synchronous) روی ترد فراخواننده اجرا می‌شود و سرعت خواندن رکوردهای بزرگ را تا ۱۰ برابر افزایش می‌دهد.</li>
+              <li><strong>@digimezzo/node-taglib-sharp:</strong> پورت بومی کتابخانه TagLib# برای خواندن و نوشتن آنی تگ‌های ID3، Vorbis، MP4 و محاسبات ReplayGain در فایل‌های صوتی.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۳: کاتالوگ قابلیت‌ها و ویژگی‌ها -->
+    <section id="tab-features" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🎛️</span> کاتالوگ امکانات، ماژول‌ها و فیچرهای Dopamine 3</h2>
+          <p class="section-desc">فهرست‌بندی کامل امکانات کاربردی پیاده‌سازی شده در نسخه سوم برای تجربه شنیداری و آرشیو موسیقی</p>
+        </div>
+        <span class="badge-pill badge-dark">کاتالوگ قابلیت‌ها</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🗂️ سیستم مدیریت کتابخانه و کالکشن</h3>
+            <span class="badge-pill badge-subtle">Collection</span>
+          </div>
+          <div class="item-card-body">
+            <ul>
+              <li><strong>پیمایش چندگانه:</strong> دسته‌بندی بر مبنای هنرمندان (Artists)، ژانرها (Genres)، آلبوم‌ها (Albums)، آهنگ‌ها (Tracks)، پوشه‌های فیزیکی (Folders) و لیست‌های پخش (Playlists).</li>
+              <li><strong>پوشه‌بندی پلی‌لیست‌ها (Playlist Folders):</strong> امکان ساخت پوشه‌های تو در تو برای سازماندهی ده‌ها پلی‌لیست مجزا.</li>
+              <li><strong>پلی‌لیست‌های هوشمند (Smart Playlists):</strong> فیلترهای منطقی پویا بر پایه تاریخ افزودن، امتیاز، تعداد دفعات پخش و سبک آهنگ با فرمت <code>.dspl</code>.</li>
+              <li><strong>Semantic Zoom:</strong> پرش سریع به حروف الفبا در آرشیوهای غول‌پیکر با چند هزار خواننده یا آلبوم.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🎚️ کنترل‌های پیشرفته و سفارشی‌سازی پخش</h3>
+            <span class="badge-pill badge-subtle">Playback Controls</span>
+          </div>
+          <div class="item-card-body">
+            <ul>
+              <li><strong>تنظیم سرعت پخش (Playback Speed):</strong> شتاب‌دهی یا کندسازی سرعت قطعه از 0.5x تا 2.0x با حفظ زیروبمی صدا (Pitch).</li>
+              <li><strong>اکولایزر گرافیکی ۱۰ کاناله:</strong> فیلترهای فرکانسی دقیق Web Audio با پریست‌های ذخیره‌شدنی.</li>
+              <li><strong>نمایشگر طیف صوتی (Audio Visualizer):</strong> تحلیل بلادرنگ دامنه فرکانس‌ها به صورت میله‌های انیمیشنی زنده در هدر یا فوتر پلیر.</li>
+              <li><strong>مدیریت صف پخش (Queue):</strong> صف‌بندی داینامیک، جابجایی دستی ترک‌ها با درگ اند دراپ و امکان پرش به ترک خاص.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">📝 موتور متن ترانه چهارگانه (Lyrics Engine)</h3>
+            <span class="badge-pill badge-subtle">Lyrics</span>
+          </div>
+          <div class="item-card-body">
+            <ul>
+              <li><strong>متن تعبیه‌شده (Embedded Lyrics):</strong> استخراج مستقیم متن ترانه ذخیره‌شده درون تگ‌های صوتی USLT و SYLT.</li>
+              <li><strong>پشتیبانی از فایل‌های LRC:</strong> خواندن فایل‌های متن همگام محلی با پسوند <code>.lrc</code> موجود در کنار فایل موسیقی.</li>
+              <li><strong>پشتیبانی از زیرنویس SRT:</strong> قابلیت منحصر‌به‌فرد خواندن فایل‌های زمان‌بندی شده <code>.srt</code> به عنوان متن آهنگ.</li>
+              <li><strong>دریافت آنلاین:</strong> جستجوی خودکار در وب‌سرویس‌های آنلاین در صورت عدم وجود متن محلی.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🌟 ویترین هایلایت‌ها (Highlights Showcase)</h3>
+            <span class="badge-pill badge-subtle">Statistics UI</span>
+          </div>
+          <div class="item-card-body">
+            <p>صفحه مدرن <strong>Highlights</strong> که در Dopamine 3 ابداع شد، یک کلاژ بصری تعاملی از بیشترین آلبوم‌های گوش داده شده توسط کاربر را بر مبنای الگوریتم‌های آماری با انیمیشن‌های ورود تأخیری (Staggered Animations) به نمایش می‌گذارد و امکان پخش سریع آلبوم‌های محبوب را فراهم می‌سازد.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۴: کالبدشکافی موتور صوتی سه‌گانه -->
+    <section id="tab-audio" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🔊</span> کالبدشکافی موتور صوتی سه‌گانه (Tri-Mode Web Audio Engine)</h2>
+          <p class="section-desc">تحلیل دقیق پیاده‌سازی پخش Legacy، Gapless و Crossfade بر بستر نودهای Web Audio API کرومیوم</p>
+        </div>
+        <span class="badge-pill badge-dark">هسته مهندسی صوت</span>
+      </div>
+
+      <div class="grid-3">
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🎵 ۱. پلیر سنتی (LegacyAudioPlayer)</h3>
+            <span class="badge-pill badge-subtle">HTMLAudioElement</span>
+          </div>
+          <div class="item-card-body">
+            <p>ساده‌ترین حالت پخش بر بستر تگ استاندارد HTML5 Audio:</p>
+            <div class="code-block">
+<span class="code-keyword">this</span>._audio = <span class="code-keyword">new</span> Audio();
+<span class="code-keyword">this</span>._audioContext = <span class="code-keyword">new</span> AudioContext();
+<span class="code-keyword">this</span>._analyser = <span class="code-keyword">this</span>._audioContext.createAnalyser();
+<span class="code-keyword">this</span>._equalizer = <span class="code-keyword">new</span> AudioEqualizer(<span class="code-keyword">this</span>._audioContext);
+            </div>
+            <p><strong>کارکرد:</strong> فایل به صورت استریم پخش می‌شود و خروجی به اکولایزر و آنالایزر متصل است. مصرف رم بسیار پایین است اما بین آهنگ‌ها سکوت اجتناب‌ناپذیر رخ می‌دهد.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">⚡ ۲. پخش پیوسته (GaplessAudioPlayer)</h3>
+            <span class="badge-pill badge-dark">AudioBufferSourceNode</span>
+          </div>
+          <div class="item-card-body">
+            <p>پیاده‌سازی حرفه‌ای پخش با صفر میلی‌ثانیه مکث میان آهنگ‌ها:</p>
+            <div class="code-block">
+<span class="code-comment">// پیش‌دیکود آهنگ بعدی در حافظه:</span>
+<span class="code-keyword">public</span> preloadNext(track: TrackModel): <span class="code-keyword">void</span> {
+    <span class="code-keyword">this</span>.loadAudioWithWebAudio(playableAudioFilePath, <span class="code-keyword">true</span>);
+}
+            </div>
+            <p><strong>کارکرد:</strong> کل فایل با <code>fetch</code> دانلود و توسط <code>decodeAudioData</code> به بافر PCM خام تبدیل می‌شود. آهنگ بعدی از قبل در بافر رم دیکود شده تا تعویض ترک با صفر میلی‌ثانیه سکوت انجام شود.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🎚️ ۳. پخش درهم‌آمیخته (CrossfadeAudioPlayer)</h3>
+            <span class="badge-pill badge-mid">Twin Gain Nodes</span>
+          </div>
+          <div class="item-card-body">
+            <p>آمیزش صدای انتهای آهنگ فعلی با شروع آهنگ بعدی:</p>
+            <div class="code-block">
+<span class="code-keyword">this</span>._currentSource = <span class="code-keyword">this</span>._audioContext.createMediaElementSource(<span class="code-keyword">this</span>._currentAudio);
+<span class="code-keyword">this</span>._nextSource = <span class="code-keyword">this</span>._audioContext.createMediaElementSource(<span class="code-keyword">this</span>._nextAudio);
+<span class="code-comment">// تنظیم تدریجی گین دو نود در چند ثانیه آخر</span>
+            </div>
+            <p><strong>کارکرد:</strong> دو نود گین همزمان کنترل می‌شوند؛ نود اول ولوم را به آرامی به صفر می‌رساند و نود دوم از صفر به یک افزایش می‌دهد تا محو صوتی نرم (Crossfade) شکل گیرد.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۵: نوآوری‌ها، تکنیک‌ها و درس‌های آموخته -->
+    <section id="tab-innovations" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>💡</span> نوآوری‌ها، تکنیک‌ها و درس‌های آموخته از Dopamine 3</h2>
+          <p class="section-desc">مجموعه الگوهای طراحی تحسین‌برانگیز و ایده‌های ارزنده‌ای که می‌توان از این پروژه آموخت و الگوبرداری کرد</p>
+        </div>
+        <span class="badge-pill badge-dark">درس‌های استراتژیک</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🛡️ ۱. سیستم پشتیبان‌گیری خودکار امتیازات (Rating Backup System)</h3>
+            <span class="badge-pill badge-dark">UX Masterclass</span>
+          </div>
+          <div class="item-card-body">
+            <p>یکی از درخشان‌ترین ایده‌های پیاده‌سازی شده در <code>RatingBackupService</code> است:</p>
+            <p>بزرگ‌ترین ترس کاربران موزیک‌پلیرها، پریدن امتیازات (Stars) و نشان قلب (Love) آهنگ‌ها در اثر خراب شدن دیتابیس است. Dopamine 3 با هر بار تغییر امتیاز، آن را در یک فایل مستقل به نام <code>ratings-backup.json</code> درون پوشه Music کاربر ذخیره می‌کند.</p>
+            <div class="callout callout-bordered">
+              <strong>درس آموخته:</strong> حتی اگر کاربر ویندوز خود را عوض کند یا فایل دیتابیس خراب شود، در نخستین اجرا با متد <code>tryAutoRestoreOnStartupAsync</code>، تمامی ستاره‌ها و لایک‌ها از فایل JSON امن به طور خودکار بازیابی می‌شوند.
+            </div>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🎨 ۲. استخراج پالت رنگ زنده از کاور آلبوم (node-vibrant)</h3>
+            <span class="badge-pill badge-dark">Visual Aesthetics</span>
+          </div>
+          <div class="item-card-body">
+            <p>در <code>AlbumAccentColorService</code> از پکیج <code>node-vibrant</code> بهره گرفته شده است:</p>
+            <p>هنگام تعویض آهنگ، تصویر کاور آنالیز شده و رنگ غالب (Dominant Vibrant Color) استخراج می‌شود. سپس با تبدیل به متغیرهای CSS روی ریشه سند (<code>--theme-primary-color</code>)، کل محیط برنامه و المان‌های اکتیو، رنگ و بوی آلبوم در حال پخش را به خود می‌گیرند.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🔄 ۳. سیستم مایگریشن منظم پایگاه داده (Database Migrator)</h3>
+            <span class="badge-pill badge-mid">Architecture Cleanliness</span>
+          </div>
+          <div class="item-card-body">
+            <p>به جای اجرای کدهای دستکاری دستی جدول‌ها در زمان استارت‌آپ، ساختار مایگریشن تفکیک شده پیاده‌سازی شده است:</p>
+            <p>۱۳ کلاس مجزا (از <code>migration1.ts</code> تا <code>migration13.ts</code>) که هر کدام یک ارتقای ساختاری را کپسوله کرده و با متد <code>PRAGMA user_version</code> شماره نسخه دیتابیس را ارتقا می‌دهند. این الگو تضمین می‌کند آپدیت‌های نرم‌افزار هرگز ساختار دیتابیس قدیمی کاربر را از کار نیندازند.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="lessons">
+          <div class="item-card-header">
+            <h3 class="item-card-title">📜 ۴. اسکرول مجازی پرسرعت (CDK Virtual Scroll)</h3>
+            <span class="badge-pill badge-mid">Frontend Performance</span>
+          </div>
+          <div class="item-card-body">
+            <p>در لیست‌های طویل قطعات موسیقی (بیش از ۵۰,۰۰۰ آهنگ)، رندر کردن DOM واقعی باعث کرش کامل مرورگر می‌شود. Dopamine 3 با استفاده از <code>cdk-virtual-scroll-viewport</code> تنها المان‌هایی را در DOM رسم می‌کند که در کادر دید کاربر هستند و با اسکرول، همان المان‌ها بازیافت می‌شوند.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۶: ممیزی آسیب‌پذیری‌های امنیتی -->
+    <section id="tab-security" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🛡️</span> ممیزی آسیب‌پذیری‌های امنیتی و خطرات اجرایی کرومیوم</h2>
+          <p class="section-desc">بررسی ریسک‌های بحرانی پیکربندی Electron در سورس‌کد Dopamine 3 که مغایر با استانداردهای امنیتی مدرن هستند</p>
+        </div>
+        <span class="badge-pill badge-dark">ممیزی امنیتی (P0)</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card" data-priority="p0">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🚨 پیکربندی فوق‌العاده ناامن webPreferences در main.ts</h3>
+            <span class="badge-pill badge-dark">P0 بحرانی (RCE Risk)</span>
+          </div>
+          <div class="item-card-body">
+            <p>در فایل <code>main.ts</code> خطوط ۳۴۱ تا ۳۴۶، پنجره اصلی با خطرناک‌ترین کانفیگ ممکن در دنیای الکترون باز شده است:</p>
+            <div class="code-block">
+webPreferences: {
+    <span class="code-alert">webSecurity: false</span>,
+    <span class="code-alert">nodeIntegration: true</span>,
+    <span class="code-alert">contextIsolation: false</span>,
+    devTools: !app.isPackaged,
+}
+            </div>
+            <p><strong>تحلیل آسیب‌پذیری:</strong></p>
+            <ul>
+              <li><strong>nodeIntegration: true:</strong> فرآیند رندرِر (محیط وب) دسترسی مستقیم نامحدود به آبجکت <code>require</code> و توابع Node.js نظیر <code>child_process</code> دارد.</li>
+              <li><strong>contextIsolation: false:</strong> اسکریپت‌های وب مستقیماً با محیط گلوبال سیستمی ترکیب شده‌اند.</li>
+              <li><strong>webSecurity: false:</strong> تمامی قوانین امنیتی Same-Origin Policy و اعتبارسنجی CORS خاموش شده است!</li>
+            </ul>
+            <div class="callout callout-dark">
+              <strong>پیامد امنیتی فاجعه‌بار:</strong> اگر اسکراپر متن ترانه یا متادیتای وب در اثر حمله مرد میانی (MitM) یا دستکاری سرور لیریکس، یک قطعه کد جاوااسکریپت تزریق کند (XSS)، این کد می‌تواند بلافاصله با فراخوانی دستورات شِل سیستمی، کنترل کل رایانه کاربر را به دست گیرد!
+            </div>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="p0">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🕸️ وب‌اسکراپینگ شکننده و ناامن AZLyrics با Cheerio</h3>
+            <span class="badge-pill badge-dark">P0 تزریق محتوا</span>
+          </div>
+          <div class="item-card-body">
+            <p>در فایل <code>src/app/common/api/lyrics/a-z-lyrics.api.ts</code> خط ۲۸:</p>
+            <div class="code-block">
+<span class="code-keyword">const</span> lyricsDiv = cheerioAPI(<span class="code-string">'.col-xs-12.col-lg-8.text-center'</span>)[0].children[14].children;
+            </div>
+            <p>پارس کردن مستقیم تگ‌های وب‌سایت‌های خارجی بدون عبور از فیلترهای ضدعفونی‌کننده (Sanitization)، در کنار لغو <code>webSecurity</code>، ریسک باز شدن درگاه‌های بارگذاری تروجان و کدهای مخرب درون DOM را به شدت تشدید می‌کند.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۷: باگ‌ها، گلوگاه‌ها و بدهی فنی -->
+    <section id="tab-bugs" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🐛</span> تحلیل باگ‌ها، گلوگاه‌های حافظه و بدهی‌های فنی</h2>
+          <p class="section-desc">بررسی نقایص طراحی حافظه، نشت بافر در مود Gapless و گلوگاه‌های محاسباتی در جاوااسکریپت</p>
+        </div>
+        <span class="badge-pill badge-mid">گلوگاه‌های فنی</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">💥 انفجار مصرف رم در GaplessAudioPlayer (AudioBuffer Bloat)</h3>
+            <span class="badge-pill badge-dark">P1 بالا</span>
+          </div>
+          <div class="item-card-body">
+            <p>در <code>gapless-audio-player.ts</code> برای دستیابی به پخش پیوسته، فایل صوتی به صورت یکجا به وسیله <code>fetch</code> دانلود و توسط Web Audio به دیتای خام دیکود شده (Uncompressed PCM) درون شیء <code>AudioBuffer</code> در رم نگهداری می‌شود.</p>
+            <p><strong>محاسبه حجم حافظه:</strong> یک فایل موسیقی با کیفیت بالا (مثلاً FLAC 24-bit / 96kHz به مدت ۵ دقیقه) در حالت دیکود شده PCM خام بیش از <strong>۳۵۰ مگابایت رم</strong> را اشغال می‌کند. با توجه به اینکه ترک بعدی نیز در پیش‌حافظه لود می‌شود (Preload)، مصرف رم رندرِر تنها برای نگه داشتن بافر صدا از <strong>۷۰۰ مگابایت الی ۱ گیگابایت</strong> عبور می‌کند که در سیستم‌های معمولی موجب کندی شدید سیستم و فریز ناگهانی تب کرومیوم می‌شود.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🧱 بلوکه شدن UI با کوئری‌های همگام better-sqlite3</h3>
+            <span class="badge-pill badge-mid">P1 عملکردی</span>
+          </div>
+          <div class="item-card-body">
+            <p>کتابخانه <code>better-sqlite3</code> ذاتاً به صورت همگام (Synchronous) کار می‌کند. در صورت فراخوانی مستقیم از رندرِر، اجرای کوئری‌های حجیم فیلترینگ یا ایندکس‌گذاری ده‌ها هزار فایل، ترد اصلی رابط کاربری (UI Thread) را مسدود کرده و موجب لگ زدن انیمیشن‌های پخش و اسکرول می‌شود.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="p2">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🔋 ردپای سنگین ران‌تایم الکترون در حالت آماده‌به‌کار (Idle Overhead)</h3>
+            <span class="badge-pill badge-outline">P2 ساختاری</span>
+          </div>
+          <div class="item-card-body">
+            <p>اجرای کامل موتور کرومیوم، رندرر گرافیکی Blink، پروسس‌های GPU و ترد‌های Node.js حتی زمانی که هیچ آهنگی پخش نمی‌شود، حداقل <strong>۲۵۰ الی ۳۵۰ مگابایت رم</strong> و چند درصد مصرف دائمی پردازنده را به سیستم تحمیل می‌کند که برای یک پخش‌کننده موسیقی در پس‌زمینه رقم بالایی است.</p>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">📉 آسیب‌پذیری اسکراپر AZLyrics با مسدودسازی Cloudflare</h3>
+            <span class="badge-pill badge-subtle">P1 سرویس‌دهی</span>
+          </div>
+          <div class="item-card-body">
+            <p>سایت AZLyrics برای مقابله با بات‌ها از مکانیزم‌های سخت‌گیرانه کلودفلر (JS Challenge و CAPTCHA) استفاده می‌کند. متد <code>httpClient.get</code> در Angular قادر به عبور از چالش کپچا نیست و پس از چند درخواست ساده، کلاً پاسخ ۴۰۳ برمی‌گرداند و دانلود متن ترانه با شکست مواجه می‌شود.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۸: دیزاین سیستم و ارزیابی UI/UX -->
+    <section id="tab-design" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🎨</span> بررسی بدهی دیزاین سیستم و ارزیابی تجربه کاربری (UI/UX)</h2>
+          <p class="section-desc">تحلیل زبان بصری Dopamine 3، مزیت‌ها و کاستی‌های تطبیق با استانداردهای سیستم‌عامل‌های نوین</p>
+        </div>
+        <span class="badge-pill badge-dark">ارزیابی بصری</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">✨ نقاط قوت طراحی در Dopamine 3</h3>
+            <span class="badge-pill badge-dark">مزایای بصری</span>
+          </div>
+          <div class="item-card-body">
+            <ul>
+              <li><strong>مینیمالیسم مدرن:</strong> فاصله مناسب المان‌ها (Whitespace)، خطوط تمیز و حذف پیچیدگی‌های شلوغ منوهای سنتی.</li>
+              <li><strong>پویایی رنگ‌ها:</strong> هماهنگی رنگ عناصر با رنگ کاور آلبوم باعث ایجاد یک پیوند عاطفی میان کاربر و موسیقی می‌شود.</li>
+              <li><strong>مینی‌پلیر کاور (Cover Player):</strong> طراحی بسیار شیک و تمیز ویجت کاور آلبوم به همراه دکمه‌های ظاهرشونده با هاور ماوس.</li>
+              <li><strong>سازگاری تم روشن و تاریک:</strong> تغییر یکپارچه پس‌زمینه‌ها با هماهنگی تم سیستم‌عامل.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card">
+          <div class="item-card-header">
+            <h3 class="item-card-title">⚠️ کاستی‌ها و بدهی‌های دیزاین سیستم</h3>
+            <span class="badge-pill badge-mid">نقاط ضعف</span>
+          </div>
+          <div class="item-card-body">
+            <ul>
+              <li><strong>حذف حالت‌های Micro و Nano Player:</strong> در نسخه ۳، دو حالت بسیار محبوب مینی‌پلیرهای نواری کوچک (میکرو و نانو) به کلی حذف شدند و تنها حالت Cover Player باقی ماند که موجب نارضایتی کاربرانی شد که فضای دسکتاپ کمی دارند.</li>
+              <li><strong>کادر پنجره شبیه‌سازی‌شده (Fake Window Frame):</strong> به دلیل استفاده از کادرهای CSS، رفتار پنجره هنگام درگ کردن و اسنپ به لبه‌های مانیتور به روانی پنجره‌های نیتیو ویندوز نیست.</li>
+              <li><strong>فقدان افکت‌های مات طبیعی (Native Blur):</strong> به دلیل محدودیت‌های الکترون در شیشه‌های DWM، شفافیت پس‌زمینه صرفاً با کدهای CSS شبیه‌سازی شده و عمق مات طبیعی شیشه ویندوز ۱۱ را ندارد.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۹: سازگاری ویندوز ۱۱ و محدودیت فرمت‌ها -->
+    <section id="tab-compatibility" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>💻</span> سازگاری با ویندوز ۱۱ و سقف فرمت‌های صوتی کرومیوم</h2>
+          <p class="section-desc">محدودیت‌های ریشه‌ای Web Audio در عدم پشتیبانی از فرمت‌های تخصصی آدیوفایل و امکانات سخت‌افزاری ویندوز ۱۱</p>
+        </div>
+        <span class="badge-pill badge-dark">محدودیت‌های فنی</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🚫 سقف محدود فرمت‌های صوتی (۷ فرمت محدود کرومیوم)</h3>
+            <span class="badge-pill badge-dark">P1 عدم پشتیبانی آدیوفایل</span>
+          </div>
+          <div class="item-card-body">
+            <p>در فایل <code>file-formats.ts</code>، تنها ۷ پسوند صوتی ثبت شده‌اند:</p>
+            <div class="code-block">
+<span class="code-keyword">public static readonly</span> supportedAudioExtensions: <span class="code-type">string</span>[] = [
+    <span class="code-string">'.mp3'</span>, <span class="code-string">'.mp4'</span>, <span class="code-string">'.flac'</span>, <span class="code-string">'.ogg'</span>, <span class="code-string">'.m4a'</span>, <span class="code-string">'.opus'</span>, <span class="code-string">'.wav'</span>
+];
+            </div>
+            <p><strong>فرمت‌های غایب به دلیل وابستگی به Web Audio:</strong></p>
+            <ul>
+              <li><strong>WMA (ویندوز مدیا):</strong> کرومیوم به دلیل پتنت‌های انحصاری از پخش WMA پشتیبانی نمی‌کند.</li>
+              <li><strong>APE (Monkey's Audio):</strong> توسط مرورگرها غیرقابل دیکود است.</li>
+              <li><strong>WavPack (.wv) و Musepack (.mpc):</strong> به کلی ناممکن در وب آدیو.</li>
+              <li><strong>DSD / SACD (.dsf, .dff):</strong> عدم امکان پخش مستقیم فرکانس‌های ۱ بیتی سوپر آدیو سی‌دی.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="item-card glass-card" data-priority="p1">
+          <div class="item-card-header">
+            <h3 class="item-card-title">🎛️ فقدان خروجی انحصاری Bit-Perfect و درایورهای ASIO/WASAPI</h3>
+            <span class="badge-pill badge-mid">P1 محدودیت سخت‌افزاری</span>
+          </div>
+          <div class="item-card-body">
+            <p>در Web Audio کرومیوم، تمام استریم‌های صدا بالاجبار وارد <strong>میکسر عمومی ویندوز (Windows Shared Audio Engine)</strong> می‌شوند و به نرخ نمونه‌برداری پیش‌فرض کارت صدا (مثلاً 48kHz) تغییر داده می‌شوند.</p>
+            <p>هیچ امکانی برای ارسال مستقیم داده به DAC از طریق پروتکل‌های <strong>WASAPI Exclusive یا ASIO</strong> برای شنیدن صدای خالص و بیت‌پرفکت وجود ندارد.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- تب ۱۰: نقشه راه و ایده‌های تحول -->
+    <section id="tab-roadmap" class="tab-section">
+      <div class="section-header glass-card">
+        <div>
+          <h2 class="section-title"><span>🗺️</span> نقشه راه، الگوهای برتر و ایده‌های استخراج‌شده</h2>
+          <p class="section-desc">جمع‌بندی درس‌های مهندسی و الگوهای نوآورانه‌ای که می‌توان از کالبدشکافی Dopamine 3 الهام گرفت</p>
+        </div>
+        <span class="badge-pill badge-dark">الگوهای تکاملی</span>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item" data-priority="lessons">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content glass-card">
+            <h3 style="font-size: 15.5px; font-weight: 700; color: var(--c-gray-800); margin-bottom: 6px;">
+              الگوی ۱: پیاده‌سازی مکانیزم پشتیبان‌گیری Ratings در معماری توسعه
+            </h3>
+            <p>ایجاد فایل <code>ratings-backup.json</code> مستقل از دیتابیس برای تضمین ایمنی داده‌های ارزش‌گذاری کاربر در هر پروژه موزیک‌پلیر، یک ایده طلایی با ارزش UX فوق‌العاده بالا است که باید حتماً اقتباس شود.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item" data-priority="lessons">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content glass-card">
+            <h3 style="font-size: 15.5px; font-weight: 700; color: var(--c-gray-800); margin-bottom: 6px;">
+              الگوی ۲: مهاجرت پایگاه‌داده با کلاس‌های ورژن‌بندی شده مستقل (Migration Classes)
+            </h3>
+            <p>جداسازی کدهای اسکیما به فایل‌های منظم <code>migrationN.ts</code> همراه با تست‌های یکپارچگی (Database Integration Tests)، تضمین‌کننده پایداری دیتابیس در به‌روزرسانی‌های مداوم بدون از دست رفتن رکوردها است.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item" data-priority="lessons">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content glass-card">
+            <h3 style="font-size: 15.5px; font-weight: 700; color: var(--c-gray-800); margin-bottom: 6px;">
+              الگوی ۳: استخراج خودکار پالت تم متناسب با رنگ آلبوم (Vibrant Accent Adaptation)
+            </h3>
+            <p>ایده دگرگون‌سازی لحن بصری پنجره نرم‌افزار بر مبنای رنگ کاور قطعه موسیقی، تجربه غوطه‌وری شنیداری را چندین برابر می‌کند و باید به عنوان یک قابلیت محوری در دیزاین سیستم مد نظر قرار گیرد.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item" data-priority="lessons">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content glass-card">
+            <h3 style="font-size: 15.5px; font-weight: 700; color: var(--c-gray-800); margin-bottom: 6px;">
+              الگوی ۴: طراحی صفحه آماری خلاقانه Highlights برای جذب کاربر
+            </h3>
+            <p>کلاژ هوشمند آلبوم‌های پرشنونده با انیمیشن‌های ورود جذاب، علاوه بر زیبایی بصری، انگیزه‌ای قوی برای بازگشت کاربر و استفاده مداوم از نرم‌افزار ایجاد می‌کند.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- فوتر گزارش تک‌رنگ -->
+    <footer>
+      <p>گزارش اختصاصی کالبدشکافی فنی <strong>Dopamine 3</strong> | سورس‌کد محلی: <code>E:\IDE\vyv-player\dopamine3</code> | پالت رنگی مونوکروم (سفید-خاکستری-سیاه) | سند تعاملی SPA</p>
+    </footer>
+
+  </div>
+
+  <!-- کدهای تعاملی سوییچ تب‌ها، فیلتر اولویت و جستجوی بلادرنگ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ۱. سوییچ تب‌ها
+      const tabButtons = document.querySelectorAll('.tab-nav-btn');
+      const tabSections = document.querySelectorAll('.tab-section');
+
+      tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetTab = btn.getAttribute('data-tab');
+
+          tabButtons.forEach(b => b.classList.remove('active'));
+          tabSections.forEach(s => s.classList.remove('active'));
+
+          btn.classList.add('active');
+          const targetSection = document.getElementById(targetTab);
+          if (targetSection) {
+            targetSection.classList.add('active');
+            window.scrollTo({ top: 120, behavior: 'smooth' });
+          }
+        });
+      });
+
+      // ۲. فیلتر بر اساس اولویت و درس‌ها
+      const filterButtons = document.querySelectorAll('.filter-btn');
+      const filterableCards = document.querySelectorAll('[data-priority]');
+
+      filterButtons.forEach(fBtn => {
+        fBtn.addEventListener('click', () => {
+          filterButtons.forEach(b => b.classList.remove('active'));
+          fBtn.classList.add('active');
+
+          const filterVal = fBtn.getAttribute('data-filter');
+
+          filterableCards.forEach(card => {
+            const cardPriority = card.getAttribute('data-priority');
+            if (filterVal === 'all' || cardPriority === filterVal) {
+              card.style.display = '';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+
+      // ۳. جستجوی زنده
+      const searchInput = document.getElementById('searchInput');
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        const allCards = document.querySelectorAll('.item-card, .timeline-item');
+
+        if (!query) {
+          allCards.forEach(c => c.style.display = '');
+          return;
+        }
+
+        allCards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (text.includes(query)) {
+            card.style.display = '';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

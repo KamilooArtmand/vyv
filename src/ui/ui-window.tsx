@@ -1,26 +1,56 @@
 // ─────────────────────────────────────────────────────────────
 // ui-window.tsx: Minimal window controls & resize edges (desktop)
+// Argon-V1 Frameless Precision Window Controller
 // ─────────────────────────────────────────────────────────────
 
 import { Copy, Minus, Square, X } from 'lucide-react';
 import { desktop, useWindowState } from '../core/core-desktop';
 import { cn } from '../core/core-utils';
 
-/** Close · minimise · maximise drawn straight on the window body: no chips, no fills. */
+/**
+ * Minimal window control glyphs (minimize, maximize, close)
+ * Rendered with hairline precision directly on the Tier 1 Glass TopBar.
+ */
 export function WindowControls({ className }: { className?: string }) {
   const state = useWindowState();
-  if (!desktop) return null;
-  const btn = 'no-drag press flex size-8 items-center justify-center text-fg-3 transition-colors hover:text-fg';
+  const d = desktop;
+  if (!d) return null;
+
+  const btn =
+    'no-drag press flex size-7 items-center justify-center rounded-md text-ink-tertiary transition-colors duration-150 hover:bg-surface-2 hover:text-ink-primary';
+
   return (
-    <div className={cn('flex items-center gap-0.5', className)}>
-      <button type="button" aria-label="Minimize" className={btn} onClick={desktop.minimize}>
-        <Minus size={15} strokeWidth={1.5} />
+    <div className={cn('flex items-center gap-1', className)}>
+      <button
+        type="button"
+        aria-label="Minimize"
+        className={btn}
+        onClick={() => d.minimize()}
+      >
+        <Minus size={13} strokeWidth={1.5} />
       </button>
-      <button type="button" aria-label={state?.maximized ? 'Restore' : 'Maximize'} className={btn} onClick={desktop.toggleMaximize}>
-        {state?.maximized ? <Copy size={12.5} strokeWidth={1.5} className="-scale-x-100" /> : <Square size={12} strokeWidth={1.5} />}
+      <button
+        type="button"
+        aria-label={state?.maximized ? 'Restore' : 'Maximize'}
+        className={btn}
+        onClick={() => d.toggleMaximize()}
+      >
+        {state?.maximized ? (
+          <Copy size={11} strokeWidth={1.5} className="-scale-x-100" />
+        ) : (
+          <Square size={11} strokeWidth={1.5} />
+        )}
       </button>
-      <button type="button" aria-label="Close" className={cn(btn, 'hover:!text-[#ff3c00]')} onClick={desktop.close}>
-        <X size={16} strokeWidth={1.5} />
+      <button
+        type="button"
+        aria-label="Close"
+        className={cn(
+          btn,
+          'hover:!bg-status-danger-bg hover:!text-status-danger-ink dark:hover:!bg-status-danger-bg dark:hover:!text-status-danger-ink'
+        )}
+        onClick={() => d.close()}
+      >
+        <X size={13} strokeWidth={1.5} />
       </button>
     </div>
   );

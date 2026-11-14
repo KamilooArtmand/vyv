@@ -8,7 +8,7 @@ import { Bookmark, Check, FolderPlus, Heart, ListMusic, LogOut, Pause, Pencil, P
 import { Archive, Podcasts, RadioBrowser } from '../services/sources';
 import { ArchiveCard, LiveState, OpenSource, ShowCard, StationGrid, useLive } from '../ui/ui-live';
 import { useStore } from '../core/core-store';
-import { cn, formatDuration, initials } from '../core/core-utils';
+import { cn, formatDuration, hash, initials } from '../core/core-utils';
 import { ask } from '../state/state-agent';
 import {
   ARTISTS,
@@ -48,6 +48,8 @@ import {
   Visualizer,
   meshGradient,
 } from '../ui/ui-components';
+import { CatalogTrackTable } from './view-catalog';
+import { SpecularSurface } from '../components/primitives/specular-surface';
 import type { Audiobook, Mood, Show, Track } from '../core/core-types';
 
 // ── Radio View ───────────────────────────────────────────────
@@ -57,25 +59,50 @@ function StationTile({ s }: { s: Track }) {
   const isCurrent = useStore(playerStore, (p) => p.track?.id === s.id);
   const isPlaying = useStore(playerStore, (p) => p.isPlaying && p.track?.id === s.id);
   const saved = useIsBookmarked('station', s.id);
+  const h = hash(s.id);
+  const freqNum = (87.5 + (h % 205) / 10).toFixed(1);
+  const freq = h % 4 === 0 ? `${freqNum} MHz FM` : h % 4 === 1 ? `${freqNum} MHz` : h % 4 === 2 ? 'DAB+ Digital' : 'Web Stream';
+  const bitrates = ['128 kbps MP3', '256 kbps AAC', '320 kbps HQ', '96 kbps OPUS'];
+  const bitrate = bitrates[h % bitrates.length];
+
   return (
-    <div
+    <SpecularSurface
       role="button"
       tabIndex={0}
       onClick={() => (isCurrent ? togglePlay() : playTrack(s, STATIONS))}
       onKeyDown={(e) => e.key === 'Enter' && (isCurrent ? togglePlay() : playTrack(s, STATIONS))}
-      className={cn('glass press group relative flex cursor-pointer items-center gap-4 rounded-[var(--radius-xl)] p-3 pr-4 hover:bg-surface-2', isCurrent && 'ring-1 ring-accent')}
+      className={cn(
+        'press group relative flex cursor-pointer items-center gap-4 rounded-2xl bg-surface/50 p-3 pr-4 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200 outline-none',
+        isCurrent && 'ring-1 ring-accent'
+      )}
     >
-      <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-[72px] [--art-r:16px]">
-        <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition-opacity group-hover:opacity-100">
-          {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="ml-0.5 fill-current" />}
-        </span>
-      </Artwork>
+      <div className="size-[72px] shrink-0 overflow-hidden rounded-xl border border-hairline-subtle relative bg-surface-2">
+        <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-full rounded-xl object-cover">
+          <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
+            {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="ml-0.5 fill-current" />}
+          </span>
+        </Artwork>
+      </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[16px] font-semibold tracking-[-0.02em]">{s.title}</div>
-        <div className="truncate text-[13px] text-fg-3">
+        <div className="flex items-center gap-2 mb-1">
+          {/* Concentric Live Badge Pulse Animation */}
+          <span className="relative flex size-2 shrink-0">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-live opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-live" />
+          </span>
+          <span className="text-[10.5px] font-mono tabular-nums text-live font-semibold uppercase tracking-wider">
+            {freq}
+          </span>
+          <span className="text-[10px] font-mono tabular-nums text-fg-3/70 ml-auto hidden sm:inline">
+            {bitrate}
+          </span>
+        </div>
+
+        <div className="truncate text-[15.5px] font-semibold tracking-[-0.02em] text-fg">{s.title}</div>
+        <div className="truncate text-[12.5px] text-fg-3">
           {s.artist} · {genreById(s.genreId)?.name}
         </div>
-        {isPlaying && <Visualizer bars={20} className="mt-2 h-4 w-28" />}
+        {isPlaying && <Visualizer bars={24} className="mt-2 h-3.5 w-32 text-accent" />}
       </div>
       <IconButton
         icon={Bookmark}
@@ -88,7 +115,7 @@ function StationTile({ s }: { s: Track }) {
           toast(toggleBookmark('station', s.id) ? 'Station saved' : 'Removed', 'bookmark');
         }}
       />
-    </div>
+    </SpecularSurface>
   );
 }
 
@@ -660,7 +687,7 @@ export function PlaylistView({ id }: { id?: string }) {
     return (
       <div>
         <CollectionHeader kind="playlist" id="liked" eyebrow="Collection" title="Liked Songs" color="#ff3c00" tracks={tracks} />
-        <Section title="Tracks"><TrackList tracks={tracks} /></Section>
+        <Section title="Tracks"><CatalogTrackTable tracks={tracks} /></Section>
       </div>
     );
   }
@@ -694,7 +721,7 @@ export function PlaylistView({ id }: { id?: string }) {
         }
       />
       <Section title="Tracks">
-        <TrackList tracks={tracks} />
+        <CatalogTrackTable tracks={tracks} />
       </Section>
     </div>
   );

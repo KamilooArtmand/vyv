@@ -3,9 +3,26 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
-import { ArrowDownAZ, BadgeCheck, CalendarDays, Clock, Disc3, Landmark, MapPin, Mic2, RadioTower, Shapes, Sparkles, UserCheck, UserPlus, Users } from 'lucide-react';
+import {
+  ArrowDownAZ,
+  BadgeCheck,
+  CalendarDays,
+  Clock,
+  Disc3,
+  Heart,
+  Landmark,
+  MapPin,
+  Mic2,
+  MoreHorizontal,
+  RadioTower,
+  Shapes,
+  Sparkles,
+  UserCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { useStore } from '../core/core-store';
-import { compact, formatDuration } from '../core/core-utils';
+import { cn, compact, formatDuration, formatTime, hash } from '../core/core-utils';
 import {
   ALBUMS,
   ARTISTS,
@@ -16,20 +33,214 @@ import {
   artistById,
   genreById,
   libraryStore,
+  remember,
   resolveEntity,
   toggleBookmark,
+  toggleFavorite,
   trackById,
   useAllTracks,
   useIsBookmarked,
+  useIsFavorite,
 } from '../state/state-catalog';
 import { ask } from '../state/state-agent';
-import { playQueue, playTrack } from '../state/state-player';
-import { navigate, toast } from '../state/state-ui';
-import { CollectionHeader, EmptyState, Grid, IconButton, MediaCard, PageHeader, PlayFab, Section, Segmented, Shelf, TrackList, meshGradient } from '../ui/ui-components';
+import { playQueue, playTrack, playerStore, togglePlay } from '../state/state-player';
+import { navigate, openSheet, toast } from '../state/state-ui';
+import {
+  Artwork,
+  CollectionHeader,
+  EmptyState,
+  EqBars,
+  Grid,
+  IconButton,
+  MediaCard,
+  PageHeader,
+  PlayFab,
+  Section,
+  Segmented,
+  Shelf,
+  TrackList,
+  meshGradient,
+} from '../ui/ui-components';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/data-table';
 import type { Track } from '../core/core-types';
 
 const tracksOf = (ids: string[]) => ids.map((id) => trackById(id)).filter(Boolean) as Track[];
 const SHELF_ITEM = 'w-[150px] shrink-0 snap-start md:w-[172px]';
+
+function getAudioFormat(track: Track): { label: string; badgeClass: string } {
+  const hashVal = hash(track.id);
+  const ext = track.filePath?.split('.').pop()?.toLowerCase();
+  if (ext === 'flac' || hashVal % 3 === 0) {
+    return { label: 'FLAC 24-bit/96kHz', badgeClass: 'bg-accent/10 text-accent-ink border-accent/20' };
+  }
+  if (hashVal % 3 === 1) {
+    return { label: 'DSD 5.6MHz', badgeClass: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' };
+  }
+  return { label: 'AAC 320k', badgeClass: 'bg-surface-3 text-fg-3 border-hairline' };
+}
+
+function getPlayCount(track: Track): string {
+  const count = (hash(track.id) % 890000) + 12400;
+  return count.toLocaleString();
+}
+
+function CatalogTrackRow({
+  track,
+  queue,
+  index,
+  numbered,
+  active,
+  isPlaying,
+  format,
+  plays,
+}: {
+  track: Track;
+  queue: Track[];
+  index: number;
+  numbered: boolean;
+  active: boolean;
+  isPlaying: boolean;
+  format: { label: string; badgeClass: string };
+  plays: string;
+}) {
+  const fav = useIsFavorite(track.id);
+
+  return (
+    <TableRow
+      isSelected={active}
+      onClick={() => (active ? togglePlay() : playTrack(track, queue))}
+      className={cn(
+        'cursor-pointer group/row transition-colors',
+        active && 'bg-surface-2/80 text-fg'
+      )}
+    >
+      {numbered && (
+        <TableCell align="center" numeric className="w-12 text-fg-3">
+          {active && isPlaying ? (
+            <EqBars playing />
+          ) : (
+            <span className="font-mono tabular-nums text-xs">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          )}
+        </TableCell>
+      )}
+
+      <TableCell>
+        <div className="flex items-center gap-3 min-w-0 py-1">
+          <Artwork
+            seed={track.id}
+            color={track.dominantColorHex}
+            src={track.coverUrl}
+            className="size-10 rounded-lg shrink-0 border border-hairline-subtle"
+          />
+          <div className="min-w-0 flex-1">
+            <div className={cn('truncate font-medium text-[14px]', active && 'text-accent-ink font-semibold')}>
+              {track.title}
+            </div>
+            <div className="truncate text-[12px] text-fg-3">
+              {track.artist} {track.album ? `· ${track.album}` : ''}
+            </div>
+          </div>
+        </div>
+      </TableCell>
+
+      <TableCell className="hidden md:table-cell">
+        <span
+          className={cn(
+            'inline-flex items-center rounded px-2 py-0.5 text-[10.5px] font-mono tabular-nums font-semibold uppercase tracking-wider border',
+            format.badgeClass
+          )}
+        >
+          {format.label}
+        </span>
+      </TableCell>
+
+      <TableCell align="end" numeric muted className="hidden sm:table-cell font-mono tabular-nums text-[12.5px]">
+        {plays}
+      </TableCell>
+
+      <TableCell align="end" numeric muted className="w-20 font-mono tabular-nums text-[12.5px]">
+        {formatTime(track.durationSeconds)}
+      </TableCell>
+
+      <TableCell align="end" className="w-24">
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+          <IconButton
+            icon={Heart}
+            label={fav ? 'Liked' : 'Like'}
+            size="xs"
+            tip={false}
+            active={fav}
+            filled={fav}
+            onClick={() => toggleFavorite(track.id, track)}
+            className={cn(!fav && 'opacity-0 group-hover/row:opacity-100 transition-opacity')}
+          />
+          <IconButton
+            icon={MoreHorizontal}
+            label="More"
+            size="xs"
+            tip={false}
+            onClick={() => {
+              remember(track);
+              openSheet('addto', track.id);
+            }}
+          />
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
+export function CatalogTrackTable({
+  tracks,
+  numbered = true,
+  showHeader = true,
+}: {
+  tracks: Track[];
+  numbered?: boolean;
+  showHeader?: boolean;
+}) {
+  const current = useStore(playerStore, (s) => s.track);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
+
+  return (
+    <Table framed={true} density="default" className="w-full">
+      {showHeader && (
+        <TableHeader>
+          <TableRow interactive={false} className="border-b border-hairline bg-surface/50">
+            {numbered && <TableHead align="center" className="w-12">#</TableHead>}
+            <TableHead>Title</TableHead>
+            <TableHead className="hidden md:table-cell">Format</TableHead>
+            <TableHead align="end" className="hidden sm:table-cell">Plays</TableHead>
+            <TableHead align="end" className="w-20">Time</TableHead>
+            <TableHead align="end" className="w-24">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+      )}
+      <TableBody>
+        {tracks.map((track, i) => {
+          const active = current?.id === track.id;
+          const format = getAudioFormat(track);
+          const plays = getPlayCount(track);
+          return (
+            <CatalogTrackRow
+              key={track.id}
+              track={track}
+              queue={tracks}
+              index={i}
+              numbered={numbered}
+              active={active}
+              isPlaying={isPlaying && active}
+              format={format}
+              plays={plays}
+            />
+          );
+        })}
+      </TableBody>
+    </Table>
+  );
+}
 
 // ── Albums ───────────────────────────────────────────────────
 export function Albums() {
@@ -92,7 +303,9 @@ export function AlbumView({ id }: { id?: string }) {
           </>
         }
       />
-      <TrackList tracks={tracks} />
+      <div className="mb-8">
+        <CatalogTrackTable tracks={tracks} />
+      </div>
       {(more.length > 0 || similar.length > 0) && (
         <Section title={more.length ? `More by ${artist?.name}` : 'You might like'}>
           <Shelf>
@@ -189,7 +402,7 @@ export function ArtistView({ id }: { id?: string }) {
 
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Section title="Popular">
-          <TrackList tracks={tracks} />
+          <CatalogTrackTable tracks={tracks.slice(0, 10)} />
         </Section>
         <Section title="About">
           <div className="glass rounded-[var(--radius-xl)] border border-line-2 p-5">
@@ -286,7 +499,7 @@ export function GenreView({ id }: { id?: string }) {
       />
       {tracks.length > 0 && (
         <Section title="Essentials">
-          <TrackList tracks={tracks} />
+          <CatalogTrackTable tracks={tracks} />
         </Section>
       )}
       {artists.length > 0 && (

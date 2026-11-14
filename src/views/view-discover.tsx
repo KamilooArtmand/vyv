@@ -8,11 +8,14 @@ import { DiscoverSkeleton } from '../ui/skeletons';
 
 import { useEffect, useState } from 'react';
 import { Compass, Play } from 'lucide-react';
+import { motion } from 'motion/react';
 import { playQueue } from '../state/state-player';
 import { Audius, RadioBrowser } from '../services/sources';
 import { loadSnapshot, snapshotSize, type CatalogSnapshot } from '../services/snapshot';
 import { Chip, EmptyState, Grid, PageHeader, Section, Segmented, TrackList } from '../ui/ui-components';
 import { ArchiveCard, ShowCard, SourceTag, StationGrid, useLive } from '../ui/ui-live';
+import { BentoCard } from '../components/ui/bento-card';
+import { ARGON_SPRINGS } from '../lib/motion';
 import type { Track } from '../core/core-types';
 
 type Tab = 'music' | 'radio' | 'podcasts' | 'heritage';
@@ -32,9 +35,16 @@ function Chips<T extends string>({ items, value, onChange, label }: { items: T[]
 function PlayAll({ tracks }: { tracks: Track[] }) {
   if (!tracks.length) return null;
   return (
-    <button type="button" onClick={() => playQueue(tracks)} className="press flex h-9 items-center gap-2 rounded-full bg-fg pl-3 pr-4 text-[13px] font-semibold text-bg">
+    <motion.button
+      type="button"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      transition={ARGON_SPRINGS.bouncy}
+      onClick={() => playQueue(tracks)}
+      className="flex h-9 items-center gap-2 rounded-full bg-fg pl-3 pr-4 text-[13px] font-semibold text-bg shadow-ambient-xs cursor-pointer outline-none hover:opacity-90"
+    >
       <Play size={14} className="fill-current" /> Play all
-    </button>
+    </motion.button>
   );
 }
 
@@ -47,7 +57,9 @@ function MusicTab({ snap }: { snap: CatalogSnapshot }) {
     <>
       <Chips items={genres} value={genre} onChange={setGenre} />
       <Section title={genre} action={<PlayAll tracks={tracks} />}>
-        <TrackList tracks={tracks} />
+        <BentoCard variant="default" padding="none" className="rounded-2xl border border-hairline shadow-ambient-xs p-1.5 bg-surface/40">
+          <TrackList tracks={tracks} />
+        </BentoCard>
       </Section>
     </>
   );

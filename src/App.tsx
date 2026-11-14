@@ -9,7 +9,7 @@ import { bootPlayer, next, prev, skip, toggleMute, togglePlay } from './state/st
 import { applyTheme, navigate, settingsStore, setMode, togglePanel, uiStore } from './state/state-ui';
 import { Aura, BottomNav, MiniPlayer, PlayerDock, Sidebar, Toast, TopBar } from './ui/ui-shell';
 import { CoverPlayer, MicroPlayer, NanoPlayer } from './ui/ui-modes';
-import { AgentOverlay, SidePanel } from './ui/ui-panels';
+import { AgentOverlay, GlobalCommandPalette, SidePanel } from './ui/ui-panels';
 import { Sheets } from './ui/ui-sheets';
 import { ResizeEdges } from './ui/ui-window';
 import { UpdateBanner } from './ui/ui-update';
@@ -56,8 +56,9 @@ export function App() {
   const dockPos = useStore(settingsStore, (s) => s.dockPosition);
   const wide = useMediaQuery('(min-width: 1024px)');
   const [agentOpen, setAgentOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
 
-  const openAgent = useCallback(() => (wide ? togglePanel('agent') : setAgentOpen((o) => !o)), [wide]);
+  const openAgent = useCallback(() => setAgentOpen(true), []);
 
   useEffect(() => {
     bootPlayer();
@@ -79,7 +80,13 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        return openAgent();
+        setCommandOpen((o) => !o);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
+        e.preventDefault();
+        openAgent();
+        return;
       }
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
       switch (e.key) {
@@ -147,6 +154,11 @@ export function App() {
       </div>
 
       <AgentOverlay open={agentOpen} onClose={() => setAgentOpen(false)} />
+      <GlobalCommandPalette
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        onOpenAgent={openAgent}
+      />
       <div className="fixed inset-x-3 bottom-3 z-40 md:hidden">
         <MiniPlayer />
         <BottomNav onAgent={openAgent} />

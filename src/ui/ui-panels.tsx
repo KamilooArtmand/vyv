@@ -7,8 +7,8 @@ import { useStore } from '../core/core-store';
 import { playerStore, removeFromQueue } from '../state/state-player';
 import { togglePanel, uiStore } from '../state/state-ui';
 import { EmptyState, IconButton, LyricsView, Segmented, TrackRow } from './ui-components';
-import { AgentPanel, AgentOverlay } from './ui-agent-panel';
-export { AgentPanel, AgentOverlay };
+import { AgentPanel, AgentOverlay, GlobalCommandPalette } from './ui-agent-panel';
+export { AgentPanel, AgentOverlay, GlobalCommandPalette };
 
 export function QueuePanel() {
   const queue = useStore(playerStore, (s) => s.queue);
@@ -20,19 +20,27 @@ export function QueuePanel() {
     <div className="flex flex-col gap-4">
       {current && (
         <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-3">Now Playing</div>
-          <TrackRow track={current} queue={queue} />
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-fg-3">
+            <span>Now Playing</span>
+            <span className="font-mono tabular-nums text-[10.5px] text-fg-3">
+              {current.isRadio ? '128 kbps' : 'FLAC · 24-bit/96kHz'}
+            </span>
+          </div>
+          <TrackRow track={current} queue={queue} numbered index={idx >= 0 ? idx : 0} />
         </div>
       )}
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-3">Up Next</div>
+        <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-fg-3">
+          <span>Up Next</span>
+          <span className="font-mono tabular-nums text-[11px] text-fg-3">{upNext.length} tracks</span>
+        </div>
         {upNext.length === 0 ? (
           <EmptyState icon={ListMusic} title="Queue is empty" />
         ) : (
           <div className="space-y-1">
-            {upNext.map((t) => (
+            {upNext.map((t, i) => (
               <div key={t.id} className="relative group">
-                <TrackRow track={t} queue={queue} />
+                <TrackRow track={t} queue={queue} numbered index={i + 1} />
                 <IconButton
                   icon={X}
                   label="Remove"
@@ -54,7 +62,7 @@ export function SidePanel() {
   if (!panel) return null;
 
   return (
-    <aside className="glass mb-[calc(var(--dock-h)+var(--dock-gap)*2)] mr-3 mt-1 hidden w-[360px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] lg:flex p-3">
+    <aside className="glass-tier-2 border border-hairline mb-[calc(var(--dock-h)+var(--dock-gap)*2)] mr-3 mt-1 hidden w-[360px] shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] lg:flex p-3">
       <div className="flex items-center justify-between gap-2 mb-3">
         <Segmented
           value={panel}

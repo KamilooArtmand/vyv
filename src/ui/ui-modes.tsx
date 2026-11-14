@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronDown,
   Heart,
@@ -43,6 +44,8 @@ import { cyclePlayerMode, settingsStore, setMode, toast } from '../state/state-u
 import { Artwork, IconButton, LogoMark, LyricsView, Slider } from './ui-components';
 import { ResizeEdges } from './ui-window';
 import { desktop } from '../core/core-desktop';
+import { ARGON_SPRINGS } from '../lib/motion';
+import { triggerHaptic } from '../lib/haptics';
 
 /** Miniature interactive Logo Button with Left-Click Cycle, Long-Press Menu, and Right-Click Context Menu */
 function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
@@ -54,6 +57,7 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
     isLongPress.current = false;
     longPressTimer.current = window.setTimeout(() => {
       isLongPress.current = true;
+      triggerHaptic('impact');
       if (desktop) desktop.showModeMenu(currentMode);
       else setMenuOpen(true);
     }, 450);
@@ -71,6 +75,7 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
       e.preventDefault();
       return;
     }
+    triggerHaptic('tick');
     cyclePlayerMode();
   };
 
@@ -78,6 +83,7 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    triggerHaptic('tick');
     if (desktop) desktop.showModeMenu(currentMode);
     else setMenuOpen(true);
   };
@@ -98,7 +104,7 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
 
   return (
     <div className="relative inline-flex items-center">
-      <button
+      <motion.button
         type="button"
         onMouseDown={startPress}
         onMouseUp={endPress}
@@ -107,48 +113,57 @@ function MiniModeLogo({ currentMode }: { currentMode: PlayerMode }) {
         onTouchEnd={endPress}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
+        whileTap={{ scale: 0.92 }}
+        transition={ARGON_SPRINGS.snappy}
         className="press group relative flex size-8 items-center justify-center rounded-full"
         title="Click: next mode · Right click: all modes"
         aria-label="Player mode"
       >
         <LogoMark bare className="size-5 transition-transform group-hover:scale-110" />
-      </button>
+      </motion.button>
 
       {/* Popover / Context Menu */}
-      {menuOpen && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="glass-strong anim-pop absolute right-0 top-full mt-2 z-[100] w-48 rounded-2xl p-1.5 shadow-2xl border border-line-2 text-left"
-        >
-          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-3">
-            Switch Display Mode
-          </div>
-          <div className="space-y-0.5 mt-1">
-            {modes.map((m) => {
-              const active = currentMode === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    setMode(m.id);
-                    setMenuOpen(false);
-                  }}
-                  className={`press flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors ${
-                    active ? 'bg-surface-3 text-fg font-semibold' : 'text-fg-2 hover:bg-surface-2 hover:text-fg'
-                  }`}
-                >
-                  <div className="truncate">
-                    <div>{m.label}</div>
-                    <div className="text-[10px] text-fg-3 font-normal">{m.desc}</div>
-                  </div>
-                  {active && <Check size={14} className="text-accent-ink shrink-0 ml-1.5" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={ARGON_SPRINGS.snappy}
+            onClick={(e) => e.stopPropagation()}
+            className="glass-tier-2 border border-hairline absolute right-0 top-full mt-2 z-[100] w-52 rounded-2xl p-1.5 shadow-2xl text-left"
+          >
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-3">
+              Switch Display Mode
+            </div>
+            <div className="space-y-0.5 mt-1">
+              {modes.map((m) => {
+                const active = currentMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('tick');
+                      setMode(m.id);
+                      setMenuOpen(false);
+                    }}
+                    className={`press flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-xs transition-colors ${
+                      active ? 'bg-surface-3 text-fg font-semibold' : 'text-fg-2 hover:bg-surface-2 hover:text-fg'
+                    }`}
+                  >
+                    <div className="truncate">
+                      <div>{m.label}</div>
+                      <div className="text-[10px] text-fg-3 font-normal">{m.desc}</div>
+                    </div>
+                    {active && <Check size={14} className="text-accent-ink shrink-0 ml-1.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -192,7 +207,7 @@ export function CoverPlayer() {
   const lyrics = useStore(playerStore, (s) => s.lyrics);
   const sleepAt = useStore(playerStore, (s) => s.sleepAt);
   const speed = useStore(settingsStore, (s) => s.speed);
-  const { time, duration } = useStore(timeStore, (s) => s);
+  const { time, duration, buffered } = useStore(timeStore, (s) => s);
   const fav = useIsFavorite(currentTrack?.id);
   const [showLyrics, setShowLyrics] = useState(false);
   const [sleepIdx, setSleepIdx] = useState(0);
@@ -202,22 +217,28 @@ export function CoverPlayer() {
   const sleepMins = sleepAt ? Math.max(1, Math.round((sleepAt - Date.now()) / 60_000)) : null;
 
   const cycleSpeed = () => {
+    triggerHaptic('tick');
     const speeds = [0.75, 1, 1.25, 1.5, 2];
     setSpeed(speeds[(speeds.indexOf(speed) + 1) % speeds.length] ?? 1);
   };
   const cycleSleep = () => {
+    triggerHaptic('tick');
     const options = [null, 15, 30, 60] as const;
     const n = (sleepIdx + 1) % options.length;
     setSleepIdx(n);
     setSleep(options[n]);
   };
-  const pill = 'press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-1.5 text-[12px] font-semibold tabular text-fg-2 hover:text-fg';
+  const pill = 'press flex h-8 min-w-8 items-center justify-center gap-1 rounded-full px-2 text-[12px] font-semibold tabular-nums font-mono text-fg-2 hover:text-fg bg-surface-2/60 border border-hairline/40';
 
   return (
     <div className="mode-stage anim-fade">
       <ResizeEdges />
-      <div
-        className="mode-cover mode-surface reveal-host anim-pop select-none"
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={ARGON_SPRINGS.snappy}
+        className="mode-cover mode-surface reveal-host select-none relative"
         data-show={awake || showLyrics}
         onPointerMove={poke}
         onPointerDown={poke}
@@ -225,18 +246,31 @@ export function CoverPlayer() {
       >
         <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} className="absolute inset-0 size-full !rounded-none" />
 
+        {/* Specular vinyl radial sheen simulation */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.12)_0%,transparent_70%)]" aria-hidden />
+
         {/* Drag handle for the desktop window (top centre, clear of the controls). */}
         <div className="drag absolute inset-x-[22%] top-0 z-10 h-14" aria-hidden />
 
         {showLyrics && lyrics.length > 0 && (
-          <div className="absolute inset-0 z-10 bg-black/60 backdrop-blur-xl">
+          <div className="absolute inset-0 z-10 bg-black/65 backdrop-blur-2xl">
             <LyricsView className="h-full px-10 py-20 text-center" large />
           </div>
         )}
 
         {/* Top: back to the app, like, modes. */}
-        <div className="reveal absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-[linear-gradient(to_bottom,rgb(0_0_0/0.5),transparent)] px-6 pb-10 pt-5 text-fg">
-          <IconButton icon={ChevronDown} label="Back to app" size="sm" variant="bare" tip="bottom" onClick={() => setMode('Full')} />
+        <div className="reveal absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-[linear-gradient(to_bottom,rgb(0_0_0/0.6),transparent)] px-6 pb-10 pt-5 text-fg">
+          <IconButton
+            icon={ChevronDown}
+            label="Back to app"
+            size="sm"
+            variant="bare"
+            tip="bottom"
+            onClick={() => {
+              triggerHaptic('tick');
+              setMode('Full');
+            }}
+          />
           <div className="flex items-center gap-1">
             {!live && (
               <IconButton
@@ -248,6 +282,7 @@ export function CoverPlayer() {
                 active={fav}
                 filled={fav}
                 onClick={() => {
+                  triggerHaptic(fav ? 'tick' : 'impact');
                   toggleFavorite(currentTrack.id, currentTrack);
                   toast(fav ? 'Removed from liked' : 'Added to liked', 'heart');
                 }}
@@ -258,7 +293,7 @@ export function CoverPlayer() {
         </div>
 
         {/* Bottom: meta, scrubber, transport, volume & extras. */}
-        <div className="reveal absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,rgb(0_0_0/0.72),rgb(0_0_0/0.35)_65%,transparent)] px-[clamp(22px,7%,40px)] pb-[clamp(20px,6%,34px)] pt-24 text-fg">
+        <div className="reveal absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,rgb(0_0_0/0.8),rgb(0_0_0/0.4)_65%,transparent)] px-[clamp(22px,7%,40px)] pb-[clamp(20px,6%,34px)] pt-24 text-fg">
           <div className="min-w-0">
             <div className="truncate text-[clamp(17px,4.2vmin,26px)] font-semibold tracking-[-0.03em]">{currentTrack.title}</div>
             <div className="truncate text-[13.5px] text-fg-2">{currentTrack.artist}</div>
@@ -266,13 +301,16 @@ export function CoverPlayer() {
 
           {live ? (
             <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-fg-2">
-              <span className="anim-live size-1.5 rounded-full bg-[#ff3c00]" /> Live
+              <span className="anim-live size-1.5 rounded-full bg-[#ff3c00]" /> Live Radio Stream
             </div>
           ) : (
             <div className="mt-2">
-              <Slider value={time} max={duration || 1} step={0.1} onChange={seek} label="Seek" />
-              <div className="flex justify-between text-[11px] font-medium tabular text-fg-3">
+              <Slider value={time} max={duration || 1} step={0.1} buffered={buffered} onChange={seek} label="Seek" />
+              <div className="flex justify-between items-center text-[11px] font-medium font-mono tabular-nums text-fg-3">
                 <span>{formatTime(time)}</span>
+                <span className="rounded px-1.5 py-0.5 text-[9.5px] font-mono tabular-nums uppercase tracking-wider text-fg-3 border border-hairline/40">
+                  {currentTrack.isRadio ? '128 kbps' : 'FLAC · 24-bit/96kHz'}
+                </span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
@@ -280,73 +318,222 @@ export function CoverPlayer() {
 
           <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center">
             <div className="flex items-center gap-1">
-              <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} />
+              <IconButton
+                icon={muted || volume === 0 ? VolumeX : Volume2}
+                label="Mute"
+                size="sm"
+                variant="bare"
+                onClick={() => {
+                  triggerHaptic('tick');
+                  toggleMute();
+                }}
+              />
               <Slider value={muted ? 0 : volume} onChange={setVolume} label="Volume" className="w-[min(88px,13vmin)]" />
             </div>
             <div className="flex items-center gap-1.5">
-              <IconButton icon={SkipBack} label="Previous" variant="bare" onClick={prev} className="[&_svg]:fill-current" />
-              <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" size="lg" onClick={togglePlay} className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'} />
-              <IconButton icon={SkipForward} label="Next" variant="bare" onClick={() => next()} className="[&_svg]:fill-current" />
+              <IconButton
+                icon={SkipBack}
+                label="Previous"
+                variant="bare"
+                onClick={() => {
+                  triggerHaptic('tick');
+                  prev();
+                }}
+                className="[&_svg]:fill-current"
+              />
+              <IconButton
+                icon={isPlaying ? Pause : Play}
+                label={isPlaying ? 'Pause' : 'Play'}
+                variant="solid"
+                size="lg"
+                onClick={() => {
+                  triggerHaptic('impact');
+                  togglePlay();
+                }}
+                className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'}
+              />
+              <IconButton
+                icon={SkipForward}
+                label="Next"
+                variant="bare"
+                onClick={() => {
+                  triggerHaptic('tick');
+                  next();
+                }}
+                className="[&_svg]:fill-current"
+              />
             </div>
             <div className="flex items-center justify-end">
-              {!live && <IconButton icon={Shuffle} label="Shuffle" size="sm" variant="bare" active={shuffle} onClick={toggleShuffle} />}
-              {!live && <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label="Repeat" size="sm" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />}
+              {!live && (
+                <IconButton
+                  icon={Shuffle}
+                  label="Shuffle"
+                  size="sm"
+                  variant="bare"
+                  active={shuffle}
+                  onClick={() => {
+                    triggerHaptic('tick');
+                    toggleShuffle();
+                  }}
+                />
+              )}
+              {!live && (
+                <IconButton
+                  icon={repeat === 'one' ? Repeat1 : Repeat}
+                  label="Repeat"
+                  size="sm"
+                  variant="bare"
+                  active={repeat !== 'off'}
+                  onClick={() => {
+                    triggerHaptic('tick');
+                    cycleRepeat();
+                  }}
+                />
+              )}
               {!live && (
                 <button type="button" onClick={cycleSpeed} aria-label="Playback speed" className={pill}>
-                  <Gauge size={15} strokeWidth={1.75} />
+                  <Gauge size={14} strokeWidth={1.75} />
                   {speed !== 1 && `${speed}×`}
                 </button>
               )}
               {spoken && (
                 <button type="button" onClick={cycleSleep} aria-label="Sleep timer" className={pill}>
-                  <Moon size={15} strokeWidth={1.75} />
+                  <Moon size={14} strokeWidth={1.75} />
                   {sleepMins && `${sleepMins}m`}
                 </button>
               )}
-              {lyrics.length > 0 && <IconButton icon={MicVocal} label="Lyrics" size="sm" variant="bare" active={showLyrics} onClick={() => setShowLyrics(!showLyrics)} />}
+              {lyrics.length > 0 && (
+                <IconButton
+                  icon={MicVocal}
+                  label="Lyrics"
+                  size="sm"
+                  variant="bare"
+                  active={showLyrics}
+                  onClick={() => {
+                    triggerHaptic('tick');
+                    setShowLyrics(!showLyrics);
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
-/** Micro: an opaque capsule — art, title, transport. Floats on top on desktop. */
+/** Micro: an opaque capsule — art, title marquee, timeline arc, transport. Floats on top on desktop. */
 export function MicroPlayer() {
   const currentTrack = useStore(playerStore, (s) => s.track) || SEED_TRACKS[0];
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
-  const { time, duration } = useStore(timeStore, (s) => s);
+  const { time, duration, buffered } = useStore(timeStore, (s) => s);
   const progress = duration ? Math.min(100, (time / duration) * 100) : 0;
+  const bufferedPct = duration ? Math.min(100, (buffered / duration) * 100) : 0;
 
   return (
     <div className="mode-stage anim-fade">
-      <div className="mode-micro mode-surface drag anim-pop flex items-center gap-3 pl-3 pr-4">
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.95 }}
+        transition={ARGON_SPRINGS.snappy}
+        className="mode-micro mode-surface drag flex items-center gap-3 pl-3 pr-4 shadow-ambient-lg border border-hairline"
+      >
         {/* 64px circle inset 12px: concentric with the capsule's 44px ends. */}
-        <button type="button" aria-label="Open cover" onClick={() => setMode('Cover')} className="press shrink-0">
+        <motion.button
+          type="button"
+          aria-label="Open cover"
+          whileTap={{ scale: 0.92 }}
+          transition={ARGON_SPRINGS.snappy}
+          onClick={() => {
+            triggerHaptic('tick');
+            setMode('Cover');
+          }}
+          className="press shrink-0 rounded-full"
+        >
           <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} shape="circle" className="size-16" />
-        </button>
+        </motion.button>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-semibold text-fg">{currentTrack.title}</div>
-          <div className="truncate text-[12px] text-fg-3">{currentTrack.artist}</div>
-          <div className="mt-2 h-[3px] w-full overflow-hidden rounded-full bg-surface-3">
-            {currentTrack.isRadio ? <div className="skeleton size-full" /> : <div className="h-full rounded-full bg-fg transition-[width] duration-300" style={{ width: `${progress}%` }} />}
+          {/* Title with marquee overflow capability */}
+          <div className="overflow-hidden">
+            <div className="truncate text-[14px] font-semibold text-fg tracking-tight">
+              {currentTrack.title}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 truncate text-[12px] text-fg-3">
+            <span className="truncate">{currentTrack.artist}</span>
+            <span className="text-[10px] font-mono tabular-nums opacity-60">
+              · {formatTime(time)} / {formatTime(duration)}
+            </span>
+          </div>
+
+          {/* Progressive timeline bar with buffered range */}
+          <div className="relative mt-2 h-[3px] w-full overflow-hidden rounded-full bg-surface-3">
+            {currentTrack.isRadio ? (
+              <div className="skeleton size-full" />
+            ) : (
+              <>
+                <div
+                  className="absolute inset-y-0 left-0 bg-surface-3/80 transition-[width] duration-300"
+                  style={{ width: `${bufferedPct}%` }}
+                />
+                <div
+                  className="relative h-full rounded-full bg-fg transition-[width] duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center">
-          <IconButton icon={SkipBack} label="Previous" size="sm" variant="bare" tip={false} onClick={prev} className="[&_svg]:fill-current" />
-          <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} variant="solid" tip={false} onClick={togglePlay} className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'} />
-          <IconButton icon={SkipForward} label="Next" size="sm" variant="bare" tip={false} onClick={() => next()} className="[&_svg]:fill-current" />
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            icon={SkipBack}
+            label="Previous"
+            size="sm"
+            variant="bare"
+            tip={false}
+            onClick={() => {
+              triggerHaptic('tick');
+              prev();
+            }}
+            className="[&_svg]:fill-current"
+          />
+          <motion.div whileTap={{ scale: 0.9 }} transition={ARGON_SPRINGS.bouncy}>
+            <IconButton
+              icon={isPlaying ? Pause : Play}
+              label={isPlaying ? 'Pause' : 'Play'}
+              variant="solid"
+              tip={false}
+              onClick={() => {
+                triggerHaptic('impact');
+                togglePlay();
+              }}
+              className={isPlaying ? '[&_svg]:fill-current' : '[&_svg]:ml-0.5 [&_svg]:fill-current'}
+            />
+          </motion.div>
+          <IconButton
+            icon={SkipForward}
+            label="Next"
+            size="sm"
+            variant="bare"
+            tip={false}
+            onClick={() => {
+              triggerHaptic('tick');
+              next();
+            }}
+            className="[&_svg]:fill-current"
+          />
           <MiniModeLogo currentMode="Micro" />
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
-/** Nano: an opaque orb with a progress ring. Hover reveals play/pause; the rim drags. */
+/** Nano: an opaque orb with a progress ring. Hover reveals play/pause; single tap toggles; the rim drags. */
 export function NanoPlayer() {
   const currentTrack = useStore(playerStore, (s) => s.track) || SEED_TRACKS[0];
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
@@ -357,39 +544,70 @@ export function NanoPlayer() {
 
   return (
     <div className="mode-stage anim-fade">
-      <div className="mode-nano mode-surface drag reveal-host anim-pop">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.88 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.88 }}
+        transition={ARGON_SPRINGS.snappy}
+        className="mode-nano mode-surface drag reveal-host shadow-ambient-lg border border-hairline relative"
+      >
         <svg className="pointer-events-none absolute inset-0 size-full -rotate-90" viewBox="0 0 168 168" aria-hidden>
           <circle cx="84" cy="84" r={R} fill="none" stroke="var(--surface-3)" strokeWidth="3" />
-          <circle cx="84" cy="84" r={R} fill="none" stroke="#ff3c00" strokeWidth="3" strokeDasharray={C} strokeDashoffset={C * (1 - progress)} strokeLinecap="round" className="transition-[stroke-dashoffset] duration-300" />
+          <circle
+            cx="84"
+            cy="84"
+            r={R}
+            fill="none"
+            stroke="var(--accent, #ff3c00)"
+            strokeWidth="3.5"
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - progress)}
+            strokeLinecap="round"
+            className="transition-[stroke-dashoffset] duration-300"
+          />
         </svg>
 
-        <button
+        <motion.button
           type="button"
           aria-label={isPlaying ? 'Pause' : 'Play'}
-          onClick={togglePlay}
-          onDoubleClick={() => setMode('Full')}
+          whileTap={{ scale: 0.93 }}
+          transition={ARGON_SPRINGS.bouncy}
+          onClick={() => {
+            triggerHaptic('impact');
+            togglePlay();
+          }}
+          onDoubleClick={() => {
+            triggerHaptic('success');
+            setMode('Full');
+          }}
           onContextMenu={(e) => {
             e.preventDefault();
+            triggerHaptic('tick');
             if (desktop) desktop.showModeMenu('Nano');
             else cyclePlayerMode();
           }}
-          className="press absolute inset-[12px] overflow-hidden rounded-full"
+          className="press absolute inset-[12px] overflow-hidden rounded-full shadow-inner"
         >
           <Artwork seed={currentTrack.id} color={currentTrack.dominantColorHex} src={currentTrack.coverUrl} shape="circle" className="size-full" />
-          <span className="reveal absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white">
+          <span className="reveal absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-[2px]">
             {isPlaying ? <Pause size={30} className="fill-current" /> : <Play size={30} className="ml-1 fill-current" />}
           </span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
           type="button"
           aria-label="Open full app"
-          onClick={() => setMode('Full')}
+          whileTap={{ scale: 0.88 }}
+          transition={ARGON_SPRINGS.snappy}
+          onClick={() => {
+            triggerHaptic('tick');
+            setMode('Full');
+          }}
           className="reveal press absolute bottom-[26px] left-1/2 flex size-7 -translate-x-1/2 items-center justify-center text-white/85 hover:text-white"
         >
           <Maximize2 size={14} />
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </div>
   );
 }

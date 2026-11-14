@@ -3,13 +3,17 @@
 // ─────────────────────────────────────────────────────────────
 
 import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Bookmark, Heart, MicVocal, MoreHorizontal, Pause, Play, Shuffle, X, type LucideIcon } from 'lucide-react';
+import { Bookmark, Heart, MicVocal, MoreHorizontal, Pause, Play, Shuffle, Volume2, VolumeX, X, type LucideIcon } from 'lucide-react';
+import { motion } from 'motion/react';
 import type { BookmarkKind, Track } from '../core/core-types';
 import { cn, formatTime, hash } from '../core/core-utils';
 import { useStore } from '../core/core-store';
-import { getActiveLyricIndex, playQueue, playTrack, playerStore, seek, timeStore, togglePlay, AudioEngine } from '../state/state-player';
+import { getActiveLyricIndex, playQueue, playTrack, playerStore, seek, timeStore, togglePlay, AudioEngine, setVocalIsolation } from '../state/state-player';
 import { remember, toggleBookmark, toggleFavorite, useIsBookmarked, useIsFavorite } from '../state/state-catalog';
 import { navigate, openSheet } from '../state/state-ui';
+import { ARGON_SPRINGS } from '../lib/motion';
+import { computeInnerRadius } from '../lib/utils';
+import { SpecularSurface } from '../components/primitives/specular-surface';
 
 // ── Artwork & Generative Mesh Gradient ───────────────────────
 function hexToHue(hex: string): number | null {
@@ -152,23 +156,48 @@ export const IconButton = forwardRef<HTMLButtonElement, {
 });
 
 // ── Play Floating Action Button ──────────────────────────────
-export function PlayFab({ onClick, playing, className, size = 'md' }: { onClick: () => void; playing?: boolean; className?: string; size?: 'md' | 'lg' }) {
+export function PlayFab({
+  onClick,
+  playing,
+  className,
+  size = 'md',
+}: {
+  onClick: () => void;
+  playing?: boolean;
+  className?: string;
+  size?: 'md' | 'lg';
+}) {
   return (
-    <button
+    <motion.button
       type="button"
       aria-label={playing ? 'Pause' : 'Play'}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.92 }}
+      transition={ARGON_SPRINGS.bouncy}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
       className={cn(
-        'press flex items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_12px_28px_-8px_var(--accent)] hover:brightness-110',
+        'group/play relative flex items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_8px_20px_-6px_var(--accent)] hover:brightness-105 active:brightness-95 border border-white/20 dark:border-white/10 outline-none cursor-pointer',
         size === 'lg' ? 'size-14' : 'size-11',
         className,
       )}
     >
-      {playing ? <Pause size={size === 'lg' ? 22 : 18} className="fill-current" /> : <Play size={size === 'lg' ? 22 : 18} className="ml-0.5 fill-current" />}
-    </button>
+      <motion.span
+        key={playing ? 'pause' : 'play'}
+        initial={{ scale: 0.85, opacity: 0.8 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={ARGON_SPRINGS.bouncy}
+        className="flex items-center justify-center"
+      >
+        {playing ? (
+          <Pause size={size === 'lg' ? 22 : 18} className="fill-current" />
+        ) : (
+          <Play size={size === 'lg' ? 22 : 18} className="ml-0.5 fill-current" />
+        )}
+      </motion.span>
+    </motion.button>
   );
 }
 
@@ -231,6 +260,144 @@ export function Visualizer({ bars = 24, className, mirror, color = 'var(--accent
   return <canvas ref={ref} className={className} style={{ color }} aria-hidden />;
 }
 
+// ── Smooth Audio Waveform Visualizer Canvas ──────────────────
+export function WaveformVisualizer({
+  className,
+  height = 36,
+  color = 'var(--accent)',
+  points = 64,
+  active = true,
+}: {
+  className?: string;
+  height?: number;
+  color?: string;
+  points?: number;
+  active?: boolean;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const data = new Float32Array(points);
+    const smooth = new Float32Array(points);
+    let raf = 0;
+    let visible = true;
+    let strokeColor = '';
+    let phase = 0;
+
+    const resize = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width || canvas.clientWidth || 300;
+      const h = height;
+      canvas.width = Math.max(10, Math.floor(w * dpr));
+      canvas.height = Math.max(10, Math.floor(h * dpr));
+      strokeColor = getComputedStyle(canvas).color || '#ff3c00';
+    };
+
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+    });
+    io.observe(canvas);
+
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      if (!visible || !active) return;
+
+      phase += 0.04;
+      AudioEngine.fillWaveform(data);
+
+      let isSilent = true;
+      for (let i = 0; i < points; i++) {
+        if (Math.abs(data[i]) > 0.015) {
+          isSilent = false;
+          break;
+        }
+      }
+
+      const { width: w, height: h } = canvas;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      ctx.clearRect(0, 0, w, h);
+
+      const midY = h / 2;
+      const step = w / (points - 1);
+
+      ctx.beginPath();
+      for (let i = 0; i < points; i++) {
+        let targetVal = data[i];
+        if (isSilent) {
+          targetVal = Math.sin(i * 0.18 + phase) * 0.08 + Math.cos(i * 0.09 - phase * 0.5) * 0.04;
+        }
+        smooth[i] += (targetVal - smooth[i]) * 0.3;
+        const amp = smooth[i] * (h * 0.44);
+        const x = i * step;
+        const y = midY - amp;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          const prevX = (i - 1) * step;
+          const prevAmp = smooth[i - 1] * (h * 0.44);
+          const prevY = midY - prevAmp;
+          const cpX = (prevX + x) / 2;
+          ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+        }
+      }
+
+      const lastX = (points - 1) * step;
+      ctx.lineTo(lastX, midY);
+      ctx.lineTo(0, midY);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, strokeColor);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.22;
+      ctx.fill();
+
+      ctx.globalAlpha = 0.85;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      ctx.globalAlpha = 1.0;
+    };
+
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      io.disconnect();
+    };
+  }, [points, height, active]);
+
+  return (
+    <div
+      className={cn('relative w-full overflow-hidden shrink-0 select-none pointer-events-none', className)}
+      style={{ height: `${height}px`, minHeight: `${height}px` }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="size-full block"
+        style={{ color }}
+        aria-hidden
+      />
+    </div>
+  );
+}
+
 export function EqBars({ playing, className }: { playing: boolean; className?: string }) {
   return (
     <span className={`eq-bars inline-flex h-3.5 items-end gap-[2px] ${playing ? '' : 'paused'} ${className ?? ''}`} aria-hidden>
@@ -262,29 +429,37 @@ export const MediaCard = memo(function MediaCard({
   badge?: ReactNode;
 }) {
   return (
-    <div
+    <SpecularSurface
       role="link"
       tabIndex={0}
       onClick={() => entity.route && navigate(entity.route as unknown as Parameters<typeof navigate>[0])}
       onKeyDown={(e) => e.key === 'Enter' && entity.route && navigate(entity.route as unknown as Parameters<typeof navigate>[0])}
-      className={cn('group/card press cursor-pointer outline-none [&:active]:scale-[0.98]', className)}
+      className={cn(
+        'group/card press cursor-pointer outline-none rounded-2xl p-2 bg-surface/50 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200',
+        className
+      )}
     >
-      <Artwork
-        seed={entity.id}
-        color={entity.color}
-        src={entity.src}
-        glyph={entity.glyph}
-        shape={entity.circle ? 'circle' : 'square'}
-        className="aspect-square w-full shadow-[var(--shadow-1)] transition-transform duration-500 [transition-timing-function:var(--ease-spring)] group-hover/card:scale-[1.02]"
-      >
-        {onPlay && <PlayFab onClick={onPlay} className="absolute bottom-3 right-3 opacity-0 transition-opacity group-hover/card:opacity-100 max-md:opacity-100" />}
-        {badge && <div className="absolute left-3 top-3">{badge}</div>}
-      </Artwork>
-      <div className="mt-3 min-w-0">
-        <div className="truncate text-[14.5px] font-semibold tracking-[-0.015em] text-fg">{entity.title}</div>
-        <div className="truncate text-[13px] text-fg-3">{entity.subtitle}</div>
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-hairline-subtle">
+        <Artwork
+          seed={entity.id}
+          color={entity.color}
+          src={entity.src}
+          glyph={entity.glyph}
+          shape={entity.circle ? 'circle' : 'square'}
+          className={cn(
+            'size-full transition-transform duration-500 [transition-timing-function:var(--ease-spring)] group-hover/card:scale-[1.03]',
+            entity.circle ? 'rounded-full' : 'rounded-xl'
+          )}
+        >
+          {onPlay && <PlayFab onClick={onPlay} className="absolute bottom-2.5 right-2.5 opacity-0 transition-opacity group-hover/card:opacity-100 max-md:opacity-100" />}
+          {badge && <div className="absolute left-2.5 top-2.5">{badge}</div>}
+        </Artwork>
       </div>
-    </div>
+      <div className="mt-2.5 min-w-0 px-0.5 pb-0.5">
+        <div className="truncate text-[14px] font-semibold tracking-[-0.015em] text-fg">{entity.title}</div>
+        <div className="truncate text-[12.5px] text-fg-3">{entity.subtitle}</div>
+      </div>
+    </SpecularSurface>
   );
 });
 
@@ -305,8 +480,8 @@ export function TrackRow({ track, queue, numbered, index }: { track: Track; queu
       )}
     >
       {numbered && (
-        <span className="w-5 text-center text-xs tabular text-fg-3">
-          {active && isPlaying ? <EqBars playing /> : index !== undefined ? index + 1 : ''}
+        <span className="w-6 text-center text-xs font-mono tabular-nums text-fg-3">
+          {active && isPlaying ? <EqBars playing /> : index !== undefined ? String(index + 1).padStart(2, '0') : ''}
         </span>
       )}
       <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} className="size-10 [--art-r:8px]" />
@@ -327,7 +502,7 @@ export function TrackRow({ track, queue, numbered, index }: { track: Track; queu
         }}
         className={cn(!fav && 'opacity-0 group-hover/row:opacity-100')}
       />
-      <span className="text-[12px] tabular text-fg-3">{formatTime(track.durationSeconds)}</span>
+      <span className="text-[12px] font-mono tabular-nums text-fg-3">{formatTime(track.durationSeconds)}</span>
       <IconButton
         icon={MoreHorizontal}
         label="More"
@@ -451,17 +626,33 @@ export function Slider({
   value,
   max = 1,
   step = 0.01,
+  buffered,
   onChange,
   label,
   className,
   ...rest
-}: { value: number; max?: number; step?: number; onChange: (v: number) => void; label: string; className?: string } & Omit<
+}: {
+  value: number;
+  max?: number;
+  step?: number;
+  buffered?: number;
+  onChange: (v: number) => void;
+  label: string;
+  className?: string;
+} & Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'value' | 'max' | 'step' | 'onChange' | 'type' | 'min'
 >) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  const pct = Math.max(0, Math.min(100, (value / (max || 1)) * 100));
+  const bufferedPct = buffered !== undefined ? Math.max(0, Math.min(100, (buffered / (max || 1)) * 100)) : 0;
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <div className={cn('relative flex h-5 w-full items-center', className)}>
+    <div
+      className={cn('group/slider relative flex h-5 w-full items-center cursor-pointer select-none', className)}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+    >
       <input
         type="range"
         min={0}
@@ -470,12 +661,140 @@ export function Slider({
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         aria-label={label}
-        className="absolute inset-0 size-full cursor-pointer opacity-0"
+        className="absolute inset-0 z-20 size-full cursor-pointer opacity-0"
         {...rest}
       />
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
-        {/* --track-fill lets adaptive surfaces (dock, cover) force a legible ink. */}
-        <div className="h-full rounded-full bg-[var(--track-fill,var(--accent))]" style={{ width: `${pct}%` }} />
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-3 transition-all duration-200 group-hover/slider:h-2">
+        {/* Buffered range shimmer */}
+        {bufferedPct > 0 && (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-surface-3/80 dark:bg-white/15 skeleton-shimmer transition-[width] duration-300"
+            style={{ width: `${bufferedPct}%` }}
+          />
+        )}
+        {/* Playback progress track */}
+        <div
+          className="relative h-full rounded-full bg-[var(--track-fill,var(--accent))] transition-[width] duration-75"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Tactile Scrubber Thumb with bouncy micro-spring */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 -translate-y-1/2 size-3.5 rounded-full bg-fg shadow-ambient-sm border border-hairline-strong transition-opacity duration-150"
+        style={{
+          left: `calc(${pct}% - 7px)`,
+          opacity: hovered ? 1 : 0,
+        }}
+        animate={{ scale: hovered ? 1 : 0.6 }}
+        transition={ARGON_SPRINGS.bouncy}
+      />
+    </div>
+  );
+}
+
+// ── Tactile Rotary Volume Dial ────────────────────────────────
+export function VolumeDial({
+  value,
+  onChange,
+  className,
+  size = 34,
+  label = 'Volume',
+  onMuteToggle,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  className?: string;
+  size?: number;
+  label?: string;
+  onMuteToggle?: () => void;
+}) {
+  const isDragging = useRef(false);
+  const startY = useRef(0);
+  const startVal = useRef(0);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = true;
+    startY.current = e.clientY;
+    startVal.current = value;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging.current) return;
+    const deltaY = startY.current - e.clientY;
+    const nextVal = Math.max(0, Math.min(1, startVal.current + deltaY / 120));
+    onChange(nextVal);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    isDragging.current = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const r = (size - 6) / 2;
+  const circumference = 2 * Math.PI * r;
+  const arcLength = circumference * 0.75;
+  const strokeDashoffset = arcLength - arcLength * Math.max(0, Math.min(1, value));
+  const pct = Math.round(value * 100);
+
+  return (
+    <div
+      role="slider"
+      aria-label={label}
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      tabIndex={0}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onDoubleClick={onMuteToggle}
+      className={cn(
+        'group/dial relative flex items-center justify-center cursor-ns-resize touch-none select-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent',
+        className
+      )}
+      style={{ width: `${size}px`, height: `${size}px` }}
+      title={`${label}: ${pct}% (Drag up/down, double click to mute)`}
+    >
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="size-full -rotate-[135deg] overflow-visible"
+        aria-hidden
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeDasharray={`${arcLength} ${circumference}`}
+          strokeLinecap="round"
+          className="text-surface-3"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="2.5"
+          strokeDasharray={`${arcLength} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-[stroke-dashoffset] duration-75"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        {value === 0 ? (
+          <VolumeX size={size * 0.4} className="text-fg-3" />
+        ) : (
+          <Volume2 size={size * 0.4} className="text-fg-2 group-hover/dial:text-accent transition-colors" />
+        )}
       </div>
     </div>
   );
@@ -661,8 +980,18 @@ export function Fader({ value, min, max, onChange, label }: { value: number; min
 }
 
 /** Karaoke-style synced lyrics, shared by Cover mode and the desktop side panel. */
-export function LyricsView({ className, large }: { className?: string; large?: boolean }) {
+export function LyricsView({
+  className,
+  large,
+  showVocalToggles = true,
+}: {
+  className?: string;
+  large?: boolean;
+  showVocalToggles?: boolean;
+}) {
   const lyrics = useStore(playerStore, (s) => s.lyrics);
+  const track = useStore(playerStore, (s) => s.track);
+  const vocalMode = useStore(playerStore, (s) => s.vocalIsolation || 'off');
   const time = useStore(timeStore, (s) => s.time);
   const active = useMemo(() => getActiveLyricIndex(lyrics, time), [lyrics, time]);
   const ref = useRef<HTMLDivElement>(null);
@@ -673,34 +1002,104 @@ export function LyricsView({ className, large }: { className?: string; large?: b
 
   if (!lyrics.length) {
     return (
-      <div className={cn('flex flex-col items-center justify-center gap-3 text-fg-3', className)}>
+      <div className={cn('relative flex flex-col items-center justify-center gap-3 text-fg-3 p-8 text-center', className)}>
+        {track && (
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 opacity-20 blur-3xl saturate-150 transition-opacity duration-700"
+            style={{
+              backgroundImage: meshGradient(track.id, track.dominantColorHex),
+              transform: 'translateZ(0)',
+            }}
+          />
+        )}
         <MicVocal size={28} strokeWidth={1.5} />
-        <span className="text-sm">No lyrics</span>
+        <span className="text-sm font-medium">No lyrics available</span>
       </div>
     );
   }
 
+  const cycleVocalIsolation = () => {
+    const next: 'off' | 'karaoke' | 'vocals' = vocalMode === 'off' ? 'karaoke' : vocalMode === 'karaoke' ? 'vocals' : 'off';
+    setVocalIsolation(next);
+  };
+
   return (
-    <div ref={ref} className={cn('scrollbar-none overflow-y-auto py-[35%]', className)} style={{ maskImage: 'linear-gradient(transparent,#000 18%,#000 82%,transparent)' }}>
-      {lyrics.map((l, i) => {
-        const d = Math.abs(i - active);
-        return (
+    <div className={cn('relative flex flex-col h-full overflow-hidden', className)}>
+      {/* Dynamic Generative Mesh Background Aura without frame drops */}
+      {track && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 opacity-25 blur-3xl saturate-150 transition-opacity duration-1000 will-change-[opacity,transform]"
+          style={{
+            backgroundImage: meshGradient(track.id, track.dominantColorHex),
+            transform: 'translateZ(0)',
+          }}
+        />
+      )}
+
+      {/* Vocal Isolation Header Pill */}
+      {showVocalToggles && (
+        <div className="shrink-0 flex items-center justify-between pb-3 px-2 z-20">
           <button
-            key={i}
-            data-i={i}
             type="button"
-            onClick={() => seek(l.time)}
+            onClick={cycleVocalIsolation}
             className={cn(
-              'block w-full origin-left text-left font-semibold tracking-[-0.025em] transition-[opacity,transform,filter] duration-500',
-              large ? 'py-2.5 text-[28px] leading-[1.18] md:text-[40px]' : 'py-2 text-[20px] leading-snug',
-              i === active ? 'scale-100 text-fg opacity-100' : 'scale-[0.97] text-fg opacity-30 hover:opacity-60',
+              'press inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-mono tabular-nums font-semibold tracking-wider transition-all cursor-pointer outline-none',
+              vocalMode === 'karaoke'
+                ? 'bg-accent text-on-accent shadow-[0_0_12px_var(--accent)]'
+                : vocalMode === 'vocals'
+                ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+                : 'bg-surface-2 text-fg-3 hover:text-fg border border-hairline'
             )}
-            style={{ filter: i === active ? 'none' : `blur(${Math.min(d, 3) * 0.6}px)` }}
+            title="Toggle vocal isolation (Normal / Karaoke Instrumental / Vocals Focus)"
           >
-            {l.text}
+            <MicVocal size={12} />
+            <span>
+              {vocalMode === 'karaoke' ? 'Karaoke · Backing' : vocalMode === 'vocals' ? 'Vocal Focus' : 'Vocals: Standard'}
+            </span>
           </button>
-        );
-      })}
+        </div>
+      )}
+
+      {/* Synchronized Lyrics Scroll Container */}
+      <div
+        ref={ref}
+        className="scrollbar-none flex-1 overflow-y-auto py-[35%] px-2"
+        style={{ maskImage: 'linear-gradient(transparent,#000 15%,#000 85%,transparent)' }}
+      >
+        {lyrics.map((l, i) => {
+          const isActive = i === active;
+          const d = Math.abs(i - active);
+
+          return (
+            <motion.button
+              key={i}
+              data-i={i}
+              type="button"
+              onClick={() => seek(l.time)}
+              animate={{
+                scale: isActive ? (large ? 1.05 : 1.03) : 0.96,
+                opacity: isActive ? 1 : Math.max(0.2, 0.5 - d * 0.1),
+              }}
+              transition={ARGON_SPRINGS.snappy}
+              className={cn(
+                'block w-full origin-left text-left font-semibold tracking-[-0.025em] cursor-pointer outline-none select-none transition-colors duration-200',
+                large ? 'py-3 text-[28px] leading-[1.2] md:text-[38px]' : 'py-2.5 text-[20px] leading-snug',
+                isActive
+                  ? 'text-fg [text-shadow:0_0_24px_var(--accent)] font-bold'
+                  : 'text-fg-3 hover:text-fg/80',
+              )}
+              style={{
+                filter: isActive ? 'none' : `blur(${Math.min(d, 2.5) * 0.6}px)`,
+                transformOrigin: 'left center',
+                willChange: 'transform, opacity, filter',
+              }}
+            >
+              {l.text}
+            </motion.button>
+          );
+        })}
+      </div>
     </div>
   );
 }

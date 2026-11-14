@@ -1,0 +1,7 @@
+---
+description: Universal Argon Design System, Optical Monochrome Tokens, RTL/LTR Typography & 120FPS Motion Architecture
+globs: ["**/*.tsx", "**/*.ts", "**/*.css"]
+alwaysApply: true
+---
+
+CRITICAL DIRECTIVE: Read and strictly enforce @DESIGN-SYSTEM.md before modifying or creating any UI, CSS, or React component.

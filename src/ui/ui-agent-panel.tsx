@@ -1,18 +1,58 @@
 // ─────────────────────────────────────────────────────────────
-// ui-agent-panel.tsx: Conversational Agent Overlay & Panel
+// ui-agent-panel.tsx: Conversational Agent Overlay & Command Palette
 // ─────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, CloudSun, Headphones, History, Landmark, Mic, MoonStar, Sparkles, Timer, Wand2, X } from 'lucide-react';
+import {
+  ArrowUp,
+  Circle,
+  CloudSun,
+  Headphones,
+  History,
+  Landmark,
+  Layout,
+  Maximize2,
+  Mic,
+  Moon,
+  MoonStar,
+  Music,
+  Pause,
+  PictureInPicture2,
+  Play,
+  Repeat,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Sparkles,
+  Sun,
+  Timer,
+  Volume2,
+  VolumeX,
+  Wand2,
+  X,
+} from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { cn } from '../core/core-utils';
 import { ask, listen, predict, voiceSupported } from '../state/state-agent';
-import { allTracks, libraryStore, resolveEntity } from '../state/state-catalog';
-import { playerStore } from '../state/state-player';
-import { settingsStore, uiStore } from '../state/state-ui';
-import { navigate } from '../state/state-ui';
+import { SEED_TRACKS, allTracks, libraryStore, resolveEntity } from '../state/state-catalog';
+import {
+  cycleRepeat,
+  next,
+  playerStore,
+  playQueue,
+  prev,
+  setSleep,
+  setVolume,
+  toggleMute,
+  togglePlay,
+  toggleShuffle,
+} from '../state/state-player';
+import { applyTheme, navigate, setMode, settingsStore, toast, uiStore } from '../state/state-ui';
 import { Artwork, IconButton } from './ui-components';
-import type { AgentMessage, BookmarkKind } from '../core/core-types';
+import { AdaptiveOverlay } from '../components/ui/adaptive-overlay';
+import { CommandGroup, CommandItem, CommandPalette } from '../components/ui/command-palette';
+import { triggerHaptic } from '../lib/haptics';
+import type { AgentMessage, BookmarkKind, ThemePref } from '../core/core-types';
 
 const CAPABILITIES = [
   { icon: Wand2, text: 'Make me a focus mix' },
@@ -63,7 +103,15 @@ function Bubble({ m, onSuggest }: { m: AgentMessage; onSuggest: (s: string) => v
       {m.suggestions && (
         <div className="ml-8 flex flex-wrap gap-1.5">
           {m.suggestions.map((s) => (
-            <button key={s} type="button" onClick={() => onSuggest(s)} className="press rounded-full border border-line-2 px-3 py-1.5 text-[12.5px] text-fg-2 hover:bg-surface-2 hover:text-fg">
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                triggerHaptic('tick');
+                onSuggest(s);
+              }}
+              className="press rounded-full border border-line-2 px-3 py-1.5 text-[12.5px] text-fg-2 hover:bg-surface-2 hover:text-fg"
+            >
               {s}
             </button>
           ))}
@@ -94,12 +142,17 @@ export function AgentPanel({ autoFocus }: { autoFocus?: boolean } = {}) {
 
   const send = (t = text) => {
     if (!t.trim()) return;
+    triggerHaptic('impact');
     ask(t);
     setText('');
   };
 
   const mic = () => {
-    if (listening) return stopRef.current();
+    if (listening) {
+      triggerHaptic('tick');
+      return stopRef.current();
+    }
+    triggerHaptic('impact');
     setListening(true);
     stopRef.current = listen(
       (t) => send(t),
@@ -119,17 +172,26 @@ export function AgentPanel({ autoFocus }: { autoFocus?: boolean } = {}) {
                 <Sparkles size={22} />
               </div>
               <h3 className="text-[22px] font-semibold tracking-[-0.03em]">How should it sound?</h3>
-              <p className="mt-1 text-[13.5px] text-fg-3">Moods, artists, years, questions, or commands — in any words.</p>
+              <p className="mt-1 text-[13.5px] text-fg-3">Moods, artists, years, questions, or commands — in natural language.</p>
             </div>
-            <button type="button" onClick={() => send(nudge.prompt)} className="press relative overflow-hidden rounded-[var(--radius-lg)] bg-accent-soft p-4 text-left">
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-accent-ink">
+            <button
+              type="button"
+              onClick={() => send(nudge.prompt)}
+              className="press relative overflow-hidden rounded-[var(--radius-lg)] bg-accent-soft p-4 text-left border border-hairline"
+            >
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-accent-ink font-mono">
                 <CloudSun size={13} /> Predicted for now
               </div>
               <div className="text-[14.5px] font-medium leading-snug">{nudge.title}</div>
             </button>
             <div className="grid grid-cols-2 gap-2">
               {CAPABILITIES.map(({ icon: Icon, text: t }) => (
-                <button key={t} type="button" onClick={() => send(t)} className="press flex flex-col gap-2 rounded-[var(--radius-md)] bg-surface p-3 text-left text-[13px] leading-snug text-fg-2 hover:bg-surface-2 hover:text-fg">
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => send(t)}
+                  className="press flex flex-col gap-2 rounded-[var(--radius-md)] bg-surface p-3 text-left text-[13px] leading-snug text-fg-2 hover:bg-surface-2 hover:text-fg border border-hairline/40"
+                >
                   <Icon size={16} strokeWidth={1.75} className="text-fg-3" />
                   {t}
                 </button>
@@ -158,7 +220,7 @@ export function AgentPanel({ autoFocus }: { autoFocus?: boolean } = {}) {
           e.preventDefault();
           send();
         }}
-        className="flex items-center gap-1.5 rounded-full bg-surface-2 p-1.5 pl-4 ring-1 ring-transparent transition focus-within:bg-surface focus-within:ring-line-2"
+        className="flex items-center gap-1.5 rounded-full bg-surface-2 p-1.5 pl-4 ring-1 ring-transparent transition focus-within:bg-surface focus-within:ring-line-2 border border-hairline/60"
       >
         <input
           ref={inputRef}
@@ -178,20 +240,346 @@ export function AgentPanel({ autoFocus }: { autoFocus?: boolean } = {}) {
   );
 }
 
+/**
+ * Conversational AI Audio Assistant Wrapped in AdaptiveOverlay:
+ * - Desktop: Centered specular glass Dialog modal
+ * - Mobile: Swipeable Vaul BottomSheet drawer
+ */
 export function AgentOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
-  if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[65] flex flex-col bg-bg/90 backdrop-blur-xl p-4 lg:hidden">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-semibold">
+    <AdaptiveOverlay
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          triggerHaptic('tick');
+          onClose();
+        }
+      }}
+      title={
+        <div className="flex items-center gap-2">
           <Sparkles size={18} className="text-accent-ink" />
-          <span>Agent</span>
+          <span>AI Audio Assistant</span>
         </div>
-        <IconButton icon={X} label="Close" size="sm" onClick={onClose} />
-      </div>
-      <div className="min-h-0 flex-1">
+      }
+      description="Natural language queries for music discovery, context curation, and playback control."
+      className="max-w-2xl h-[78vh] flex flex-col p-6"
+    >
+      <div className="min-h-0 flex-1 pt-2">
         <AgentPanel autoFocus />
       </div>
-    </div>
+    </AdaptiveOverlay>
+  );
+}
+
+/**
+ * Global Command Palette (Cmd+K / Ctrl+K):
+ * Provides instant track discovery, volume adjustments, sleep timer, and mode switching.
+ */
+export function GlobalCommandPalette({
+  open,
+  onOpenChange,
+  onOpenAgent,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOpenAgent?: () => void;
+}) {
+  const currentTrack = useStore(playerStore, (s) => s.track);
+  const isPlaying = useStore(playerStore, (s) => s.isPlaying);
+  const volume = useStore(playerStore, (s) => s.volume);
+  const muted = useStore(playerStore, (s) => s.muted);
+  const mode = useStore(uiStore, (s) => s.mode);
+  const themePref = useStore(settingsStore, (s) => s.theme);
+
+  const availableTracks = SEED_TRACKS;
+
+  const selectTrack = (trackId: string) => {
+    const t = availableTracks.find((x) => x.id === trackId);
+    if (t) {
+      triggerHaptic('impact');
+      playQueue([t], 0);
+      onOpenChange(false);
+      toast(`Playing "${t.title}"`, 'sparkles');
+    }
+  };
+
+  const handleMode = (m: 'Full' | 'Cover' | 'Micro' | 'Nano') => {
+    triggerHaptic('tick');
+    setMode(m);
+    onOpenChange(false);
+  };
+
+  const handleTheme = (th: ThemePref) => {
+    triggerHaptic('tick');
+    settingsStore.set({ theme: th });
+    applyTheme(th);
+    onOpenChange(false);
+  };
+
+  const handleVolume = (vol: number) => {
+    triggerHaptic('tick');
+    setVolume(vol);
+    onOpenChange(false);
+    toast(`Volume: ${Math.round(vol * 100)}%`, 'check');
+  };
+
+  const handleSleep = (minutes: number | null) => {
+    triggerHaptic('tick');
+    setSleep(minutes);
+    onOpenChange(false);
+    toast(minutes ? `Sleep timer set to ${minutes}m` : 'Sleep timer disabled', 'moon');
+  };
+
+  return (
+    <CommandPalette
+      open={open}
+      onOpenChange={onOpenChange}
+      placeholder="Type a command or search tracks, modes, volume..."
+    >
+      {/* 1. Track Discovery */}
+      <CommandGroup heading="Track Discovery">
+        {availableTracks.map((t) => (
+          <CommandItem
+            key={t.id}
+            icon={<Music size={15} />}
+            shortcut={[t.isRadio ? 'RADIO' : 'FLAC']}
+            onSelect={() => selectTrack(t.id)}
+          >
+            <div className="flex items-center gap-2 truncate">
+              <span className="font-medium truncate">{t.title}</span>
+              <span className="text-xs text-ink-tertiary truncate">· {t.artist}</span>
+            </div>
+          </CommandItem>
+        ))}
+      </CommandGroup>
+
+      {/* 2. Playback & Transport */}
+      <CommandGroup heading="Playback & Controls">
+        <CommandItem
+          icon={isPlaying ? <Pause size={15} /> : <Play size={15} />}
+          shortcut={['Space']}
+          onSelect={() => {
+            triggerHaptic('impact');
+            togglePlay();
+            onOpenChange(false);
+          }}
+        >
+          {isPlaying ? 'Pause Playback' : 'Resume Playback'}
+        </CommandItem>
+        <CommandItem
+          icon={<SkipForward size={15} />}
+          shortcut={['⌘', '→']}
+          onSelect={() => {
+            triggerHaptic('tick');
+            next();
+            onOpenChange(false);
+          }}
+        >
+          Next Track
+        </CommandItem>
+        <CommandItem
+          icon={<SkipBack size={15} />}
+          shortcut={['⌘', '←']}
+          onSelect={() => {
+            triggerHaptic('tick');
+            prev();
+            onOpenChange(false);
+          }}
+        >
+          Previous Track
+        </CommandItem>
+        <CommandItem
+          icon={<Shuffle size={15} />}
+          shortcut={['S']}
+          onSelect={() => {
+            triggerHaptic('tick');
+            toggleShuffle();
+            onOpenChange(false);
+          }}
+        >
+          Toggle Shuffle Mode
+        </CommandItem>
+        <CommandItem
+          icon={<Repeat size={15} />}
+          shortcut={['R']}
+          onSelect={() => {
+            triggerHaptic('tick');
+            cycleRepeat();
+            onOpenChange(false);
+          }}
+        >
+          Cycle Repeat Mode
+        </CommandItem>
+      </CommandGroup>
+
+      {/* 3. Player Morphing Modes */}
+      <CommandGroup heading="Player Morphing Modes">
+        <CommandItem
+          icon={<Layout size={15} />}
+          shortcut={['1']}
+          onSelect={() => handleMode('Full')}
+        >
+          Full Player Mode (Standard Desktop)
+        </CommandItem>
+        <CommandItem
+          icon={<Maximize2 size={15} />}
+          shortcut={['2']}
+          onSelect={() => handleMode('Cover')}
+        >
+          Cover Mode (1:1 Vinyl Square)
+        </CommandItem>
+        <CommandItem
+          icon={<PictureInPicture2 size={15} />}
+          shortcut={['3']}
+          onSelect={() => handleMode('Micro')}
+        >
+          Micro Player Mode (Floating Capsule)
+        </CommandItem>
+        <CommandItem
+          icon={<Circle size={15} />}
+          shortcut={['4']}
+          onSelect={() => handleMode('Nano')}
+        >
+          Nano Mode (Progress Ring Orb)
+        </CommandItem>
+      </CommandGroup>
+
+      {/* 4. Volume Adjustments */}
+      <CommandGroup heading="Volume Adjustments">
+        <CommandItem
+          icon={muted ? <Volume2 size={15} /> : <VolumeX size={15} />}
+          shortcut={['M']}
+          onSelect={() => {
+            triggerHaptic('tick');
+            toggleMute();
+            onOpenChange(false);
+          }}
+        >
+          {muted ? 'Unmute Volume' : 'Mute Audio'}
+        </CommandItem>
+        <CommandItem
+          icon={<Volume2 size={15} />}
+          shortcut={['25%']}
+          onSelect={() => handleVolume(0.25)}
+        >
+          Volume: 25% (Whisper)
+        </CommandItem>
+        <CommandItem
+          icon={<Volume2 size={15} />}
+          shortcut={['50%']}
+          onSelect={() => handleVolume(0.5)}
+        >
+          Volume: 50% (Comfortable)
+        </CommandItem>
+        <CommandItem
+          icon={<Volume2 size={15} />}
+          shortcut={['75%']}
+          onSelect={() => handleVolume(0.75)}
+        >
+          Volume: 75% (Focused)
+        </CommandItem>
+        <CommandItem
+          icon={<Volume2 size={15} />}
+          shortcut={['100%']}
+          onSelect={() => handleVolume(1.0)}
+        >
+          Volume: 100% (Maximum Output)
+        </CommandItem>
+      </CommandGroup>
+
+      {/* 5. Sleep Timer Settings */}
+      <CommandGroup heading="Sleep Timer">
+        <CommandItem
+          icon={<Timer size={15} />}
+          shortcut={['15m']}
+          onSelect={() => handleSleep(15)}
+        >
+          Sleep in 15 Minutes
+        </CommandItem>
+        <CommandItem
+          icon={<Timer size={15} />}
+          shortcut={['30m']}
+          onSelect={() => handleSleep(30)}
+        >
+          Sleep in 30 Minutes
+        </CommandItem>
+        <CommandItem
+          icon={<Timer size={15} />}
+          shortcut={['60m']}
+          onSelect={() => handleSleep(60)}
+        >
+          Sleep in 60 Minutes
+        </CommandItem>
+        <CommandItem
+          icon={<X size={15} />}
+          shortcut={['Off']}
+          onSelect={() => handleSleep(null)}
+        >
+          Disable Sleep Timer
+        </CommandItem>
+      </CommandGroup>
+
+      {/* 6. Theme Switching */}
+      <CommandGroup heading="Theme & Polarity">
+        <CommandItem
+          icon={<Sun size={15} />}
+          shortcut={['Light']}
+          onSelect={() => handleTheme('light')}
+        >
+          Porcelain Alabaster (Light Canvas)
+        </CommandItem>
+        <CommandItem
+          icon={<Moon size={15} />}
+          shortcut={['Dark']}
+          onSelect={() => handleTheme('dark')}
+        >
+          Obsidian Neutral (Dark Canvas)
+        </CommandItem>
+        <CommandItem
+          icon={<Sparkles size={15} />}
+          shortcut={['OLED']}
+          onSelect={() => handleTheme('oled')}
+        >
+          Cinema OLED (Pure Black #000000)
+        </CommandItem>
+      </CommandGroup>
+
+      {/* 7. Conversational AI Assistant */}
+      <CommandGroup heading="AI Intelligence">
+        <CommandItem
+          icon={<Sparkles size={15} />}
+          shortcut={['⌘', 'J']}
+          onSelect={() => {
+            triggerHaptic('impact');
+            onOpenChange(false);
+            onOpenAgent?.();
+          }}
+        >
+          Open AI Audio Assistant Dialog
+        </CommandItem>
+        <CommandItem
+          icon={<Wand2 size={15} />}
+          onSelect={() => {
+            triggerHaptic('impact');
+            onOpenChange(false);
+            onOpenAgent?.();
+            ask('Make me a focus mix');
+          }}
+        >
+          "Make me a focus mix"
+        </CommandItem>
+        <CommandItem
+          icon={<History size={15} />}
+          onSelect={() => {
+            triggerHaptic('impact');
+            onOpenChange(false);
+            onOpenAgent?.();
+            ask('What happened in 1979?');
+          }}
+        >
+          "What happened in 1979?"
+        </CommandItem>
+      </CommandGroup>
+    </CommandPalette>
   );
 }

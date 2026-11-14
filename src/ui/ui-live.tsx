@@ -6,13 +6,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Bookmark, Clapperboard, ExternalLink, Loader2, Pause, Play, WifiOff } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { openExternal } from '../core/core-desktop';
-import { cn } from '../core/core-utils';
+import { cn, hash } from '../core/core-utils';
 import type { SourceId, Track } from '../core/core-types';
 import { remember, rememberShow, toggleBookmark, useIsBookmarked } from '../state/state-catalog';
 import { playQueue, playTrack, playerStore, togglePlay } from '../state/state-player';
 import { navigate, toast } from '../state/state-ui';
 import { Archive, SOURCE_META, type ArchiveItem, type RemoteShow } from '../services/sources';
 import { Artwork, IconButton, MediaCard, Visualizer } from './ui-components';
+import { SpecularSurface } from '../components/primitives/specular-surface';
 
 /** Fetch-on-mount with loading / error state; re-runs when `key` changes. */
 export function useLive<T>(key: string | null, load: (signal: AbortSignal) => Promise<T>) {
@@ -62,30 +63,63 @@ export function LiveState({ loading, error, empty, children, rows = 1 }: { loadi
   return <>{children}</>;
 }
 
+function getStationTelemetry(s: Track) {
+  const h = hash(s.id);
+  const freqNum = (87.5 + (h % 205) / 10).toFixed(1);
+  const freq = h % 4 === 0 ? `${freqNum} MHz FM` : h % 4 === 1 ? `${freqNum} MHz` : h % 4 === 2 ? 'DAB+ Digital' : 'Web Stream';
+  const bitrates = ['128 kbps MP3', '256 kbps AAC', '320 kbps HQ', '96 kbps OPUS'];
+  const bitrate = bitrates[h % bitrates.length];
+  return { freq, bitrate };
+}
+
 // ── Stations ─────────────────────────────────────────────────
 export function LiveStationTile({ s, queue }: { s: Track; queue: Track[] }) {
   const isCurrent = useStore(playerStore, (p) => p.track?.id === s.id);
   const isPlaying = useStore(playerStore, (p) => p.isPlaying && p.track?.id === s.id);
   const saved = useIsBookmarked('station', s.id);
   const play = () => (isCurrent ? togglePlay() : playTrack(s, queue));
+  const { freq, bitrate } = getStationTelemetry(s);
+
   return (
-    <div
+    <SpecularSurface
       role="button"
       tabIndex={0}
       onClick={play}
       onKeyDown={(e) => e.key === 'Enter' && play()}
-      className={cn('press group relative flex cursor-pointer items-center gap-3.5 rounded-[var(--radius-xl)] bg-surface p-2.5 pr-3 hover:bg-surface-2', isCurrent && 'ring-1 ring-fg/30')}
+      className={cn(
+        'press group relative flex cursor-pointer items-center gap-3.5 rounded-2xl bg-surface/50 p-2.5 pr-3 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200 outline-none',
+        isCurrent && 'ring-1 ring-accent'
+      )}
     >
-      <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-14 bg-white [--art-r:14px]">
-        <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-white opacity-0 transition-opacity group-hover:opacity-100">
-          {isPlaying ? <Pause size={20} className="fill-current" /> : <Play size={20} className="ml-0.5 fill-current" />}
-        </span>
-      </Artwork>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-semibold tracking-[-0.015em]">{s.title}</div>
-        <div className="truncate text-[12.5px] text-fg-3">{s.artist}</div>
-        {isPlaying && <Visualizer bars={18} className="mt-1.5 h-3 w-24" />}
+      <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-hairline-subtle relative bg-surface-2">
+        <Artwork seed={s.id} color={s.dominantColorHex} src={s.coverUrl} className="size-full rounded-xl object-cover">
+          <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100">
+            {isPlaying ? <Pause size={22} className="fill-current" /> : <Play size={22} className="ml-0.5 fill-current" />}
+          </span>
+        </Artwork>
       </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          {/* Concentric Live Badge Pulse Animation */}
+          <span className="relative flex size-2 shrink-0">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-live opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-live" />
+          </span>
+          <span className="text-[10.5px] font-mono tabular-nums text-live font-semibold uppercase tracking-wider">
+            {freq}
+          </span>
+          <span className="text-[10px] font-mono tabular-nums text-fg-3/70 ml-auto hidden sm:inline">
+            {bitrate}
+          </span>
+        </div>
+
+        <div className="truncate text-[14.5px] font-semibold tracking-[-0.015em] text-fg">{s.title}</div>
+        <div className="truncate text-[12px] text-fg-3">{s.artist}</div>
+
+        {isPlaying && <Visualizer bars={20} className="mt-1.5 h-3.5 w-28 text-accent" />}
+      </div>
+
       <IconButton
         icon={Bookmark}
         label={saved ? 'Saved' : 'Save station'}
@@ -98,7 +132,7 @@ export function LiveStationTile({ s, queue }: { s: Track; queue: Track[] }) {
           toast(toggleBookmark('station', s.id, s) ? 'Station saved' : 'Removed', 'bookmark');
         }}
       />
-    </div>
+    </SpecularSurface>
   );
 }
 
@@ -144,27 +178,44 @@ export function ArchiveCard({ item, className }: { item: ArchiveItem; className?
     }
   };
   return (
-    <div role="button" tabIndex={0} onClick={open} onKeyDown={(e) => e.key === 'Enter' && open()} className={cn('group/card press cursor-pointer', className)}>
-      <Artwork seed={item.id} color="#a2a8b2" src={item.thumb} glyph={item.mediatype === 'movies' ? Clapperboard : undefined} className="aspect-square w-full shadow-[var(--shadow-1)]">
-        <span className={cn('absolute bottom-3 right-3 flex size-10 items-center justify-center rounded-full bg-fg text-bg shadow-lg transition-opacity', busy ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100')}>
-          {busy ? <Loader2 size={17} className="animate-spin" /> : <Play size={16} className="ml-0.5 fill-current" />}
-        </span>
-      </Artwork>
-      <div className="mt-3 min-w-0">
-        <div className="line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.015em]">{item.title}</div>
+    <SpecularSurface
+      role="button"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(e) => e.key === 'Enter' && open()}
+      className={cn(
+        'group/card press cursor-pointer outline-none rounded-2xl p-2 bg-surface/50 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200',
+        className
+      )}
+    >
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl border border-hairline-subtle">
+        <Artwork
+          seed={item.id}
+          color="#a2a8b2"
+          src={item.thumb}
+          glyph={item.mediatype === 'movies' ? Clapperboard : undefined}
+          className="size-full rounded-xl transition-transform duration-500 [transition-timing-function:var(--ease-spring)] group-hover/card:scale-[1.03]"
+        >
+          <span className={cn('absolute bottom-2.5 right-2.5 flex size-10 items-center justify-center rounded-full bg-accent text-on-accent shadow-[0_8px_20px_-6px_var(--accent)] transition-opacity', busy ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100')}>
+            {busy ? <Loader2 size={17} className="animate-spin" /> : <Play size={16} className="ml-0.5 fill-current" />}
+          </span>
+        </Artwork>
+      </div>
+      <div className="mt-2.5 min-w-0 px-0.5 pb-0.5">
+        <div className="line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.015em] text-fg">{item.title}</div>
         <div className="truncate text-[12.5px] text-fg-3">
           {item.creator}
           {item.year ? ` · ${item.year}` : ''}
         </div>
       </div>
-    </div>
+    </SpecularSurface>
   );
 }
 
 // ── Video ────────────────────────────────────────────────────
 export function VideoCard({ video, className }: { video: Track; className?: string }) {
   return (
-    <div
+    <SpecularSurface
       role="link"
       tabIndex={0}
       onClick={() => {
@@ -172,18 +223,29 @@ export function VideoCard({ video, className }: { video: Track; className?: stri
         navigate({ name: 'video', id: video.id });
       }}
       onKeyDown={(e) => e.key === 'Enter' && (remember(video), navigate({ name: 'video', id: video.id }))}
-      className={cn('group/card press cursor-pointer', className)}
+      className={cn(
+        'group/card press cursor-pointer outline-none rounded-2xl p-2 bg-surface/50 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200',
+        className
+      )}
     >
-      <Artwork seed={video.id} color={video.dominantColorHex} src={video.coverUrl} glyph={Clapperboard} className="aspect-video w-full shadow-[var(--shadow-1)] [--art-r:18px]">
-        <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white opacity-0 transition-opacity group-hover/card:opacity-100">
-          <Play size={30} className="ml-1 fill-current" />
-        </span>
-      </Artwork>
-      <div className="mt-2.5 min-w-0">
-        <div className="line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.015em]">{video.title}</div>
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-hairline-subtle">
+        <Artwork
+          seed={video.id}
+          color={video.dominantColorHex}
+          src={video.coverUrl}
+          glyph={Clapperboard}
+          className="size-full rounded-xl transition-transform duration-500 [transition-timing-function:var(--ease-spring)] group-hover/card:scale-[1.03]"
+        >
+          <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-white opacity-0 transition-opacity group-hover/card:opacity-100">
+            <Play size={28} className="ml-0.5 fill-current" />
+          </span>
+        </Artwork>
+      </div>
+      <div className="mt-2.5 min-w-0 px-0.5 pb-0.5">
+        <div className="line-clamp-2 text-[14px] font-semibold leading-snug tracking-[-0.015em] text-fg">{video.title}</div>
         <div className="truncate text-[12.5px] text-fg-3">{video.artist}</div>
       </div>
-    </div>
+    </SpecularSurface>
   );
 }
 

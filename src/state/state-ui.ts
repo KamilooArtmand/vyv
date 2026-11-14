@@ -6,6 +6,7 @@ import { createStore } from '../core/core-store';
 import { signInWith, signOutProviders } from '../services/auth';
 import { cloudEnabled, cloudSignIn, cloudSignOut, cloudUnlink, onCloudUser, saveProfile } from '../services/cloud';
 import type { AgentMessage, AuthProvider, LinkedAccount, PlayerMode, Route, RouteName, ThemePref, User } from '../core/core-types';
+import { ARGON_SPRINGS } from '../lib/motion';
 
 const ROUTES: RouteName[] = [
   'home',
@@ -210,25 +211,43 @@ export function applyTheme(pref: ThemePref, origin?: { x: number; y: number }) {
   const current = root.dataset.theme;
   if (current === target) return;
 
+  const updateDomTheme = () => {
+    root.dataset.theme = target;
+    if (target === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark', 'oled');
+    } else if (target === 'oled') {
+      root.classList.add('dark', 'oled');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light', 'oled');
+    }
+  };
+
   const docWithTransition = document as unknown as {
     startViewTransition?: (cb: () => void) => { ready: Promise<void> };
   };
 
   const reduced = settingsStore.get().reduceMotion || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  if (!docWithTransition.startViewTransition || reduced || !origin) {
-    root.dataset.theme = target;
+  if (!docWithTransition.startViewTransition || reduced) {
+    updateDomTheme();
+    return;
+  }
+
+  // Synchronized with ARGON_SPRINGS.snappy (settling ~180-220ms, 120fps hardware snap)
+  if (!origin) {
+    docWithTransition.startViewTransition(updateDomTheme);
     return;
   }
 
   const { x, y } = origin;
   const maxR = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  const t = docWithTransition.startViewTransition(() => {
-    root.dataset.theme = target;
-  });
+  const t = docWithTransition.startViewTransition(updateDomTheme);
   t.ready.then(() => {
     root.animate(
       { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${maxR}px at ${x}px ${y}px)`] },
-      { duration: 420, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)', pseudoElement: '::view-transition-new(root)' },
+      { duration: 220, easing: 'cubic-bezier(0.2, 0, 0, 1)', pseudoElement: '::view-transition-new(root)' },
     );
   });
 }

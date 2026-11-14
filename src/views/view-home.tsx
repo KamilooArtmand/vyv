@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { ArrowUpRight, Heart, History, ListMusic, RadioTower, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useStore } from '../core/core-store';
 import { greeting } from '../core/core-utils';
 import {
@@ -20,7 +21,10 @@ import {
 import { playQueue, playTrack, playerStore } from '../state/state-player';
 import { ask, predict } from '../state/state-agent';
 import { authStore, navigate, settingsStore } from '../state/state-ui';
-import { Artwork, LiveBadge, MediaCard, PlayFab, Section, Shelf, SHELF_ITEM, meshGradient } from '../ui/ui-components';
+import { Artwork, LiveBadge, MediaCard, PlayFab, Section, Shelf, SHELF_ITEM, WaveformVisualizer, meshGradient } from '../ui/ui-components';
+import { BentoCard, BentoInnerWell } from '../components/ui/bento-card';
+import { SpecularSurface } from '../components/primitives/specular-surface';
+import { ARGON_SPRINGS } from '../lib/motion';
 import type { Mood, Track } from '../core/core-types';
 import { Audius, RadioBrowser } from '../services/sources';
 import { SourceTag, useLive } from '../ui/ui-live';
@@ -37,26 +41,41 @@ const MOODS: { mood: Mood; name: string; prompt: string }[] = [
   { mood: 'melancholy', name: 'Rainy', prompt: 'Play something for a rainy day' },
 ];
 
-function QuickTile({ title, color, seed, src, icon, onClick, onPlay }: { title: string; color: string; seed: string; src?: string; icon?: typeof Heart; onClick: () => void; onPlay: () => void }) {
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-    e.currentTarget.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-  };
-
+function QuickTile({
+  title,
+  color,
+  seed,
+  src,
+  icon,
+  onClick,
+  onPlay,
+}: {
+  title: string;
+  color: string;
+  seed: string;
+  src?: string;
+  icon?: typeof Heart;
+  onClick: () => void;
+  onPlay: () => void;
+}) {
   return (
-    <div
+    <SpecularSurface
       role="button"
       tabIndex={0}
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
-      onMouseMove={handleMouseMove}
-      className="vyv-spotlight-card group/q press flex h-14 cursor-pointer items-center gap-3 overflow-hidden rounded-[var(--radius-md)] bg-surface pr-2 hover:bg-surface-2 md:h-16"
+      className="group/q press flex h-16 cursor-pointer items-center gap-3 overflow-hidden rounded-2xl bg-surface/50 hover:bg-surface-2/70 p-2 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200 outline-none"
     >
-      <Artwork seed={seed} color={color} src={src} glyph={icon} className="aspect-square h-full !rounded-none" />
-      <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium md:text-[14.5px]">{title}</span>
-      <PlayFab onClick={onPlay} className="!size-9 opacity-0 transition-opacity group-hover/q:opacity-100 max-md:hidden" />
-    </div>
+      <div className="size-12 shrink-0 overflow-hidden rounded-xl border border-hairline-subtle relative bg-surface-2">
+        <Artwork seed={seed} color={color} src={src} glyph={icon} className="size-full rounded-xl object-cover" />
+      </div>
+      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-fg tracking-tight">{title}</span>
+      <PlayFab
+        onClick={onPlay}
+        size="md"
+        className="opacity-0 group-hover/q:opacity-100 transition-opacity max-md:opacity-100 shrink-0"
+      />
+    </SpecularSurface>
   );
 }
 
@@ -99,36 +118,64 @@ export default function HomeView() {
         </h1>
       </header>
 
-      {/* Agent prediction */}
+      {/* Agent prediction Bento Hero */}
       {proactive && (
         <section className="anim-rise mb-9">
-          <div className="relative overflow-hidden rounded-[var(--radius-2xl)] p-6 text-white md:p-8" style={{ backgroundImage: meshGradient(nudge.mood, nudgeTracks[0]?.dominantColorHex ?? MOOD_COLOR) }}>
-            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(0_0_0/0.45),transparent_70%)]" />
-            <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-              <div className="max-w-lg">
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] backdrop-blur">
-                  <Sparkles size={12} /> Agent · for right now
+          <BentoCard
+            variant="default"
+            padding="none"
+            className="relative overflow-hidden rounded-2xl border border-hairline shadow-ambient-xs text-white"
+          >
+            <div
+              className="relative p-6 md:p-8"
+              style={{ backgroundImage: meshGradient(nudge.mood, nudgeTracks[0]?.dominantColorHex ?? MOOD_COLOR) }}
+            >
+              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgb(0_0_0/0.52),transparent_75%)] pointer-events-none" />
+              <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                <div className="max-w-lg">
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] backdrop-blur border border-white/20">
+                    <Sparkles size={12} /> Agent · for right now
+                  </div>
+                  <p className="text-[24px] font-semibold leading-tight tracking-[-0.03em] md:text-[30px]">{nudge.title}</p>
+                  <p className="mt-2 text-[13.5px] text-white/80">{nudgeTracks.slice(0, 3).map((t) => t.artist).join(' · ')}</p>
                 </div>
-                <p className="text-[22px] font-semibold leading-tight tracking-[-0.025em] md:text-[28px]">{nudge.title}</p>
-                <p className="mt-2 text-[13.5px] text-white/70">{nudgeTracks.slice(0, 3).map((t) => t.artist).join(' · ')}</p>
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={ARGON_SPRINGS.bouncy}
+                    onClick={() => ask(nudge.prompt)}
+                    className="flex h-12 items-center gap-2 rounded-full bg-white pl-4 pr-5 text-[14px] font-semibold text-black shadow-ambient-sm cursor-pointer outline-none hover:bg-white/95"
+                  >
+                    <Sparkles size={16} /> Play mix
+                  </motion.button>
+                  <div className="flex -space-x-3">
+                    {nudgeTracks.slice(0, 3).map((t) => (
+                      <Artwork
+                        key={t.id}
+                        seed={t.id}
+                        color={t.dominantColorHex}
+                        src={t.coverUrl}
+                        shape="circle"
+                        className="size-12 ring-2 ring-white/30"
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => ask(nudge.prompt)} className="press flex h-12 items-center gap-2 rounded-full bg-white pl-4 pr-5 text-[14px] font-semibold text-black">
-                  <Sparkles size={16} /> Play mix
-                </button>
-                <div className="flex -space-x-3">
-                  {nudgeTracks.slice(0, 3).map((t) => (
-                    <Artwork key={t.id} seed={t.id} color={t.dominantColorHex} src={t.coverUrl} shape="circle" className="size-12 ring-2 ring-white/40" />
-                  ))}
-                </div>
+
+              {/* Integrated Waveform Visualizer in Bento Hero with zero layout shift */}
+              <div className="mt-6 pt-3 border-t border-white/10">
+                <WaveformVisualizer height={28} color="#ffffff" points={48} />
               </div>
             </div>
-          </div>
+          </BentoCard>
         </section>
       )}
 
       {/* Quick picks */}
-      <section className="stagger mb-10 grid grid-cols-2 gap-2 md:gap-3 xl:grid-cols-3">
+      <section className="stagger mb-10 grid grid-cols-2 gap-2.5 md:gap-3 xl:grid-cols-3">
         <QuickTile title="Liked" color={MOOD_COLOR} seed="liked" icon={Heart} onClick={() => navigate({ name: 'playlist', id: 'liked' })} onPlay={() => playQueue(liked)} />
         <QuickTile title={mix.name} color={mix.color} seed={mix.id} icon={Sparkles} onClick={() => navigate({ name: 'playlist', id: mix.id })} onPlay={() => playFromIds(mix.trackIds)} />
         {playlists.slice(0, 2).map((p) => (
@@ -152,16 +199,20 @@ export default function HomeView() {
       <Section title="Moods" icon={Sparkles}>
         <Shelf>
           {MOODS.map((m) => (
-            <button
+            <SpecularSurface
               key={m.mood}
-              type="button"
+              as="article"
+              role="button"
+              tabIndex={0}
               onClick={() => ask(m.prompt)}
-              className={`${SHELF_ITEM} press relative aspect-[4/5] overflow-hidden rounded-[var(--radius-lg)] p-4 text-left text-white`}
+              onKeyDown={(e) => e.key === 'Enter' && ask(m.prompt)}
+              className={`${SHELF_ITEM} group/mood press relative aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl p-4 text-left text-white border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200 outline-none`}
               style={{ backgroundImage: meshGradient(m.mood, MOOD_COLOR) }}
             >
-              <span className="absolute bottom-4 left-4 text-[22px] font-semibold tracking-[-0.03em]">{m.name}</span>
-              <ArrowUpRight size={18} className="absolute right-3.5 top-3.5 opacity-70" />
-            </button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+              <span className="absolute bottom-4 left-4 z-10 text-[20px] font-semibold tracking-[-0.03em]">{m.name}</span>
+              <ArrowUpRight size={18} className="absolute right-3.5 top-3.5 z-10 opacity-70 transition-transform group-hover/mood:translate-x-0.5 group-hover/mood:-translate-y-0.5 group-hover/mood:opacity-100" />
+            </SpecularSurface>
           ))}
         </Shelf>
       </Section>
@@ -170,17 +221,22 @@ export default function HomeView() {
         <Section title="Continue listening">
           <div className="grid gap-3 md:grid-cols-2">
             {continueItems.map(({ id, secs, show, ep }) => (
-              <div key={id} className="glass flex items-center gap-4 rounded-[var(--radius-lg)] p-3">
-                <Artwork seed={show.id} color={show.color} className="size-16 [--art-r:14px]" />
+              <SpecularSurface
+                key={id}
+                className="flex items-center gap-4 rounded-2xl p-3 bg-surface/50 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200"
+              >
+                <div className="size-16 shrink-0 overflow-hidden rounded-xl border border-hairline-subtle relative">
+                  <Artwork seed={show.id} color={show.color} className="size-full rounded-xl" />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px] text-fg-3">{show.title}</div>
-                  <div className="truncate text-[14.5px] font-medium">{ep.title}</div>
-                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-3">
-                    <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (secs / ep.durationSeconds) * 100)}%` }} />
+                  <div className="truncate text-[14.5px] font-semibold text-fg">{ep.title}</div>
+                  <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-3">
+                    <div className="h-full rounded-full bg-accent skeleton-shimmer" style={{ width: `${Math.min(100, (secs / ep.durationSeconds) * 100)}%` }} />
                   </div>
                 </div>
                 <PlayFab onClick={() => playTrack(episodeToTrack(show, ep))} />
-              </div>
+              </SpecularSurface>
             ))}
           </div>
         </Section>
@@ -189,18 +245,20 @@ export default function HomeView() {
       <LiveShelves />
 
       <Section title="On this day in music">
-        <button
-          type="button"
+        <SpecularSurface
+          role="button"
+          tabIndex={0}
           onClick={() => navigate({ name: 'timeline', id: String(onThisDay.year) })}
-          className="glass press group flex w-full items-center gap-5 overflow-hidden rounded-[var(--radius-xl)] p-5 text-left md:p-6"
+          onKeyDown={(e) => e.key === 'Enter' && navigate({ name: 'timeline', id: String(onThisDay.year) })}
+          className="group press flex w-full items-center gap-6 overflow-hidden rounded-2xl p-5 md:p-6 bg-surface/50 hover:bg-surface-2/70 border border-hairline shadow-ambient-xs hover:border-hairline-strong transition-all duration-200 text-left outline-none cursor-pointer"
         >
-          <span className="text-[56px] font-extralight leading-none tracking-[-0.06em] text-fg md:text-[72px]">{onThisDay.year}</span>
+          <span className="text-[52px] md:text-[68px] font-mono tabular-nums font-extralight leading-none tracking-tight text-fg shrink-0">{onThisDay.year}</span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[17px] font-semibold tracking-[-0.02em]">{onThisDay.headline}</span>
+            <span className="block text-[17px] font-semibold tracking-[-0.02em] text-fg">{onThisDay.headline}</span>
             <span className="mt-1 line-clamp-2 block text-[14px] text-fg-2">{onThisDay.events[0]}</span>
           </span>
           <ArrowUpRight className="shrink-0 text-fg-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-        </button>
+        </SpecularSurface>
       </Section>
 
       <Section title="New releases" action={<SeeAll to="albums" />}>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vyv Player - UI Forms Mockup</title>
+    <style>
+        @import url('https://v1.fontapi.ir/css/Vazir');
+
+        :root {
+            --bg-glass: rgba(255, 255, 255, 0.7);
+            --bg-glass-dark: rgba(20, 20, 22, 0.7);
+            --border-light: rgba(0, 0, 0, 0.08);
+            --border-dark: rgba(255, 255, 255, 0.1);
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Vazir', sans-serif;
+            background: #e5e5ea;
+            /* A vibrant background to show off the glassmorphism */
+            background-image: 
+                radial-gradient(circle at 20% 30%, #a1a1aa 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, #d4d4d8 0%, transparent 50%);
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            min-height: 100vh;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #000000;
+                background-image: 
+                    radial-gradient(circle at 20% 30%, #3f3f46 0%, transparent 50%),
+                    radial-gradient(circle at 80% 70%, #18181b 0%, transparent 50%);
+                color: #fff;
+            }
+        }
+
+        .glass {
+            background: var(--bg-glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-glass);
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .glass {
+                background: var(--bg-glass-dark);
+                border-color: var(--border-dark);
+            }
+        }
+
+        /* 1. Full Player */
+        .full-player {
+            width: 900px;
+            height: 600px;
+            border-radius: 20px;
+            display: flex;
+        }
+        .full-sidebar {
+            width: 250px;
+            border-left: 1px solid var(--border-light);
+            padding: 20px;
+        }
+        .full-main {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .full-player-bar {
+            height: 80px;
+            border-top: 1px solid var(--border-light);
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+        @media (prefers-color-scheme: dark) {
+            .full-sidebar { border-left-color: var(--border-dark); }
+            .full-player-bar { border-top-color: var(--border-dark); }
+        }
+
+        /* 2. Cover Player */
+        .cover-player {
+            width: 400px;
+            height: 400px;
+            border-radius: 20px;
+            display: flex;
+            align-items: flex-end;
+            background-image: url('https://picsum.photos/400/400?grayscale');
+            background-size: cover;
+            position: relative;
+        }
+        .cover-player .overlay {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            text-align: left;
+            direction: ltr;
+        }
+
+        /* 3. Micro Player */
+        .micro-player {
+            width: 600px;
+            height: 70px;
+            border-radius: 35px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+        }
+        .micro-cover {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-image: url('https://picsum.photos/100/100?grayscale');
+            background-size: cover;
+        }
+        .micro-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .micro-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* 4. Nano Player */
+        .nano-player {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-image: url('https://picsum.photos/120/120?grayscale');
+            background-size: cover;
+            position: relative;
+        }
+        .nano-player .glass-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .nano-player:hover .glass-overlay {
+            opacity: 1;
+        }
+
+        /* Helpers */
+        h2.title {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        p.artist {
+            margin: 0;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        .btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        @media (prefers-color-scheme: dark) {
+            .btn { background: var(--border-dark); }
+        }
+        .section-label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            opacity: 0.6;
+            margin-bottom: -20px;
+            text-align: right;
+            width: 100%;
+            max-width: 900px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="section-label">۱. Full Player (حالت کامل)</div>
+    <div class="glass full-player">
+        <div class="full-sidebar">
+            <h2 class="title">آرشیو شما</h2>
+            <br>
+            <p class="artist">♫ تمام آهنگ‌ها</p>
+            <p class="artist">♥ علاقه‌مندی‌ها</p>
+            <p class="artist">☰ پلی‌لیست‌ها</p>
+        </div>
+        <div class="full-main">
+            <h2 class="title" style="font-size: 2rem;">کشف موسیقی (Liquid Glass)</h2>
+            <p class="artist" style="font-size: 1rem;">کتابخانه مینیمال</p>
+        </div>
+        <div class="glass full-player-bar">
+            <div class="micro-cover" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+            <div style="margin-right: 15px; flex: 1;">
+                <h2 class="title">Song Name</h2>
+                <p class="artist">Artist</p>
+            </div>
+            <div class="micro-controls" style="direction: ltr;">
+                <div class="btn">|◁</div>
+                <div class="btn" style="transform: scale(1.2);">▷</div>
+                <div class="btn">▷|</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-label">۲. Cover Player (حالت کاور)</div>
+    <div class="glass cover-player">
+        <div class="overlay">
+            <h2 class="title" style="font-size: 1.5rem;">Dark Side of the Moon</h2>
+            <p class="artist">Pink Floyd</p>
+        </div>
+    </div>
+
+    <div class="section-label">۳. Micro Player (حالت نوار ابزار)</div>
+    <div class="glass micro-player">
+        <div class="micro-cover"></div>
+        <div class="micro-info" style="direction: ltr;">
+            <h2 class="title">Shape of My Heart</h2>
+            <p class="artist">Sting</p>
+        </div>
+        <div class="micro-controls" style="direction: ltr;">
+            <div class="btn">|◁</div>
+            <div class="btn" style="transform: scale(1.2);">▷</div>
+            <div class="btn">▷|</div>
+        </div>
+    </div>
+
+    <div class="section-label">۴. Nano Player (حالت شناور کوچک)</div>
+    <div class="glass nano-player">
+        <div class="glass-overlay" style="direction: ltr;">
+            <span style="font-size: 24px; color: white;">▷</span>
+        </div>
+    </div>
+
+</body>
+</html>

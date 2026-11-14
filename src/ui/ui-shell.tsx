@@ -50,7 +50,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../core/core-store';
 import { cn, formatTime } from '../core/core-utils';
-import type { RouteName } from '../core/core-types';
+import type { RouteName, ThemePref } from '../core/core-types';
 import {
   applyTheme,
   authStore,
@@ -80,6 +80,9 @@ import { toggleFavorite, useIsFavorite, useUnreadCount } from '../state/state-ca
 import { Artwork, IconButton, LiveBadge, LogoMark, Slider, Wordmark } from './ui-components';
 import { WindowControls } from './ui-window';
 import { desktop } from '../core/core-desktop';
+import { motion } from 'motion/react';
+import { ARGON_SPRINGS } from '../lib/motion';
+import { triggerHaptic } from '../lib/haptics';
 
 // ── Navigation Structure ─────────────────────────────────────
 export interface NavItem {
@@ -114,9 +117,8 @@ export const NAV_GROUPS: NavItem[][] = [
 
 // ── TopBar ───────────────────────────────────────────────────
 /**
- * The header is part of the window body: logo and icons sit straight on the
- * background with no bar, chips or button fills. On desktop it is also the
- * drag handle and carries the minimal window controls.
+ * Argon Tier 1 Glass Header with 1px hairline bottom border.
+ * Drag handle for frameless desktop window with minimal window control glyphs.
  */
 export function TopBar({ onAgent }: { onAgent?: () => void }) {
   const user = useStore(authStore, (s) => s.user);
@@ -125,11 +127,26 @@ export function TopBar({ onAgent }: { onAgent?: () => void }) {
   const route = useStore(uiStore, (s) => s.route.name);
   const panel = useStore(uiStore, (s) => s.panel);
   const isPlaying = useStore(playerStore, (s) => s.isPlaying);
-  const dark = resolveTheme(pref) !== 'light';
+  const currentTheme = resolveTheme(pref);
+  const isLight = currentTheme === 'light';
+  const isOled = currentTheme === 'oled';
+
+  const themeIcon = isLight ? Sun : isOled ? Sparkles : Moon;
+  const themeLabel = isLight
+    ? 'Theme: Porcelain (Switch to Obsidian)'
+    : isOled
+      ? 'Theme: Cinema OLED (Switch to Porcelain)'
+      : 'Theme: Obsidian (Switch to Cinema OLED)';
+
+  const cycleTheme = (e: React.MouseEvent) => {
+    const nextTheme: ThemePref = isLight ? 'dark' : currentTheme === 'dark' ? 'oled' : 'light';
+    settingsStore.set({ theme: nextTheme });
+    applyTheme(nextTheme, { x: e.clientX, y: e.clientY });
+  };
 
   return (
     <header
-      className="drag relative z-30 flex h-[var(--header-h)] shrink-0 items-center pl-5 pr-3 md:pl-[26px]"
+      className="glass-tier-1 border-b border-hairline drag relative z-30 flex h-[var(--header-h)] shrink-0 items-center pl-5 pr-3 md:pl-[26px] select-none"
       onDoubleClick={(e) => e.target === e.currentTarget && desktop?.toggleMaximize()}
     >
       <button type="button" aria-label="vyv home" onClick={() => navigate({ name: 'home' })} className="press flex items-center gap-1.5">
@@ -147,15 +164,11 @@ export function TopBar({ onAgent }: { onAgent?: () => void }) {
         <IconButton icon={Sparkles} label="Agent  ⌘K" variant="bare" tip="bottom" active={panel === 'agent'} onClick={onAgent} />
         <IconButton icon={Bell} label="Inbox" variant="bare" tip="bottom" badge={unread} active={route === 'notifications'} onClick={() => navigate({ name: 'notifications' })} />
         <IconButton
-          icon={dark ? Sun : Moon}
-          label={dark ? 'Light mode' : 'Dark mode'}
+          icon={themeIcon}
+          label={themeLabel}
           variant="bare"
           tip="bottom"
-          onClick={(e) => {
-            const nextTheme = dark ? 'light' : 'dark';
-            settingsStore.set({ theme: nextTheme });
-            applyTheme(nextTheme, { x: e.clientX, y: e.clientY });
-          }}
+          onClick={cycleTheme}
         />
         <IconButton icon={Settings2} label="Settings" variant="bare" tip="bottom" active={route === 'settings'} onClick={() => navigate({ name: 'settings' })} />
         <button
@@ -168,7 +181,7 @@ export function TopBar({ onAgent }: { onAgent?: () => void }) {
         >
           {user?.avatarUrl ? <img src={user.avatarUrl} alt="" referrerPolicy="no-referrer" className="size-7 rounded-full object-cover" /> : <UserRound size={19} strokeWidth={1.75} />}
         </button>
-        {desktop && <span className="ml-3 mr-1 h-4 w-px bg-line-2" aria-hidden />}
+        {desktop && <span className="ml-3 mr-1.5 h-4 w-px bg-hairline" aria-hidden />}
         <WindowControls />
       </div>
     </header>
@@ -234,12 +247,13 @@ export function BottomNav({ onAgent }: { onAgent?: () => void }) {
 
 // ── Player Dock ──────────────────────────────────────────────
 function Scrubber({ className }: { className?: string }) {
-  const { time, duration } = useStore(timeStore, (s) => s);
+  const { time, duration, buffered } = useStore(timeStore, (s) => s);
   const isRadio = useStore(playerStore, (s) => !!s.track?.isRadio);
   const [drag, setDrag] = useState<number | null>(null);
   const shown = drag ?? time;
   const commit = () => {
     if (drag === null) return;
+    triggerHaptic('tick');
     seek(drag);
     setDrag(null);
   };
@@ -256,10 +270,20 @@ function Scrubber({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn('flex items-center gap-3 text-[11px] text-fg-3 tabular', className)}>
-      <span className="w-10 text-right">{formatTime(shown)}</span>
-      <Slider label="Seek" value={shown} max={duration || 1} step={0.1} onChange={setDrag} onPointerUp={commit} onKeyUp={commit} className="flex-1" />
-      <span className="w-10">{formatTime(duration)}</span>
+    <div className={cn('flex items-center gap-3 text-[11px] text-fg-3 font-mono tabular-nums', className)}>
+      <span className="w-11 text-right font-mono tabular-nums">{formatTime(shown)}</span>
+      <Slider
+        label="Seek"
+        value={shown}
+        max={duration || 1}
+        step={0.1}
+        buffered={buffered}
+        onChange={setDrag}
+        onPointerUp={commit}
+        onKeyUp={commit}
+        className="flex-1"
+      />
+      <span className="w-11 font-mono tabular-nums">{formatTime(duration)}</span>
     </div>
   );
 }
@@ -276,21 +300,61 @@ function NowPlayingMeta() {
   return (
     <div className="flex min-w-0 items-center gap-3">
       {/* Circular art, concentric with the dock's round end. */}
-      <button type="button" aria-label="Open cover" onClick={() => setMode('Cover')} className="press group/art relative shrink-0">
+      <button
+        type="button"
+        aria-label="Open cover"
+        onClick={() => {
+          triggerHaptic('tick');
+          setMode('Cover');
+        }}
+        className="press group/art relative shrink-0"
+      >
         <Artwork seed={track.id} color={track.dominantColorHex} src={track.coverUrl} shape="circle" className="size-[calc(var(--dock-h)-var(--dock-gap)*2)]" />
         <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white opacity-0 transition-opacity group-hover/art:opacity-100">
           <Maximize2 size={15} />
         </span>
       </button>
       <div className="min-w-0">
-        <button type="button" onClick={() => setMode('Cover')} className="block max-w-full truncate text-left text-[14px] font-medium tracking-[-0.01em] hover:underline">
-          {track.title}
-        </button>
-        <button type="button" onClick={() => track.artistId && navigate({ name: 'artist', id: track.artistId })} className="block max-w-full truncate text-left text-[12.5px] text-fg-3 hover:text-fg-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('tick');
+              setMode('Cover');
+            }}
+            className="block max-w-full truncate text-left text-[14px] font-medium tracking-[-0.01em] hover:underline"
+          >
+            {track.title}
+          </button>
+          <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-mono tabular-nums uppercase tracking-wider text-fg-3 border border-hairline">
+            {track.isRadio ? '128 kbps' : 'FLAC · 24-bit/96kHz'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            triggerHaptic('tick');
+            track.artistId && navigate({ name: 'artist', id: track.artistId });
+          }}
+          className="block max-w-full truncate text-left text-[12.5px] text-fg-3 hover:text-fg-2"
+        >
           {track.artist}
         </button>
       </div>
-      {!track.isRadio && <IconButton icon={Heart} label={fav ? 'Unlike' : 'Like'} size="sm" variant="bare" active={fav} filled={fav} onClick={() => toggleFavorite(track.id, track)} />}
+      {!track.isRadio && (
+        <IconButton
+          icon={Heart}
+          label={fav ? 'Unlike' : 'Like'}
+          size="sm"
+          variant="bare"
+          active={fav}
+          filled={fav}
+          onClick={() => {
+            triggerHaptic(fav ? 'tick' : 'impact');
+            toggleFavorite(track.id, track);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -333,6 +397,7 @@ export function PlayerDock() {
   const startResize = (edge: 'left' | 'right', e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    triggerHaptic('tick');
     setResizing(true);
     const startX = e.clientX;
     const startW = width;
@@ -358,6 +423,7 @@ export function PlayerDock() {
 
   // Reset to default width on double-click
   const resetWidth = () => {
+    triggerHaptic('tick');
     const defW = 840;
     setWidth(defW);
     settingsStore.set({ dockWidth: defW });
@@ -366,6 +432,7 @@ export function PlayerDock() {
   // Drag to dock to top or bottom
   const startDragPos = (e: React.PointerEvent) => {
     e.preventDefault();
+    triggerHaptic('tick');
     setDraggingPos(true);
     const startY = e.clientY;
     let moved = false;
@@ -391,9 +458,12 @@ export function PlayerDock() {
   };
 
   return (
-    <div
+    <motion.div
       ref={ref}
       data-tone={tone}
+      initial={{ opacity: 0, y: dockPos === 'top' ? -16 : 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={ARGON_SPRINGS.snappy}
       style={{
         '--busy': busy,
         width: `${width}px`,
@@ -401,8 +471,8 @@ export function PlayerDock() {
         minWidth: '480px',
       } as React.CSSProperties}
       className={cn(
-        "dock-surface anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-[var(--dock-gap)] select-none transition-all duration-200",
-        resizing && "ring-2 ring-accent/60 shadow-lg",
+        "dock-surface glass-tier-3 border border-hairline anim-rise pointer-events-auto relative grid h-[var(--dock-h)] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-[var(--dock-gap)] select-none transition-all duration-200 shadow-ambient-lg",
+        resizing && "ring-2 ring-accent/60 shadow-xl",
         draggingPos && "opacity-80 scale-[0.98]"
       )}
     >
@@ -452,20 +522,65 @@ export function PlayerDock() {
       >
         <div className="flex items-center gap-1.5">
           {!isUltraCompact && (
-            <IconButton icon={Shuffle} label="Shuffle" size="xs" variant="bare" active={shuffle} onClick={toggleShuffle} />
+            <IconButton
+              icon={Shuffle}
+              label="Shuffle"
+              size="xs"
+              variant="bare"
+              active={shuffle}
+              onClick={() => {
+                triggerHaptic('tick');
+                toggleShuffle();
+              }}
+            />
           )}
-          <IconButton icon={SkipBack} label="Previous" size="sm" variant="bare" onClick={prev} className="[&_svg]:fill-current" />
           <IconButton
-            icon={isPlaying ? Pause : Play}
-            label={isPlaying ? 'Pause' : 'Play'}
-            variant="solid"
-            size="md"
-            onClick={togglePlay}
-            className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')}
+            icon={SkipBack}
+            label="Previous"
+            size="sm"
+            variant="bare"
+            onClick={() => {
+              triggerHaptic('tick');
+              prev();
+            }}
+            className="[&_svg]:fill-current"
           />
-          <IconButton icon={SkipForward} label="Next" size="sm" variant="bare" onClick={() => next()} className="[&_svg]:fill-current" />
+          <motion.div whileTap={{ scale: 0.92 }} transition={ARGON_SPRINGS.bouncy}>
+            <IconButton
+              icon={isPlaying ? Pause : Play}
+              label={isPlaying ? 'Pause' : 'Play'}
+              variant="solid"
+              size="md"
+              onClick={() => {
+                triggerHaptic('impact');
+                togglePlay();
+              }}
+              className={cn('[&_svg]:fill-current', !isPlaying && '[&_svg]:ml-0.5')}
+            />
+          </motion.div>
+          <IconButton
+            icon={SkipForward}
+            label="Next"
+            size="sm"
+            variant="bare"
+            onClick={() => {
+              triggerHaptic('tick');
+              next();
+            }}
+            className="[&_svg]:fill-current"
+          />
           {!isUltraCompact && (
-            <IconButton icon={repeat === 'one' ? Repeat1 : Repeat} label={`Repeat ${repeat}`} size="xs" variant="bare" active={repeat !== 'off'} onClick={cycleRepeat} />
+            <IconButton
+              icon={repeat === 'one' ? Repeat1 : Repeat}
+              label={`Repeat ${repeat}`}
+              size="xs"
+              variant="bare"
+              active={repeat !== 'off'}
+              onClick={() => {
+                triggerHaptic('tick');
+                cycleRepeat();
+              }}
+            />
           )}
         </div>
         <Scrubber className="-mt-0.5 w-full" />
@@ -473,19 +588,69 @@ export function PlayerDock() {
 
       {/* Right section: Actions, Volume & Position Switch */}
       <div className="flex items-center justify-end gap-0.5">
-        <IconButton icon={MicVocal} label="Lyrics" size="sm" variant="bare" active={panel === 'lyrics'} disabled={!hasLyrics} onClick={() => togglePanel('lyrics')} />
+        <IconButton
+          icon={MicVocal}
+          label="Lyrics"
+          size="sm"
+          variant="bare"
+          active={panel === 'lyrics'}
+          disabled={!hasLyrics}
+          onClick={() => {
+            triggerHaptic('tick');
+            togglePanel('lyrics');
+          }}
+        />
         {!isUltraCompact && (
-          <IconButton icon={ListMusic} label="Queue" size="sm" variant="bare" active={panel === 'queue'} onClick={() => togglePanel('queue')} />
+          <IconButton
+            icon={ListMusic}
+            label="Queue"
+            size="sm"
+            variant="bare"
+            active={panel === 'queue'}
+            onClick={() => {
+              triggerHaptic('tick');
+              togglePanel('queue');
+            }}
+          />
         )}
-        <IconButton icon={muted || volume === 0 ? VolumeX : Volume2} label="Mute" size="sm" variant="bare" onClick={toggleMute} className="ml-0.5" />
+        <IconButton
+          icon={muted || volume === 0 ? VolumeX : Volume2}
+          label="Mute"
+          size="sm"
+          variant="bare"
+          onClick={() => {
+            triggerHaptic('tick');
+            toggleMute();
+          }}
+          className="ml-0.5"
+        />
         {!isCompact && (
           <Slider label="Volume" value={muted ? 0 : volume} onChange={setVolume} className="w-20 max-xl:hidden" />
         )}
         {!isCompact && (
-          <IconButton icon={PictureInPicture2} label="Micro" size="sm" variant="bare" onClick={() => setMode('Micro')} className="ml-0.5" />
+          <IconButton
+            icon={PictureInPicture2}
+            label="Micro"
+            size="sm"
+            variant="bare"
+            onClick={() => {
+              triggerHaptic('tick');
+              setMode('Micro');
+            }}
+            className="ml-0.5"
+          />
         )}
         {!isCompact && (
-          <IconButton icon={Circle} label="Nano" size="sm" variant="bare" onClick={() => setMode('Nano')} />
+          <IconButton
+            icon={Circle}
+            label="Nano"
+            size="sm"
+            variant="bare"
+            onClick={() => {
+              triggerHaptic('tick');
+              setMode('Nano');
+            }}
+          />
         )}
 
         {/* Position Toggle: Top (Header) vs Bottom (Footer) */}
@@ -494,13 +659,25 @@ export function PlayerDock() {
           label={dockPos === 'bottom' ? 'Dock to Top (انتقال به بالا)' : 'Dock to Bottom (انتقال به پایین)'}
           size="sm"
           variant="bare"
-          onClick={() => settingsStore.set({ dockPosition: dockPos === 'bottom' ? 'top' : 'bottom' })}
+          onClick={() => {
+            triggerHaptic('tick');
+            settingsStore.set({ dockPosition: dockPos === 'bottom' ? 'top' : 'bottom' });
+          }}
         />
 
         {/* Right end: a round control concentric with the capsule's end. */}
-        <IconButton icon={Maximize2} label="Cover" variant="bare" onClick={() => setMode('Cover')} className="!size-[calc(var(--dock-h)-var(--dock-gap)*2)]" />
+        <IconButton
+          icon={Maximize2}
+          label="Cover"
+          variant="bare"
+          onClick={() => {
+            triggerHaptic('tick');
+            setMode('Cover');
+          }}
+          className="!size-[calc(var(--dock-h)-var(--dock-gap)*2)]"
+        />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -517,7 +694,10 @@ export function MiniPlayer() {
       ref={ref}
       role="button"
       tabIndex={0}
-      onClick={() => setMode('Cover')}
+      onClick={() => {
+        triggerHaptic('tick');
+        setMode('Cover');
+      }}
       data-tone={tone}
       style={{ '--busy': busy } as React.CSSProperties}
       className="dock-surface anim-rise flex h-16 items-center gap-3 overflow-hidden !rounded-[22px] pl-2 pr-1.5"
@@ -528,8 +708,26 @@ export function MiniPlayer() {
         <div className="truncate text-[12.5px] text-fg-3">{track.artist}</div>
       </div>
       <div onClick={(e) => e.stopPropagation()} className="flex items-center">
-        <IconButton icon={isPlaying ? Pause : Play} label={isPlaying ? 'Pause' : 'Play'} tip={false} className="[&_svg]:fill-current text-fg" onClick={togglePlay} />
-        <IconButton icon={SkipForward} label="Next" tip={false} className="[&_svg]:fill-current text-fg" onClick={() => next()} />
+        <IconButton
+          icon={isPlaying ? Pause : Play}
+          label={isPlaying ? 'Pause' : 'Play'}
+          tip={false}
+          className="[&_svg]:fill-current text-fg"
+          onClick={() => {
+            triggerHaptic('impact');
+            togglePlay();
+          }}
+        />
+        <IconButton
+          icon={SkipForward}
+          label="Next"
+          tip={false}
+          className="[&_svg]:fill-current text-fg"
+          onClick={() => {
+            triggerHaptic('tick');
+            next();
+          }}
+        />
       </div>
       <div className="absolute inset-x-3 bottom-0 h-[2px] overflow-hidden rounded-full bg-surface-3">
         <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${progress * 100}%` }} />
